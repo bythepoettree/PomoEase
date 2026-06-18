@@ -226,10 +226,6 @@
   .tstep.done{opacity:.4;}
   .tstep.done b{text-decoration:line-through;}
   .tarrow{color:var(--muted); font-size:13px;}
-  .chips{
-    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-    margin-top:14px; max-width:530px; width:100%;
-  }
   .chip{
     background:var(--chip); border:none; color:var(--fg);
     border-radius:999px; padding:10px 17px; font-family:inherit; font-weight:500;
@@ -251,6 +247,19 @@
   .stepper-chip input:focus{outline:2px solid var(--accent); border-radius:6px;}
   .stepper-chip input::-webkit-outer-spin-button, .stepper-chip input::-webkit-inner-spin-button{-webkit-appearance:none;}
   .stepper-chip.active button{background:rgba(0,0,0,.14); color:inherit;}
+
+  /* ---------- programme picker (dropdown) ---------- */
+  .prog-picker{width:100%; max-width:530px; margin-top:14px; position:relative;}
+  .prog-select{
+    width:100%; appearance:none; -webkit-appearance:none;
+    background:var(--chip); color:var(--fg); border:none;
+    border-radius:14px; padding:14px 44px 14px 16px;
+    font-family:inherit; font-size:15px; font-weight:500; cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%238A93A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 16px center;
+  }
+  .prog-select:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+  .prog-select option{color:#111; background:#fff;}
 
   /* ---------- toast ---------- */
   .toast{
@@ -296,6 +305,28 @@
   .stat{background:var(--chip); border:none; border-radius:16px; padding:14px;}
   .stat .num{font-family:'Anton',sans-serif; font-size:26px;}
   .stat .lab{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:2px;}
+
+  /* ---------- profile editor (avatar + display name) ---------- */
+  .profile-edit{display:flex; align-items:center; gap:14px; margin-bottom:6px;}
+  .avatar-btn{
+    position:relative; flex:none; width:64px; height:64px; border-radius:50%;
+    border:none; padding:0; cursor:pointer; background:var(--chip);
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  .avatar-btn img{width:100%; height:100%; object-fit:cover; display:block;}
+  .avatar-btn .avatar-fallback{font-family:'Anton',sans-serif; font-size:22px; color:var(--muted);}
+  .avatar-btn .avatar-edit{
+    position:absolute; inset:auto 0 0 0; background:rgba(0,0,0,.55); color:#fff;
+    font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; text-align:center; padding:4px 0;
+  }
+  .avatar-btn:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+  .profile-edit .name-field{flex:1; min-width:0;}
+  .profile-edit .name-field label{display:block; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;}
+  .profile-edit .name-field input{
+    width:100%; background:var(--chip); border:none; color:var(--fg);
+    border-radius:10px; padding:11px 13px; font-family:inherit; font-size:15px; font-weight:600;
+  }
+  .profile-edit .name-field input:focus{outline:2px solid var(--accent);}
   .hist-item{display:flex; justify-content:space-between; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px;}
   .hist-item .when{color:var(--muted); flex:none;}
   .signin-note{font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:10px;}
@@ -383,7 +414,11 @@
     </div>
     <div class="traj" id="traj"></div>
     <button class="btn" id="progStartBtn" style="display:none;margin-top:12px;">START PROGRAMME</button>
-    <div class="chips" id="chips"></div>
+    <div class="prog-picker">
+      <select class="prog-select" id="progSelect" aria-label="Choose a workout programme">
+        <option value="" selected>Choose a programme…</option>
+      </select>
+    </div>
     <div class="controls">
       <button class="btn ghost" id="shuffleBtn">🎲 Surprise mix</button>
       <button class="btn ghost" id="restBtn">Just rest</button>
@@ -432,6 +467,18 @@
     <p class="signin-note" id="storageNote">Accounts live in this browser — sign back in any time on this device. Passwords are stored only as a secure hash.</p>
   </div>
   <div id="statsBox" style="display:none;">
+    <div class="profile-edit">
+      <button class="avatar-btn" id="avatarBtn" type="button" title="Change profile picture" aria-label="Change profile picture">
+        <span class="avatar-fallback" id="avatarFallback">＋</span>
+        <img id="avatarImg" style="display:none;" alt="">
+        <span class="avatar-edit">Edit</span>
+      </button>
+      <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+      <div class="name-field">
+        <label for="displayNameInput">Display name</label>
+        <input id="displayNameInput" type="text" maxlength="24" placeholder="What should we call you?">
+      </div>
+    </div>
     <div class="stat-grid">
       <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Focus rounds</div></div>
       <div class="stat"><div class="num" id="stMinutes">0</div><div class="lab">Minutes studied</div></div>
@@ -457,7 +504,7 @@ const S = {
   session: 1, completed: 0,
   reps: 0, activeTask: null,
 };
-let DATA = { name:null, tasks:[], history:[], totals:{sessions:0, minutes:0, reps:0} };
+let DATA = { name:null, displayName:null, avatar:null, tasks:[], history:[], totals:{sessions:0, minutes:0, reps:0} };
 let storageOK = false;
 
 const $ = id => document.getElementById(id);
@@ -465,7 +512,7 @@ const timerEl=$('timer'), startBtn=$('startBtn');
 const phaseLabel=$('phaseLabel'), dotsEl=$('dots'), sesNum=$('sesNum');
 const workoutBlock=$('workoutBlock'), timerBlock=$('timerBlock');
 const exName=$('exName'), exNote=$('exNote'), repNum=$('repNum'), repOf=$('repOf');
-const counterRow=$('counterRow'), chipsEl=$('chips'), breakClock=$('breakClock');
+const counterRow=$('counterRow'), progSelect=$('progSelect'), breakClock=$('breakClock');
 const trajEl=$('traj'), toast=$('toast');
 const cv=$('cv'), ctx=cv.getContext('2d');
 
@@ -499,7 +546,7 @@ const store = {
   }
 };
 let ACCOUNTS={};
-const blankData=()=>({name:null, tasks:[], history:[], totals:{sessions:0, minutes:0, reps:0}});
+const blankData=()=>({name:null, displayName:null, avatar:null, tasks:[], history:[], totals:{sessions:0, minutes:0, reps:0}});
 async function sha(text){
   try{
     const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -528,7 +575,7 @@ function saveData(){
   setTimeout(async ()=>{
     saveQueued=false;
     if(DATA.name && ACCOUNTS[DATA.name]){
-      ACCOUNTS[DATA.name].data = {tasks:DATA.tasks, history:DATA.history, totals:DATA.totals};
+      ACCOUNTS[DATA.name].data = {displayName:DATA.displayName, avatar:DATA.avatar, tasks:DATA.tasks, history:DATA.history, totals:DATA.totals};
       await store.set('pomofit:accounts', JSON.stringify(ACCOUNTS));
     }
   }, 300);
@@ -816,7 +863,7 @@ function buildProgramme(pkey, keys){
 function selectProgramme(pkey, keys){
   PROG = buildProgramme(pkey, keys);
   PROG.mode='ready';
-  document.querySelectorAll('#chips .chip').forEach(c=>c.classList.toggle('active', c.dataset.key===pkey));
+  progSelect.value = pkey || '';
   exName.textContent=PROG.name;
   exNote.textContent=PROG.steps.length+' moves · sized to your break';
   counterRow.style.visibility='hidden';
@@ -1305,13 +1352,21 @@ function logFocus(minutes, completed){
   }
   saveData(); renderTasks();
 }
+function displayName(){ return (DATA.displayName && DATA.displayName.trim()) || DATA.name || ''; }
 function renderProfile(){
   const signed=!!DATA.name;
-  $('profileBtn').textContent = signed ? '👤 '+DATA.name.split(' ')[0] : 'Sign in';
-  $('profileTitle').textContent = signed ? DATA.name+"'s progress" : 'Sign in';
+  const nm=displayName();
+  $('profileBtn').innerHTML = signed
+    ? (DATA.avatar ? `<img src="${DATA.avatar}" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:-4px;margin-right:6px;">` : '👤 ') + esc(nm.split(' ')[0])
+    : 'Sign in';
+  $('profileTitle').textContent = signed ? nm+"'s progress" : 'Sign in';
   $('signinBox').style.display = signed?'none':'block';
   $('statsBox').style.display = signed?'block':'none';
   if(signed){
+    $('displayNameInput').value = DATA.displayName || '';
+    const fallback=$('avatarFallback'), img=$('avatarImg');
+    if(DATA.avatar){ img.src=DATA.avatar; img.style.display='block'; fallback.style.display='none'; }
+    else { img.style.display='none'; fallback.style.display='block'; fallback.textContent=(nm[0]||'?').toUpperCase(); }
     $('stSessions').textContent=DATA.totals.sessions;
     $('stMinutes').textContent=DATA.totals.minutes;
     $('stReps').textContent=DATA.totals.reps;
@@ -1330,6 +1385,7 @@ function renderProfile(){
     });
   }
 }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 $('signInBtn').onclick=signIn;
 $('signUpBtn').onclick=signUp;
 $('passInput').addEventListener('keydown',e=>{ if(e.key==='Enter') signIn(); });
@@ -1339,6 +1395,36 @@ $('signOutBtn').onclick=async ()=>{
   S.activeTask=null;
   renderProfile(); renderTasks();
 };
+
+/* ---------- profile personalisation: display name + avatar ---------- */
+$('displayNameInput').addEventListener('change', ()=>{
+  DATA.displayName = $('displayNameInput').value.trim().slice(0,24) || null;
+  renderProfile(); saveData();
+});
+$('displayNameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') $('displayNameInput').blur(); });
+$('avatarBtn').onclick=()=> $('avatarInput').click();
+$('avatarInput').addEventListener('change', e=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    // downscale to keep storage light
+    const img = new Image();
+    img.onload = ()=>{
+      const size=160;
+      const c=document.createElement('canvas'); c.width=size; c.height=size;
+      const cx=c.getContext('2d');
+      const s=Math.min(img.width,img.height);
+      cx.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
+      DATA.avatar = c.toDataURL('image/jpeg',.85);
+      renderProfile(); saveData();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+});
 
 /* ---------- timer engine ---------- */
 let tickInt=null;
@@ -1408,7 +1494,7 @@ function setPhase(p){
   counterRow.style.visibility='hidden';
   $('progStartBtn').style.display='none';
   renderTraj();
-  document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('active'));
+  progSelect.value='';
   document.body.dataset.mode = p;
   const isBreak = p!=='focus';
   workoutBlock.classList.toggle('show', isBreak);
@@ -1451,14 +1537,15 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-/* programme chips */
+/* programme dropdown */
 Object.keys(PROGRAMMES).forEach(k=>{
-  const c=document.createElement('button');
-  c.className='chip'; c.dataset.key=k;
-  c.textContent=PROGRAMMES[k].name;
-  c.onclick=()=>selectProgramme(k);
-  chipsEl.appendChild(c);
+  const o=document.createElement('option');
+  o.value=k; o.textContent=PROGRAMMES[k].name;
+  progSelect.appendChild(o);
 });
+progSelect.onchange=()=>{
+  if(progSelect.value) selectProgramme(progSelect.value);
+};
 $('shuffleBtn').onclick=()=>{
   const keys=Object.keys(EX).sort(()=>Math.random()-0.5).slice(0,3);
   selectProgramme(null, keys);
@@ -1468,7 +1555,7 @@ $('restBtn').onclick=()=>{
   counterRow.style.visibility='hidden';
   $('progStartBtn').style.display='none';
   renderTraj();
-  document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('active'));
+  progSelect.value='';
   exName.textContent='Resting easy';
   exNote.textContent='';
 };
