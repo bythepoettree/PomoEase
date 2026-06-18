@@ -79,7 +79,26 @@
   }
   .wordmark{ font-family:'Anton', sans-serif; font-size:20px; letter-spacing:.06em; }
   .wordmark em{font-style:normal; color:var(--accent);}
-  .tagline{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-top:2px;}
+  .intro-bubble{
+    position:relative; width:100%; max-width:560px; margin:18px 0 0;
+    background:var(--chip); color:var(--muted); border-radius:16px;
+    padding:12px 40px 12px 18px; font-size:12.5px; line-height:1.5; text-align:center;
+    transition:opacity .25s var(--ease), transform .25s var(--ease);
+  }
+  .intro-bubble::before{
+    content:''; position:absolute; left:50%; top:-6px; transform:translateX(-50%);
+    width:12px; height:12px; background:var(--chip);
+    clip-path:polygon(0 100%, 100% 100%, 50% 0);
+  }
+  .intro-bubble.hide{display:none;}
+  .intro-close{
+    position:absolute; top:8px; right:8px; width:24px; height:24px;
+    background:transparent; border:none; color:var(--muted); font-size:13px;
+    border-radius:50%; cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .intro-close:hover{background:rgba(128,128,128,.18); color:var(--fg);}
+  .intro-close:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
   .icon-btn{
     background:var(--chip); color:var(--fg); border:none;
     border-radius:12px; padding:9px 13px; font-family:inherit; font-size:13px;
@@ -248,18 +267,26 @@
   .stepper-chip input::-webkit-outer-spin-button, .stepper-chip input::-webkit-inner-spin-button{-webkit-appearance:none;}
   .stepper-chip.active button{background:rgba(0,0,0,.14); color:inherit;}
 
-  /* ---------- programme picker (dropdown) ---------- */
-  .prog-picker{width:100%; max-width:530px; margin-top:14px; position:relative;}
-  .prog-select{
-    width:100%; appearance:none; -webkit-appearance:none;
-    background:var(--chip); color:var(--fg); border:none;
-    border-radius:14px; padding:14px 44px 14px 16px;
-    font-family:inherit; font-size:15px; font-weight:500; cursor:pointer;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%238A93A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat:no-repeat; background-position:right 16px center;
+  /* ---------- programme picker (vertical list) ---------- */
+  .prog-list{width:100%; max-width:530px; margin-top:14px; display:flex; flex-direction:column; gap:10px;}
+  .prog-card{
+    width:100%; height:64px; flex:none; box-sizing:border-box;
+    background:var(--chip); border:none; color:var(--fg);
+    border-radius:14px; padding:0 18px; font-family:inherit; text-align:left;
+    cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+    border-left:4px solid transparent; transition:transform .12s var(--ease), border-color .15s var(--ease);
+    overflow:hidden;
   }
-  .prog-select:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
-  .prog-select option{color:#111; background:#fff;}
+  .prog-card:hover{opacity:.92;}
+  .prog-card:active{transform:scale(.985);}
+  .prog-card.active{border-left-color:var(--accent); background:var(--fg); color:var(--bg);}
+  .prog-card.active .prog-meta{color:var(--bg); opacity:.7;}
+  .prog-card .prog-name{font-size:15px; font-weight:600;}
+  .prog-card .prog-meta{
+    font-size:12px; color:var(--muted); margin-top:2px;
+    width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .prog-card:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
 
   /* ---------- toast ---------- */
   .toast{
@@ -327,6 +354,27 @@
     border-radius:10px; padding:11px 13px; font-family:inherit; font-size:15px; font-weight:600;
   }
   .profile-edit .name-field input:focus{outline:2px solid var(--accent);}
+
+  /* ---------- danger zone (reset stats) ---------- */
+  .danger-row{display:flex; justify-content:space-between; align-items:center; padding-top:14px; margin-top:4px; border-top:1px solid var(--line); gap:12px;}
+  .danger-row .lab2{font-size:13.5px;}
+  .danger-row .sub2{font-size:11.5px; color:var(--muted); margin-top:1px;}
+  .btn.danger{background:var(--chip); color:#E8604C;}
+  .btn.danger.armed{background:#E8604C; color:#fff;}
+
+  /* ---------- photo cropper ---------- */
+  .crop-stage{
+    position:relative; width:260px; height:260px; margin:6px auto 4px;
+    border-radius:50%; overflow:hidden; background:var(--chip);
+    touch-action:none; cursor:grab;
+  }
+  .crop-stage.grabbing{cursor:grabbing;}
+  .crop-stage img{position:absolute; top:0; left:0; transform-origin:0 0; user-select:none; -webkit-user-drag:none; max-width:none;}
+  .crop-stage .crop-ring{position:absolute; inset:0; border-radius:50%; border:2px solid var(--line); pointer-events:none;}
+  .crop-zoom{display:flex; align-items:center; gap:10px; max-width:260px; margin:14px auto 0;}
+  .crop-zoom span{font-size:15px; color:var(--muted); flex:none;}
+  .crop-zoom input{flex:1; accent-color:var(--accent);}
+  .crop-hint{text-align:center; font-size:12px; color:var(--muted); margin-top:10px;}
   .hist-item{display:flex; justify-content:space-between; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px;}
   .hist-item .when{color:var(--muted); flex:none;}
   .signin-note{font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:10px;}
@@ -367,6 +415,11 @@
 <div class="phase-strip">
   <div class="phase-label" id="phaseLabel">Focus</div>
   <div class="dots" id="dots"></div>
+</div>
+
+<div class="intro-bubble" id="introBubble">
+  <span>Pomodoro focus timer with workout breaks — stay on task, then get moving when it's time to rest.</span>
+  <button class="intro-close" id="introCloseBtn" aria-label="Dismiss this note" title="Dismiss">✕</button>
 </div>
 
 <main>
@@ -414,11 +467,7 @@
     </div>
     <div class="traj" id="traj"></div>
     <button class="btn" id="progStartBtn" style="display:none;margin-top:12px;">START PROGRAMME</button>
-    <div class="prog-picker">
-      <select class="prog-select" id="progSelect" aria-label="Choose a workout programme">
-        <option value="" selected>Choose a programme…</option>
-      </select>
-    </div>
+    <div class="prog-list" id="progList"></div>
     <div class="controls">
       <button class="btn ghost" id="shuffleBtn">🎲 Surprise mix</button>
       <button class="btn ghost" id="restBtn">Just rest</button>
@@ -485,10 +534,35 @@
       <div class="stat"><div class="num" id="stReps">0</div><div class="lab">Total reps</div></div>
     </div>
     <div class="set-row"><div class="lab">Recent activity</div><div id="histList"></div></div>
+    <div class="danger-row">
+      <div>
+        <div class="lab2">Reset statistics</div>
+        <div class="sub2">Clears your rounds, minutes, reps and history</div>
+      </div>
+      <button class="btn danger" id="resetStatsBtn" style="font-size:13px;padding:11px 18px;white-space:nowrap;">Reset</button>
+    </div>
     <div class="controls" style="justify-content:center;">
       <button class="btn ghost" id="signOutBtn">Sign out</button>
       <button class="btn close-sheet">DONE</button>
     </div>
+  </div>
+</div>
+
+<div class="sheet" id="cropSheet">
+  <h2>Position your photo</h2>
+  <div class="crop-stage" id="cropStage">
+    <img id="cropImg" alt="">
+    <div class="crop-ring"></div>
+  </div>
+  <div class="crop-zoom">
+    <span>－</span>
+    <input type="range" id="cropZoom" min="100" max="300" value="100" aria-label="Zoom">
+    <span>＋</span>
+  </div>
+  <p class="crop-hint">Drag to reposition · pinch or use the slider to zoom</p>
+  <div class="controls" style="justify-content:center;">
+    <button class="btn ghost" id="cropCancelBtn">Cancel</button>
+    <button class="btn" id="cropUseBtn">USE PHOTO</button>
   </div>
 </div>
 
@@ -512,7 +586,7 @@ const timerEl=$('timer'), startBtn=$('startBtn');
 const phaseLabel=$('phaseLabel'), dotsEl=$('dots'), sesNum=$('sesNum');
 const workoutBlock=$('workoutBlock'), timerBlock=$('timerBlock');
 const exName=$('exName'), exNote=$('exNote'), repNum=$('repNum'), repOf=$('repOf');
-const counterRow=$('counterRow'), progSelect=$('progSelect'), breakClock=$('breakClock');
+const counterRow=$('counterRow'), progList=$('progList'), breakClock=$('breakClock');
 const trajEl=$('traj'), toast=$('toast');
 const cv=$('cv'), ctx=cv.getContext('2d');
 
@@ -579,6 +653,72 @@ function saveData(){
       await store.set('pomofit:accounts', JSON.stringify(ACCOUNTS));
     }
   }, 300);
+}
+
+/* ---------- settings persistence (theme, durations, toggles) ---------- */
+let settingsSaveQueued=false;
+function saveSettings(){
+  if(settingsSaveQueued) return;
+  settingsSaveQueued=true;
+  setTimeout(async ()=>{
+    settingsSaveQueued=false;
+    const snap={
+      theme: document.body.dataset.theme,
+      focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
+      reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+    };
+    await store.set('pomofit:settings', JSON.stringify(snap));
+  }, 300);
+}
+async function loadSettings(){
+  let saved=null;
+  try{ saved = JSON.parse((await store.get('pomofit:settings'))||'null'); }catch(e){ saved=null; }
+  if(!saved) return;
+  if(saved.theme){ document.body.dataset.theme = saved.theme; }
+  if(typeof saved.focusMin==='number') S.focusMin = saved.focusMin;
+  if(typeof saved.breakMin==='number') S.breakMin = saved.breakMin;
+  if(typeof saved.longMin==='number') S.longMin = saved.longMin;
+  if(typeof saved.reminders==='boolean') S.reminders = saved.reminders;
+  if(typeof saved.sound==='boolean') S.sound = saved.sound;
+  if(typeof saved.autoBreak==='boolean') S.autoBreak = saved.autoBreak;
+  if(typeof saved.autoFocus==='boolean') S.autoFocus = saved.autoFocus;
+  syncSettingsUI();
+  if(!S.running){ S.remaining=phaseDuration(); render(S.remaining); }
+}
+
+/* ---------- intro note dismissal ---------- */
+const introBubble=$('introBubble');
+$('introCloseBtn').onclick=()=>{
+  introBubble.classList.add('hide');
+  store.set('pomofit:introDismissed', '1');
+};
+async function loadIntroState(){
+  const dismissed = await store.get('pomofit:introDismissed');
+  if(dismissed==='1') introBubble.classList.add('hide');
+}
+function syncSettingsUI(){
+  // theme chips
+  themeSeg.querySelectorAll('.chip').forEach(c=>{
+    c.classList.toggle('active', c.dataset.theme===document.body.dataset.theme);
+  });
+  // duration chips (focus/break/long)
+  [['focusSeg',S.focusMin],['breakSeg',S.breakMin],['longSeg',S.longMin]].forEach(([elId,val])=>{
+    const el=$(elId);
+    let matched=false;
+    el.querySelectorAll('.chip:not(.stepper-chip)').forEach(c=>{
+      const on = c.textContent.trim()===val+' min';
+      c.classList.toggle('active', on);
+      if(on) matched=true;
+    });
+    const stepper=el.querySelector('.stepper-chip');
+    if(stepper){ stepper.classList.toggle('active', !matched); if(!matched) syncFocusStepperDisplay(val); }
+  });
+  // toggles
+  [['remToggle','reminders'],['sfxToggle','sound'],['autoBreak','autoBreak'],['autoFocus','autoFocus']].forEach(([id,key])=>{
+    const b=$(id);
+    b.textContent = S[key] ? 'On' : 'Off';
+    b.setAttribute('aria-pressed', S[key]);
+  });
 }
 function authMsg(m){ $('authMsg').textContent=m; }
 async function signUp(){
@@ -863,7 +1003,7 @@ function buildProgramme(pkey, keys){
 function selectProgramme(pkey, keys){
   PROG = buildProgramme(pkey, keys);
   PROG.mode='ready';
-  progSelect.value = pkey || '';
+  document.querySelectorAll('#progList .prog-card').forEach(c=>c.classList.toggle('active', c.dataset.key===pkey));
   exName.textContent=PROG.name;
   exNote.textContent=PROG.steps.length+' moves · sized to your break';
   counterRow.style.visibility='hidden';
@@ -1354,6 +1494,8 @@ function logFocus(minutes, completed){
 }
 function displayName(){ return (DATA.displayName && DATA.displayName.trim()) || DATA.name || ''; }
 function renderProfile(){
+  resetArmed=false;
+  const b=$('resetStatsBtn'); if(b){ b.textContent='Reset'; b.classList.remove('armed'); }
   const signed=!!DATA.name;
   const nm=displayName();
   $('profileBtn').innerHTML = signed
@@ -1405,26 +1547,120 @@ $('displayNameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') $('di
 $('avatarBtn').onclick=()=> $('avatarInput').click();
 $('avatarInput').addEventListener('change', e=>{
   const file = e.target.files && e.target.files[0];
+  e.target.value='';
   if(!file) return;
   if(!file.type.startsWith('image/')) return;
   const reader = new FileReader();
-  reader.onload = ()=>{
-    // downscale to keep storage light
-    const img = new Image();
-    img.onload = ()=>{
-      const size=160;
-      const c=document.createElement('canvas'); c.width=size; c.height=size;
-      const cx=c.getContext('2d');
-      const s=Math.min(img.width,img.height);
-      cx.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
-      DATA.avatar = c.toDataURL('image/jpeg',.85);
-      renderProfile(); saveData();
-    };
-    img.src = reader.result;
-  };
+  reader.onload = ()=> openCropper(reader.result);
   reader.readAsDataURL(file);
-  e.target.value='';
 });
+
+/* ---------- photo cropper ---------- */
+const cropStage=$('cropStage'), cropImg=$('cropImg'), cropZoom=$('cropZoom');
+const CROP_SIZE=260, OUT_SIZE=200;
+let crop = { natW:0, natH:0, minScale:1, scale:1, x:0, y:0 };
+let cropDrag = null;
+
+function openCropper(src){
+  const img=new Image();
+  img.onload=()=>{
+    crop.natW=img.naturalWidth; crop.natH=img.naturalHeight;
+    crop.minScale = CROP_SIZE / Math.min(crop.natW, crop.natH);
+    crop.scale = crop.minScale;
+    cropZoom.value = 100;
+    cropImg.src = src;
+    cropImg.style.width = crop.natW+'px';
+    cropImg.style.height = crop.natH+'px';
+    // center the image in the circle
+    crop.x = (CROP_SIZE - crop.natW*crop.scale)/2;
+    crop.y = (CROP_SIZE - crop.natH*crop.scale)/2;
+    applyCropTransform();
+    document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('show'));
+    $('cropSheet').classList.add('show'); sheetBg.classList.add('show');
+  };
+  img.src = src;
+}
+function clampCropPos(){
+  const w=crop.natW*crop.scale, h=crop.natH*crop.scale;
+  // keep the circle fully covered by the image at all times
+  crop.x = Math.min(0, Math.max(CROP_SIZE-w, crop.x));
+  crop.y = Math.min(0, Math.max(CROP_SIZE-h, crop.y));
+}
+function applyCropTransform(){
+  clampCropPos();
+  cropImg.style.transform = `translate(${crop.x}px,${crop.y}px) scale(${crop.scale})`;
+}
+cropZoom.addEventListener('input', ()=>{
+  const cx=CROP_SIZE/2, cy=CROP_SIZE/2;
+  // zoom around the centre of the circle, not the image origin
+  const imgCx=(cx-crop.x)/crop.scale, imgCy=(cy-crop.y)/crop.scale;
+  crop.scale = crop.minScale * (cropZoom.value/100);
+  crop.x = cx - imgCx*crop.scale;
+  crop.y = cy - imgCy*crop.scale;
+  applyCropTransform();
+});
+function cropPointerDown(x,y){
+  cropDrag = {startX:x, startY:y, origX:crop.x, origY:crop.y};
+  cropStage.classList.add('grabbing');
+}
+function cropPointerMove(x,y){
+  if(!cropDrag) return;
+  crop.x = cropDrag.origX + (x-cropDrag.startX);
+  crop.y = cropDrag.origY + (y-cropDrag.startY);
+  applyCropTransform();
+}
+function cropPointerUp(){ cropDrag=null; cropStage.classList.remove('grabbing'); }
+cropStage.addEventListener('pointerdown', e=>{ cropStage.setPointerCapture(e.pointerId); cropPointerDown(e.clientX,e.clientY); });
+cropStage.addEventListener('pointermove', e=> cropPointerMove(e.clientX,e.clientY));
+cropStage.addEventListener('pointerup', cropPointerUp);
+cropStage.addEventListener('pointercancel', cropPointerUp);
+// pinch to zoom on touch devices
+let pinchStartDist=null, pinchStartScale=1;
+cropStage.addEventListener('touchstart', e=>{
+  if(e.touches.length===2){
+    cropDrag=null;
+    pinchStartDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    pinchStartScale = crop.scale;
+  }
+}, {passive:true});
+cropStage.addEventListener('touchmove', e=>{
+  if(e.touches.length===2 && pinchStartDist){
+    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    const cx=CROP_SIZE/2, cy=CROP_SIZE/2;
+    const imgCx=(cx-crop.x)/crop.scale, imgCy=(cy-crop.y)/crop.scale;
+    crop.scale = clamp(pinchStartScale*(d/pinchStartDist), crop.minScale, crop.minScale*3);
+    crop.x = cx - imgCx*crop.scale;
+    crop.y = cy - imgCy*crop.scale;
+    cropZoom.value = Math.round((crop.scale/crop.minScale)*100);
+    applyCropTransform();
+  }
+}, {passive:true});
+$('cropCancelBtn').onclick=()=>{ pinchStartDist=null; openSheet('profileSheet'); };
+$('cropUseBtn').onclick=()=>{
+  pinchStartDist=null;
+  const c=document.createElement('canvas'); c.width=OUT_SIZE; c.height=OUT_SIZE;
+  const cx=c.getContext('2d');
+  const k=OUT_SIZE/CROP_SIZE;
+  cx.drawImage(cropImg, crop.x*k, crop.y*k, crop.natW*crop.scale*k, crop.natH*crop.scale*k);
+  DATA.avatar = c.toDataURL('image/jpeg',.88);
+  renderProfile(); saveData();
+  openSheet('profileSheet');
+};
+
+/* ---------- reset statistics ---------- */
+let resetArmed=false;
+$('resetStatsBtn').onclick=()=>{
+  const b=$('resetStatsBtn');
+  if(!resetArmed){
+    resetArmed=true; b.textContent='Confirm?'; b.classList.add('armed');
+    setTimeout(()=>{ if(resetArmed){ resetArmed=false; b.textContent='Reset'; b.classList.remove('armed'); } }, 4000);
+    return;
+  }
+  resetArmed=false; b.textContent='Reset'; b.classList.remove('armed');
+  DATA.totals = {sessions:0, minutes:0, reps:0};
+  DATA.history = [];
+  renderProfile(); saveData();
+};
 
 /* ---------- timer engine ---------- */
 let tickInt=null;
@@ -1494,7 +1730,7 @@ function setPhase(p){
   counterRow.style.visibility='hidden';
   $('progStartBtn').style.display='none';
   renderTraj();
-  progSelect.value='';
+  document.querySelectorAll('#progList .prog-card').forEach(c=>c.classList.remove('active'));
   document.body.dataset.mode = p;
   const isBreak = p!=='focus';
   workoutBlock.classList.toggle('show', isBreak);
@@ -1537,15 +1773,18 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-/* programme dropdown */
+/* programme list */
 Object.keys(PROGRAMMES).forEach(k=>{
-  const o=document.createElement('option');
-  o.value=k; o.textContent=PROGRAMMES[k].name;
-  progSelect.appendChild(o);
+  const prog=PROGRAMMES[k];
+  const card=document.createElement('button');
+  card.type='button'; card.className='prog-card'; card.dataset.key=k;
+  const n=prog.steps.length;
+  card.innerHTML=`<span class="prog-name"></span><span class="prog-meta"></span>`;
+  card.querySelector('.prog-name').textContent=prog.name;
+  card.querySelector('.prog-meta').textContent=n+' moves · '+prog.steps.map(s=>EX[s].name).join(', ');
+  card.onclick=()=>selectProgramme(k);
+  progList.appendChild(card);
 });
-progSelect.onchange=()=>{
-  if(progSelect.value) selectProgramme(progSelect.value);
-};
 $('shuffleBtn').onclick=()=>{
   const keys=Object.keys(EX).sort(()=>Math.random()-0.5).slice(0,3);
   selectProgramme(null, keys);
@@ -1555,7 +1794,7 @@ $('restBtn').onclick=()=>{
   counterRow.style.visibility='hidden';
   $('progStartBtn').style.display='none';
   renderTraj();
-  progSelect.value='';
+  document.querySelectorAll('#progList .prog-card').forEach(c=>c.classList.remove('active'));
   exName.textContent='Resting easy';
   exNote.textContent='';
 };
@@ -1581,12 +1820,13 @@ const THEMES={ember:'🔥 Ember', forest:'🌲 Forest', ocean:'🌊 Ocean', mono
 const themeSeg=$('themeSeg');
 Object.keys(THEMES).forEach(k=>{
   const b=document.createElement('button');
-  b.className='chip'; b.textContent=THEMES[k];
+  b.className='chip'; b.textContent=THEMES[k]; b.dataset.theme=k;
   if(k==='forest') b.classList.add('active');
   b.onclick=()=>{
     document.body.dataset.theme=k;
     themeSeg.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
     b.classList.add('active');
+    saveSettings();
   };
   themeSeg.appendChild(b);
 });
@@ -1602,10 +1842,12 @@ function seg(elId, values, get, set){
       el.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
       b.classList.add('active');
       if(!S.running){ S.remaining=phaseDuration(); render(S.remaining); }
+      saveSettings();
     };
     el.appendChild(b);
   });
 }
+let syncFocusStepperDisplay = ()=>{};
 (function(){
   const wrap=document.createElement('div');
   wrap.className='chip stepper-chip'; wrap.id='focusStepper';
@@ -1613,11 +1855,12 @@ function seg(elId, values, get, set){
   $('focusSeg').appendChild(wrap);          // appended first, so it leads the row
   const val=wrap.querySelector('#fsVal');
   let v=1;
-  function commit(){
+  function commit(save){
     S.focusMin=v;
     document.querySelectorAll('#focusSeg .chip').forEach(c=>c.classList.remove('active'));
     wrap.classList.add('active');
     if(!S.running){ S.remaining=phaseDuration(); render(S.remaining); }
+    if(save!==false) saveSettings();
   }
   function show(){ val.value=String(v).padStart(2,'0'); }
   wrap.querySelector('#fsMinus').addEventListener('click',e=>{ e.stopPropagation(); v=Math.max(1,v-1); show(); commit(); });
@@ -1630,13 +1873,15 @@ function seg(elId, values, get, set){
   val.addEventListener('blur',show);
   val.addEventListener('keydown',e=>{ if(e.key==='Enter'){ val.blur(); } });
   show();
+  // allow loadSettings() to push a restored custom value into this stepper without re-saving
+  syncFocusStepperDisplay = (n)=>{ v=clamp(Math.round(n),1,180); show(); commit(false); };
 })();
 seg('focusSeg',[15,25,45,50],()=>S.focusMin,v=>S.focusMin=v);
 seg('breakSeg',[3,5,10],()=>S.breakMin,v=>S.breakMin=v);
 seg('longSeg',[15,20,30],()=>S.longMin,v=>S.longMin=v);
 function wireToggle(id, get, set){
   const b=$(id);
-  b.onclick=()=>{ set(!get()); b.textContent=get()?'On':'Off'; b.setAttribute('aria-pressed',get()); };
+  b.onclick=()=>{ set(!get()); b.textContent=get()?'On':'Off'; b.setAttribute('aria-pressed',get()); saveSettings(); };
 }
 wireToggle('remToggle',()=>S.reminders,v=>S.reminders=v);
 wireToggle('sfxToggle',()=>S.sound,v=>S.sound=v);
@@ -1649,6 +1894,8 @@ render(S.remaining);
 renderTasks();
 animate();
 loadData();
+loadSettings();
+loadIntroState();
 initLocalFacts();
 </script>
 </body>
