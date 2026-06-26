@@ -7,6 +7,8 @@
 <meta name="description" content="PomoFit is a free Pomodoro focus timer that turns your breaks into quick workouts. Stay on task, then move — with custom timers, exercise programmes, and progress tracking.">
 <link rel="canonical" href="https://www.pomofit.fit/">
 <meta name="robots" content="index, follow">
+<!-- Replace with the real tag from Google Search Console > Settings > Ownership verification > HTML tag -->
+<!-- <meta name="google-site-verification" content="PASTE_YOUR_CODE_HERE"> -->
 
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -21,6 +23,11 @@
 <meta name="twitter:description" content="A free Pomodoro focus timer that turns your breaks into quick workouts.">
 
 <meta name="theme-color" content="#171C2B">
+
+<!-- ============ GOOGLE ADSENSE ============ -->
+<!-- Once approved, uncomment and replace ca-pub-XXXXXXXXXXXXXXXX with your real publisher ID -->
+<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -428,6 +435,13 @@
   }
   .kofi-link:hover{opacity:.85;}
   .kofi-link:active{transform:scale(.96);}
+  .ad-slot{
+    width:100%; max-width:560px; margin-top:18px;
+    min-height:90px; display:flex; align-items:center; justify-content:center;
+    background:var(--bg2); border-radius:14px; color:var(--muted); font-size:11px;
+  }
+  .footer-links{margin-top:10px; font-size:11.5px;}
+  .footer-links a{color:var(--muted); text-decoration:underline; text-decoration-color:rgba(128,128,128,.4);}
 </style>
 </head>
 <body data-mode="focus" data-theme="forest">
@@ -522,7 +536,16 @@
 
 <footer>
   Session <b id="sesNum">1</b> · long break after 4 rounds
+  <div class="footer-links"><a href="privacy.html">Privacy Policy</a></div>
 </footer>
+
+<!-- ============ AD SLOT (Google AdSense) ============ -->
+<!-- This box is just a placeholder so the layout doesn't shift once ads go live.
+     Once your AdSense account is approved:
+     1. Remove the "Ad space" placeholder div below.
+     2. Paste your <ins class="adsbygoogle">...</ins> ad unit code from AdSense in its place.
+     3. Make sure the <script> in the <head> above is uncommented with your real publisher ID. -->
+<div class="ad-slot" id="adSlot">Ad space</div>
 
 <!-- ================= SHEETS ================= -->
 <div class="sheet-bg" id="sheetBg"></div>
@@ -646,7 +669,7 @@
    ===================================================== */
 const S = {
   focusMin: 25, breakMin: 5, longMin: 15,
-  autoBreak: true, autoFocus: false, sound: true, reminders: true,
+  autoBreak: true, autoFocus: false, sound: true, reminders: false,
   phase: 'focus', running: false,
   endAt: 0, remaining: 25*60*1000,
   session: 1, completed: 0,
@@ -1830,9 +1853,6 @@ function start(){
   startBtn.textContent='PAUSE';
   tickInt=setInterval(tick,200);
   ac();
-  try{
-    if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
-  }catch(e){}
 }
 function pause(){
   if(!S.running) return;
@@ -2033,7 +2053,12 @@ function wireToggle(id, get, set){
   const b=$(id);
   b.onclick=()=>{ set(!get()); b.textContent=get()?'On':'Off'; b.setAttribute('aria-pressed',get()); saveSettings(); };
 }
-wireToggle('remToggle',()=>S.reminders,v=>S.reminders=v);
+wireToggle('remToggle',()=>S.reminders,v=>{
+  S.reminders=v;
+  if(v && 'Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+});
 wireToggle('sfxToggle',()=>S.sound,v=>S.sound=v);
 wireToggle('autoBreak',()=>S.autoBreak,v=>S.autoBreak=v);
 wireToggle('autoFocus',()=>S.autoFocus,v=>S.autoFocus=v);
