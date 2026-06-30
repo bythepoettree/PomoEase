@@ -436,8 +436,14 @@
 
   /* ---------- floating chat widget (front page, while in a session) ---------- */
   .float-chat{
-    position:fixed; right:16px; bottom:16px; z-index:20;
-    width:min(340px, calc(100vw - 32px)); display:none;
+    position:fixed; bottom:16px; z-index:999;
+    /* On narrow screens the content column fills the viewport, so this sits
+       in the bottom-right corner same as before. On wide screens it tracks
+       the right edge of the centered 560px content column instead of
+       drifting off to the actual edge of the browser window. */
+    right:max(16px, calc(50vw - 280px));
+    width:min(340px, calc(100vw - 32px));
+    display:none;
   }
   .float-chat.show{display:block;}
   .float-chat.sheet-open{display:none;}
@@ -447,6 +453,7 @@
     cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.25); margin-left:auto;
     transition:transform .12s var(--ease);
   }
+  .float-chat.expanded .float-chat-toggle{display:none;}
   .float-chat-toggle:hover{opacity:.9;}
   .float-chat-toggle:active{transform:scale(.97);}
   .float-chat-badge{
@@ -454,7 +461,7 @@
   }
   .float-chat-panel{
     display:none; background:var(--bg2); border-radius:18px; padding:14px;
-    box-shadow:0 12px 32px rgba(0,0,0,.3); margin-bottom:10px; max-height:60vh;
+    box-shadow:0 12px 32px rgba(0,0,0,.3); max-height:60vh;
     flex-direction:column;
   }
   .float-chat.expanded .float-chat-panel{display:flex;}
@@ -503,7 +510,7 @@
   <div class="float-chat-panel" id="floatChatPanel">
     <div class="float-chat-head">
       <div class="code" id="floatChatCode">Session ——————</div>
-      <button type="button" id="floatChatCollapseBtn" aria-label="Collapse chat">︿</button>
+      <button type="button" id="floatChatCollapseBtn" aria-label="Close chat">✕</button>
     </div>
     <div class="together-chat" id="floatChatLog"></div>
     <div class="together-reacts" id="floatReacts">
@@ -762,12 +769,10 @@
       <div class="controls" style="justify-content:flex-start;gap:8px;margin-top:0;flex-wrap:wrap;">
         <button class="btn" id="createSessionBtn" style="font-size:14px;padding:11px 22px;">START A SESSION</button>
       </div>
-      <div class="task-add" style="margin-top:16px;margin-bottom:8px;">
-        <input id="joinCodeInput" type="text" maxlength="6" placeholder="Have a code? Enter it here" autocomplete="off" style="text-transform:uppercase;letter-spacing:.1em;">
+      <div class="controls" id="joinFromLinkRow" style="display:none;justify-content:flex-start;gap:8px;margin-top:0;flex-wrap:wrap;">
+        <button class="btn" id="joinFromLinkBtn" style="font-size:14px;padding:11px 22px;">JOIN THIS SESSION</button>
       </div>
-      <div class="controls" style="justify-content:flex-start;gap:8px;margin-top:0;">
-        <button class="btn ghost" id="joinSessionBtn">JOIN SESSION</button>
-      </div>
+      <p class="signin-note">Already have a link from a friend? Just open it — you'll be dropped straight in here.</p>
       <p class="signin-note" id="togetherMsg" style="min-height:16px;"></p>
     </div>
   </div>
@@ -775,10 +780,10 @@
   <div id="togetherActive" style="display:none;">
     <div class="together-code-row">
       <div>
-        <div class="signin-note" style="margin:0 0 2px;">Session code</div>
-        <div class="together-code" id="sessionCodeDisplay">——————</div>
+        <div class="signin-note" style="margin:0 0 2px;">Invite a friend</div>
+        <div class="signin-note" style="margin:0; font-size:11px;" id="sessionCodeDisplay">Session ——————</div>
       </div>
-      <button class="btn ghost" id="copyCodeBtn" style="font-size:12.5px;padding:9px 14px;">Copy link</button>
+      <button class="btn" id="copyCodeBtn" style="font-size:13px;padding:10px 16px;">Copy invite link</button>
     </div>
 
     <div class="together-members" id="togetherMembers"></div>
@@ -2145,6 +2150,7 @@ const FIREBASE_READY = !!FIREBASE_CONFIG.apiKey && !!FIREBASE_CONFIG.databaseURL
 let fb = null;          // { app, auth, db, uid }
 let fbLoadPromise = null;
 let mySession = null;   // current session code, or null
+let pendingJoinCode = null; // code waiting to be joined via an invite link
 let sessionRefs = null; // { sessionRef, timerRef, membersRef, chatRef, myMemberRef }
 let sessionListeners = [];
 let isHost = false;
@@ -2206,7 +2212,6 @@ $('togetherBtn').onclick=()=>{
   if(!FIREBASE_READY){
     togetherMsg('Shared sessions aren\'t set up on this site yet — check back soon!');
     $('createSessionBtn').disabled=true;
-    $('joinSessionBtn').disabled=true;
   } else if(displayName()){
     $('nicknameInput').value = displayName();
   }
@@ -2221,18 +2226,17 @@ $('createSessionBtn').onclick=async ()=>{
     await joinOrCreateSession(code, true);
   }catch(e){ togetherMsg('Couldn\'t create a session — check your connection and try again.'); }
 };
-$('joinSessionBtn').onclick=async ()=>{
-  if(!FIREBASE_READY) return;
-  const code=$('joinCodeInput').value.trim().toUpperCase();
-  if(code.length<4) return togetherMsg('Enter a valid session code.');
+async function attemptJoin(code){
+  if(!FIREBASE_READY || !code) return;
   togetherMsg('Joining…');
   try{
     await ensureFirebase();
     const snap = await fb.db.ref('sessions/'+code+'/createdAt').get();
-    if(!snap.exists()) return togetherMsg('No session found with that code.');
+    if(!snap.exists()) return togetherMsg('That invite link looks like it has expired or is invalid.');
     await joinOrCreateSession(code, false);
-  }catch(e){ togetherMsg('Couldn\'t join — check the code and your connection.'); }
-};
+  }catch(e){ togetherMsg('Couldn\'t join — check your connection and try again.'); }
+}
+$('joinFromLinkBtn').onclick=()=> attemptJoin(pendingJoinCode);
 
 async function joinOrCreateSession(code, asHost){
   await ensureFirebase();
@@ -2444,9 +2448,12 @@ $('leaveSessionBtn').onclick=async ()=>{
     const params=new URLSearchParams(location.search);
     const code=params.get('join');
     if(code){
-      $('joinCodeInput').value=code.toUpperCase();
+      pendingJoinCode = code.toUpperCase();
       openSheet('togetherSheet');
       if(displayName()) $('nicknameInput').value = displayName();
+      $('createSessionBtn').style.display='none';
+      $('joinFromLinkRow').style.display='flex';
+      togetherMsg('You\'ve been invited to a focus session.');
     }
   }catch(e){}
 })();
