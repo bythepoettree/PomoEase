@@ -12,15 +12,15 @@
 
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="PomoFit — Pomodoro Focus Timer with Workout Breaks">
-<meta property="og:description" content="A free Pomodoro focus timer that turns your breaks into quick workouts. Stay on task, then move.">
+<meta property="og:title" content="Join my PomoFit session 🍅">
+<meta property="og:description" content="Study and workout together, in real time.">
 <meta property="og:url" content="https://www.pomofit.fit/">
 <meta property="og:site_name" content="PomoFit">
 
 <!-- Twitter card -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="PomoFit — Pomodoro Focus Timer with Workout Breaks">
-<meta name="twitter:description" content="A free Pomodoro focus timer that turns your breaks into quick workouts.">
+<meta name="twitter:title" content="Join my PomoFit session 🍅">
+<meta name="twitter:description" content="Study and workout together, in real time.">
 
 <meta name="theme-color" content="#171C2B">
 
@@ -2442,8 +2442,8 @@ $('leaveSessionBtn').onclick=async ()=>{
   showTogetherIntro();
 };
 
-// auto-join via ?join=CODE link
-(function checkJoinLink(){
+// auto-join via ?join=CODE link — defined here, invoked at boot (see bottom of script)
+function checkJoinLink(){
   try{
     const params=new URLSearchParams(location.search);
     const code=params.get('join');
@@ -2455,8 +2455,8 @@ $('leaveSessionBtn').onclick=async ()=>{
       $('joinFromLinkRow').style.display='flex';
       togetherMsg('You\'ve been invited to a focus session.');
     }
-  }catch(e){}
-})();
+  }catch(e){ console.error('checkJoinLink failed:', e); }
+}
 
 /* sheets */
 const sheetBg=$('sheetBg');
@@ -2574,6 +2574,7 @@ loadData();
 loadSettings();
 loadIntroState();
 initLocalFacts();
+checkJoinLink();
 </script>
 </body>
 </html>
