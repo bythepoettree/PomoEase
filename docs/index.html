@@ -345,6 +345,7 @@
     transition:opacity .12s var(--ease), transform .12s var(--ease);
   }
   .toggle-compact-label{font-size:10.5px; font-weight:500; letter-spacing:.02em; color:var(--muted); line-height:1;}
+  .toggle-compact-desc{font-size:9.5px; color:var(--muted); line-height:1.3; text-align:center; padding:0 4px; opacity:.7;}
   .toggle-compact-btn[aria-pressed="true"] .toggle-compact-label{color:var(--fg);}
   .toggle-compact-btn:hover{opacity:.85;}
   .toggle-compact-btn:active{transform:scale(.95);}
@@ -454,6 +455,37 @@
   .together-reacts button:active{transform:scale(1.15);}
 
   /* ---------- floating chat widget (front page, while in a session) ---------- */
+  /* ---------- co-work button ---------- */
+  .cowork-fab{
+    background:var(--chip); border:none; color:var(--fg);
+    border-radius:999px; padding:8px 14px 8px 10px;
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    transition:opacity .12s var(--ease), transform .12s var(--ease);
+    outline:none; white-space:nowrap;
+  }
+  .cowork-fab:hover{opacity:.88;}
+  .cowork-fab:active{transform:scale(.96);}
+  .cowork-fab-label{font-size:13px; letter-spacing:.02em;}
+  .kofi-text{font-size:13.5px; font-weight:700;}
+  @media (max-width: 520px){
+    .cowork-fab-label{ display:none; }
+    .kofi-text{ display:none; }
+    .kofi-link{ padding:9px 11px; }
+    .cowork-fab{ padding:8px 10px; gap:0; }
+  }
+  .cowork-fab.active{
+    animation:coworkRing 2s linear infinite;
+  }
+  @keyframes coworkRing{
+    0%  { box-shadow: 0 0 0 3px #FF6B6B; }
+    25% { box-shadow: 0 0 0 3px #FFD93D; }
+    50% { box-shadow: 0 0 0 3px #6BCB77; }
+    75% { box-shadow: 0 0 0 3px #4D96FF; }
+    100%{ box-shadow: 0 0 0 3px #FF6B6B; }
+  }
+  @media (prefers-reduced-motion: reduce){ .cowork-fab.active{ animation:none; box-shadow:0 0 0 3px var(--accent); } }
+
   .float-chat{
     position:fixed; bottom:16px; z-index:999;
     /* On narrow screens the content column fills the viewport, so this sits
@@ -600,14 +632,15 @@
       </svg>
     </button>
   </div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
-    <a class="kofi-link" href="https://ko-fi.com/pomofit" target="_blank" rel="noopener noreferrer">☕ Support</a>
-    <button class="icon-btn" id="togetherBtn" title="Study together" aria-label="Study together" style="width:38px;text-align:center;padding:8px 0;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">
+    <a class="kofi-link" href="https://ko-fi.com/pomofit" target="_blank" rel="noopener noreferrer">☕<span class="kofi-text"> Support</span></a>
+    <button class="cowork-fab" id="togetherBtn" aria-label="Co-work" title="Study together">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="m11 17l2 2a1 1 0 1 0 3-3"/>
         <path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
         <path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/>
       </svg>
+      <span class="cowork-fab-label">Co-work</span>
     </button>
     <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
     <button class="icon-btn" id="profileBtn" title="Sign in" aria-label="Sign in" style="width:38px;text-align:center;padding:8px 0;">👤</button>
@@ -729,9 +762,11 @@
   <div class="toggle-row-compact">
     <button class="toggle-compact-btn" id="autoBreak" aria-pressed="true" title="Auto-start breaks">
       ⏩<span class="toggle-compact-label">Auto breaks</span>
+      <span class="toggle-compact-desc">Starts break timer automatically</span>
     </button>
     <button class="toggle-compact-btn" id="autoFocus" aria-pressed="false" title="Auto-start focus">
       🎯<span class="toggle-compact-label">Auto focus</span>
+      <span class="toggle-compact-desc">Restarts focus after each break</span>
     </button>
   </div>
 </div>
@@ -1172,6 +1207,11 @@ const chimeBreakEnd = ()=>{ beep(880,.1,.06); beep(660,.18,.06,'sine',.12); };
 const chimeProgDone = ()=>{ beep(523,.1,.07); beep(659,.1,.07,'sine',.1); beep(784,.1,.07,'sine',.2); beep(1047,.25,.08,'sine',.3); };
 const chimeChatMsg = ()=>{ beep(960,.06,.045,'sine'); beep(1280,.07,.04,'sine',.05); };
 const repTick = ()=> beep(1320,.04,.025,'square');
+// light UI interaction sounds
+const clickStart  = ()=>{ beep(523,.07,.04,'sine'); beep(659,.09,.04,'sine',.07); };
+const clickPause  = ()=>{ beep(440,.07,.03,'sine'); beep(349,.09,.03,'sine',.07); };
+const clickSkip   = ()=>{ beep(880,.05,.03,'sine'); beep(1047,.07,.03,'sine',.05); };
+const clickSelect = ()=>  beep(660,.06,.03,'sine');
 /* proper bell: inharmonic partials with long decay, like a desk bell */
 function bell(strikes){
   if(!S.sound) return;
@@ -1951,7 +1991,7 @@ function start(){
   S.endAt=Date.now()+S.remaining;
   startBtn.textContent='PAUSE';
   tickInt=setInterval(tick,200);
-  ac();
+  ac(); clickStart();
   broadcastTimer();
 }
 function pause(){
@@ -1960,6 +2000,7 @@ function pause(){
   S.remaining=Math.max(0,S.endAt-Date.now());
   startBtn.textContent='RESUME';
   clearInterval(tickInt);
+  clickPause();
   broadcastTimer();
 }
 function tick(){
@@ -2037,8 +2078,8 @@ function renderDots(){
 
 /* ---------- UI wiring ---------- */
 startBtn.onclick=()=> S.running?pause():start();
-$('skipBtn').onclick=()=> nextPhase(false);
-$('backBtn').onclick=()=> nextPhase(false);
+$('skipBtn').onclick=()=>{ clickSkip(); nextPhase(false); };
+$('backBtn').onclick=()=>{ clickSkip(); nextPhase(false); };
 document.addEventListener('keydown',e=>{
   if(e.code==='Space' && e.target.tagName!=='INPUT' && !document.querySelector('.sheet.show')){
     e.preventDefault(); S.running?pause():start();
@@ -2054,7 +2095,7 @@ Object.keys(PROGRAMMES).forEach(k=>{
   card.innerHTML=`<span class="prog-name"></span><span class="prog-meta"></span>`;
   card.querySelector('.prog-name').textContent=prog.name;
   card.querySelector('.prog-meta').textContent=n+' moves · '+prog.steps.map(s=>EX[s].name).join(', ');
-  card.onclick=()=>selectProgramme(k);
+  card.onclick=()=>{ clickSelect(); selectProgramme(k); };
   progList.appendChild(card);
 });
 $('shuffleBtn').onclick=()=>{
@@ -2139,6 +2180,7 @@ function showTogetherActive(){
   $('togetherActive').style.display='block';
   $('floatChat').classList.add('show');
   $('floatMembers').classList.add('show');
+  $('togetherBtn').classList.add('active');
 }
 function showTogetherIntro(){
   $('togetherIntro').style.display='block';
@@ -2146,6 +2188,7 @@ function showTogetherIntro(){
   togetherMsg('');
   $('floatChat').classList.remove('show');
   $('floatMembers').classList.remove('show');
+  $('togetherBtn').classList.remove('active');
   setChatExpanded(false);
 }
 
