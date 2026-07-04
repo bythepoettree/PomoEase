@@ -2673,7 +2673,14 @@ function makeStepper(elId, getVal, setVal, minV, maxV, step){
     const n=parseInt(inp.value.replace(/\D/g,''),10);
     if(n>=minV && n<=maxV){ v=n; commit(); }
   });
-  inp.addEventListener('blur',show);
+  inp.addEventListener('blur',()=>{
+    const n=parseInt(inp.value.replace(/\D/g,''),10);
+    if(!isNaN(n)){
+      v=clamp(n, minV, maxV); // clamp rather than reject out-of-range values
+      commit();
+    }
+    show();
+  });
   inp.addEventListener('keydown',e=>{ if(e.key==='Enter') inp.blur(); });
   show();
   el._syncStepper=(n)=>{ v=clamp(Math.round(n),minV,maxV); show(); commit(false); };
