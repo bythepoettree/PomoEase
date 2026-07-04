@@ -12,15 +12,15 @@
 
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Join my PomoFit session 🍅">
-<meta property="og:description" content="Study and workout together, in real time.">
+<meta property="og:title" content="PomoFit — Pomodoro Focus Timer with Workout Breaks">
+<meta property="og:description" content="A free Pomodoro timer that turns your breaks into quick workouts. Stay on task, then get moving.">
 <meta property="og:url" content="https://www.pomofit.fit/">
 <meta property="og:site_name" content="PomoFit">
 
 <!-- Twitter card -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Join my PomoFit session 🍅">
-<meta name="twitter:description" content="Study and workout together, in real time.">
+<meta name="twitter:title" content="PomoFit — Pomodoro Focus Timer with Workout Breaks">
+<meta name="twitter:description" content="A free Pomodoro timer that turns your breaks into quick workouts.">
 
 <meta name="theme-color" content="#171C2B">
 
@@ -198,6 +198,14 @@
   .task-item .t-title{font-size:15px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .task-item.done .t-title{text-decoration:line-through; color:var(--muted);}
   .task-item .t-meta{font-size:11.5px; color:var(--muted); margin-top:1px;}
+  .t-est-editor{display:inline-flex; align-items:center; gap:4px; vertical-align:middle;}
+  .t-est-btn{
+    background:var(--bg2); border:none; color:var(--fg); border-radius:6px;
+    width:18px; height:18px; font-size:12px; cursor:pointer; line-height:1;
+    display:inline-flex; align-items:center; justify-content:center; padding:0;
+  }
+  .t-est-btn:hover{opacity:.75;}
+  .t-est-val{font-size:11.5px; font-weight:700; min-width:12px; text-align:center; color:var(--fg);}
   .task-item .t-del{flex:none; background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:4px;}
   .add-task{
     width:100%; margin-top:10px; padding:14px;
@@ -499,6 +507,7 @@
   .float-chat.show{display:block;}
   .float-chat.sheet-open{display:none;}
   .float-chat-toggle{
+    position:relative;
     display:flex; align-items:center; gap:8px; background:var(--accent); color:var(--accent-ink);
     border:none; border-radius:999px; padding:12px 18px; font-weight:700; font-size:13.5px;
     cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.25); margin-left:auto;
@@ -508,7 +517,13 @@
   .float-chat-toggle:hover{opacity:.9;}
   .float-chat-toggle:active{transform:scale(.97);}
   .float-chat-badge{
-    background:rgba(0,0,0,.2); border-radius:999px; padding:1px 8px; font-size:11.5px; font-weight:700;
+    position:absolute; top:-6px; right:-6px;
+    background:#E8604C; color:#fff;
+    border-radius:999px; min-width:20px; height:20px;
+    padding:0 5px; font-size:11px; font-weight:800;
+    display:none; align-items:center; justify-content:center;
+    border:2px solid var(--bg2);
+    pointer-events:none;
   }
   .float-chat-panel{
     display:none; background:var(--bg2); border-radius:18px; padding:14px;
@@ -1703,26 +1718,49 @@ newTaskInput.addEventListener('keydown',e=>{ if(e.key==='Enter') saveTask(); });
 
 function renderTasks(){
   taskListMain.innerHTML='';
-  if(!DATA.tasks.length){
-    taskListMain.innerHTML='';
-  }
   DATA.tasks.forEach(t=>{
     const row=document.createElement('div');
-    const isDone = t.est ? (t.sessions>=t.est) : !!t.done;   // cross-out is earned, not clicked
+    const isDone = t.est ? (t.sessions>=t.est) : !!t.done;
     row.className='task-item'+(isDone?' done':'')+(S.activeTask===t.id?' selected':'');
-    let meta;
-    if(t.est){
-      const left=Math.max(0, t.est - t.sessions);
-      meta = `🍅 ${t.sessions}/${t.est}` + (left ? ` · ${left} to go` : ' · estimate reached 🎉') + (t.minutes?` · ${t.minutes} min`:'');
-    } else {
-      meta = t.sessions ? `${t.sessions} session${t.sessions>1?'s':''} · ${t.minutes} min` : '';
-    }
     row.innerHTML=`
       <div class="t-check" aria-hidden="true">${isDone?'✓':''}</div>
-      <div class="t-body"><div class="t-title"></div><div class="t-meta">${meta}</div></div>
+      <div class="t-body">
+        <div class="t-title"></div>
+        <div class="t-meta"></div>
+      </div>
       <button class="t-del" aria-label="Delete task">✕</button>`;
     row.querySelector('.t-title').textContent=t.title;
-    row.onclick=()=>{                              // tap row → link to session
+
+    // build meta line with inline est editor
+    const metaEl=row.querySelector('.t-meta');
+    if(t.est){
+      const left=Math.max(0, t.est - t.sessions);
+      const suffix = left ? ` · ${left} to go` : ' · 🎉' ;
+      const mins = t.minutes ? ` · ${t.minutes} min` : '';
+      metaEl.innerHTML = `🍅 ${t.sessions}/`;
+      // inline −/+ editor for the estimate
+      const editor=document.createElement('span'); editor.className='t-est-editor';
+      const btnMinus=document.createElement('button'); btnMinus.className='t-est-btn'; btnMinus.textContent='−'; btnMinus.type='button';
+      const valSpan=document.createElement('span'); valSpan.className='t-est-val'; valSpan.textContent=t.est;
+      const btnPlus=document.createElement('button'); btnPlus.className='t-est-btn'; btnPlus.textContent='＋'; btnPlus.type='button';
+      editor.append(btnMinus, valSpan, btnPlus);
+      metaEl.append(editor);
+      metaEl.append(document.createTextNode(suffix+mins));
+      btnMinus.onclick=e=>{
+        e.stopPropagation();
+        t.est=Math.max(t.sessions+1, t.est-1);
+        saveData(); renderTasks();
+      };
+      btnPlus.onclick=e=>{
+        e.stopPropagation();
+        t.est=Math.min(20, t.est+1);
+        saveData(); renderTasks();
+      };
+    } else {
+      metaEl.textContent = t.sessions ? `${t.sessions} session${t.sessions>1?'s':''} · ${t.minutes} min` : '';
+    }
+
+    row.onclick=()=>{
       S.activeTask = (S.activeTask===t.id)?null:t.id;
       renderTasks();
     };
@@ -2409,7 +2447,7 @@ function renderChatMessage(m){
     if(!chatExpanded){
       unreadCount++;
       const badge=$('floatChatBadge');
-      badge.textContent=unreadCount; badge.style.display='inline-block';
+      badge.textContent=unreadCount; badge.style.display='flex';
     }
   }
 }
