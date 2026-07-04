@@ -2709,7 +2709,17 @@ function wireToggle(id, get, set){
   function syncToggle(){
     b.setAttribute('aria-pressed', get());
   }
-  b.onclick=()=>{ set(!get()); syncToggle(); saveSettings(); };
+  b.onclick=()=>{
+    set(!get());
+    syncToggle();
+    // save immediately, not debounced — sheet closing quickly can eat the debounce
+    const snap={
+      theme: document.body.dataset.theme,
+      focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin, longBreakEvery: S.longBreakEvery, remindersMin: S.remindersMin,
+      reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+    };
+    store.set('pomofit:settings', JSON.stringify(snap));
+  };
 }
 S.reminders = true; // always on; interval controlled by remSeg stepper
 // sfxToggle is an icon button (SVG + CSS slash), so don't overwrite its innerHTML
