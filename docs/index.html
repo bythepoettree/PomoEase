@@ -45,31 +45,31 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{ --ease: cubic-bezier(.22,.9,.3,1); }
-  /* ---------- THEME: Ember (default) ---------- */
+  /* ---------- THEME: Field Green & White ---------- */
   body[data-mode="focus"]{
-    --bg:#171C2B; --bg2:#1E2435; --fg:#EFEAE3; --muted:#8A93A8;
-    --accent:#86D7B4; --accent-ink:#0E2A1F; --line:rgba(239,234,227,.14); --chip:#232B40;
+    --bg:#1B3A2D; --bg2:#224535; --fg:#F8FBF8; --muted:#7AAE90;
+    --accent:#FFFFFF; --accent-ink:#1B3A2D; --line:rgba(255,255,255,.12); --chip:#27503C;
   }
   body[data-mode="sweat"]{
-    --bg:#F4451F; --bg2:#D7350F; --fg:#1A0E07; --muted:#581D08;
-    --accent:#22100A; --accent-ink:#FFE2CF; --line:rgba(26,14,7,.22); --chip:#FF5C36;
+    --bg:#163224; --bg2:#1D3D2C; --fg:#F8FBF8; --muted:#6A9E80;
+    --accent:#FFFFFF; --accent-ink:#163224; --line:rgba(255,255,255,.12); --chip:#1F4430;
   }
   body[data-mode="rest"]{
-    --bg:#22304A; --bg2:#2A3A58; --fg:#EFEAE3; --muted:#93A0BC;
-    --accent:#FFC56F; --accent-ink:#3A2503; --line:rgba(239,234,227,.14); --chip:#2E4061;
+    --bg:#1F4235; --bg2:#274E3E; --fg:#F8FBF8; --muted:#80B898;
+    --accent:#FFFFFF; --accent-ink:#1F4235; --line:rgba(255,255,255,.12); --chip:#2D5A46;
   }
-  /* ---------- THEME: Mono ---------- */
+  /* ---------- THEME: Black & White ---------- */
   body[data-theme="mono"][data-mode="focus"]{
-    --bg:#101012; --bg2:#1A1A1E; --fg:#F4F4F2; --muted:#8E8E94;
-    --accent:#FFD60A; --accent-ink:#2B2300; --line:rgba(244,244,242,.14); --chip:#222226;
+    --bg:#000000; --bg2:#111111; --fg:#FFFFFF; --muted:#777777;
+    --accent:#FFFFFF; --accent-ink:#000000; --line:rgba(255,255,255,.10); --chip:#1A1A1A;
   }
   body[data-theme="mono"][data-mode="sweat"]{
-    --bg:#FFD60A; --bg2:#E6BE00; --fg:#161300; --muted:#564B00;
-    --accent:#101012; --accent-ink:#FFE96B; --line:rgba(22,19,0,.22); --chip:#FFE042;
+    --bg:#000000; --bg2:#0D0D0D; --fg:#FFFFFF; --muted:#777777;
+    --accent:#FFFFFF; --accent-ink:#000000; --line:rgba(255,255,255,.10); --chip:#181818;
   }
   body[data-theme="mono"][data-mode="rest"]{
-    --bg:#26262B; --bg2:#303037; --fg:#F4F4F2; --muted:#9A9AA2;
-    --accent:#9CFF57; --accent-ink:#1B3300; --line:rgba(244,244,242,.14); --chip:#3A3A42;
+    --bg:#000000; --bg2:#111111; --fg:#FFFFFF; --muted:#777777;
+    --accent:#FFFFFF; --accent-ink:#000000; --line:rgba(255,255,255,.10); --chip:#1A1A1A;
   }
 
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
@@ -138,8 +138,9 @@
   .lang-opt.active{color:var(--accent);}
   .lang-opt-flag{font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center;}
   /* sound button: red diagonal slash when muted (aria-pressed=false) */
-  #sfxToggle{position:relative;}
-  #sfxToggle[aria-pressed="false"]::after{
+  #sfxToggle, #settingsSfxBtn{position:relative;}
+  #sfxToggle[aria-pressed="false"]::after,
+  #settingsSfxBtn[aria-pressed="false"]::after{
     content:'';
     position:absolute; inset:0;
     background:linear-gradient(to top-right,
@@ -406,6 +407,13 @@
   .toggle-row span{font-size:15px;}
 
   .toggle-row-compact{display:flex; gap:10px;}
+  .settings-mobile-only{display:none;}
+  .header-desktop-only{} /* visible by default */
+  @media (max-width: 520px){
+    .settings-mobile-only{display:flex;}
+    .settings-mobile-only.settings-divider{display:block;}
+    .header-desktop-only{display:none !important;}
+  }
   .lang-select-wrap{position:relative; margin-top:4px;}
   .lang-select{
     width:100%; appearance:none; -webkit-appearance:none;
@@ -753,8 +761,8 @@
         <button class="lang-opt" data-lang="ar"><span class="lang-opt-flag">🇸🇦</span>العربية</button>
       </div>
     </div>
-    <button class="icon-btn" id="themeToggleBtn" title="Switch theme" aria-label="Switch theme" style="width:34px;text-align:center;padding:7px 0;">◐</button>
-    <button class="icon-btn" id="sfxToggle" title="Sound effects" aria-label="Sound effects" aria-pressed="true" style="width:34px;text-align:center;padding:7px 0;">
+    <button class="icon-btn header-desktop-only" id="themeToggleBtn" title="Switch theme" aria-label="Switch theme" style="width:34px;text-align:center;padding:7px 0;">◐</button>
+    <button class="icon-btn header-desktop-only" id="sfxToggle" title="Sound effects" aria-label="Sound effects" aria-pressed="true" style="width:34px;text-align:center;padding:7px 0;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
         <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
@@ -868,6 +876,19 @@
     <button class="close-sheet" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;" aria-label="Close">✕</button>
   </div>
 
+  <!-- mobile-only: theme + sound shortcuts, hidden on desktop -->
+  <div class="toggle-row-compact settings-mobile-only" id="settingsMobileToggles">
+    <button class="toggle-compact-btn" id="settingsThemeBtn">
+      ◐<span class="toggle-compact-label">Theme</span>
+      <span class="toggle-compact-desc">Switch colour theme</span>
+    </button>
+    <button class="toggle-compact-btn" id="settingsSfxBtn" aria-pressed="true">
+      🔊<span class="toggle-compact-label">Sound</span>
+      <span class="toggle-compact-desc">Toggle sound effects</span>
+    </button>
+  </div>
+  <div class="settings-mobile-only settings-divider" style="height:1px;background:var(--line);margin:18px 0;"></div>
+
   <div class="set-row"><div class="lab">Focus length</div><div class="seg" id="focusSeg"></div></div>
   <div class="set-row"><div class="lab">Sweat break</div><div class="seg" id="breakSeg"></div></div>
   <div class="set-row"><div class="lab">Long break</div><div class="seg" id="longSeg"></div></div>
@@ -899,21 +920,15 @@
       <span class="toggle-compact-desc">Restarts focus after each break</span>
     </button>
   </div>
-
-  <div style="height:1px;background:var(--line);margin:18px 0;"></div>
-
-  <div class="set-row" style="margin-bottom:0;">
-    <div class="lab" id="lab-language">Language</div>
-    <div class="lang-select-wrap">
-      <select class="lang-select" id="langSelect">
-        <option value="en">🇬🇧 English</option>
-        <option value="tr">🇹🇷 Türkçe</option>
-        <option value="de">🇩🇪 Deutsch</option>
-        <option value="ar">🇸🇦 العربية</option>
-      </select>
-    </div>
-  </div>
 </div>
+
+<!-- Hidden select for internal language state tracking -->
+<select id="langSelect" aria-hidden="true" style="display:none;">
+  <option value="en">en</option>
+  <option value="tr">tr</option>
+  <option value="de">de</option>
+  <option value="ar">ar</option>
+</select>
 
 <div class="sheet" id="profileSheet">
   <h2 id="profileTitle">Sign in</h2>
@@ -1235,6 +1250,7 @@ function syncSettingsUI(){
   });
   // sound button uses icon + CSS slash, not text
   $('sfxToggle').setAttribute('aria-pressed', S.sound);
+  $('settingsSfxBtn').setAttribute('aria-pressed', S.sound);
 }
 function authMsg(m){ $('authMsg').textContent=m; }
 async function signUp(){
@@ -1360,6 +1376,18 @@ const clickStart  = ()=>{ beep(523,.07,.04,'sine'); beep(659,.09,.04,'sine',.07)
 const clickPause  = ()=>{ beep(440,.07,.03,'sine'); beep(349,.09,.03,'sine',.07); };
 const clickSkip   = ()=>{ beep(880,.05,.03,'sine'); beep(1047,.07,.03,'sine',.05); };
 const clickSelect = ()=>  beep(660,.06,.03,'sine');
+const clickTap    = ()=>  beep(880,.04,.022,'sine'); // light tap for all other buttons
+
+// global button sound — fires for any button/select not already handled
+const HANDLED_IDS = new Set(['startBtn','skipBtn','backBtn']);
+document.addEventListener('click', e=>{
+  if(!S.sound) return;
+  const t = e.target.closest('button, .prog-card, .emoji-opt, .lang-opt, .toggle-compact-btn, .icon-btn, .btn, .add-task, .close-sheet, .cowork-fab');
+  if(!t) return;
+  const id = t.id || '';
+  if(HANDLED_IDS.has(id)) return; // already has its own sound
+  clickTap();
+}, {passive:true});
 /* proper bell: inharmonic partials with long decay, like a desk bell */
 function bell(strikes){
   if(!S.sound) return;
@@ -3148,11 +3176,14 @@ document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 /* themes: cycles between Ember and Mono */
 const THEME_ORDER=['ember','mono'];
 const THEME_ICON={ember:'◐', mono:'◑'};
+const THEME_NAMES={ember:'Field Grey', mono:'Black & White'};
 const themeToggleBtn=$('themeToggleBtn');
 function applyTheme(k){
   document.body.dataset.theme=k;
   themeToggleBtn.textContent=THEME_ICON[k]||'◐';
   themeToggleBtn.title='Theme: '+(k==='mono'?'Mono':'Ember')+' (tap to switch)';
+  const stb=$('settingsThemeBtn');
+  if(stb) stb.firstChild.textContent=THEME_ICON[k]||'◐';
 }
 themeToggleBtn.onclick=()=>{
   const cur=document.body.dataset.theme;
@@ -3226,12 +3257,10 @@ function wireToggle(id, get, set){
   b.onclick=()=>{
     set(!get());
     b.setAttribute('aria-pressed', get());
-    // flush immediately to localStorage so it survives page reload
     try{
       const snap={
         theme: document.body.dataset.theme,
         focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
-  
         longBreakEvery: S.longBreakEvery, remindersMin: S.remindersMin,
         reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
       };
@@ -3239,12 +3268,39 @@ function wireToggle(id, get, set){
     }catch(e){ saveSettings(); }
   };
 }
-S.reminders = true; // always on; interval controlled by remSeg stepper
-// sfxToggle is an icon button (SVG + CSS slash), so don't overwrite its innerHTML
+S.reminders = true;
 $('sfxToggle').onclick=()=>{
   S.sound=!S.sound;
   $('sfxToggle').setAttribute('aria-pressed', S.sound);
-  saveSettings();
+  $('settingsSfxBtn').setAttribute('aria-pressed', S.sound);
+  try{
+    const snap={
+      theme: document.body.dataset.theme,
+      focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
+      longBreakEvery: S.longBreakEvery, remindersMin: S.remindersMin,
+      reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+    };
+    localStorage.setItem('pomofit:settings', JSON.stringify(snap));
+  }catch(e){ saveSettings(); }
+};
+$('settingsThemeBtn').onclick=()=>{
+  const cur=document.body.dataset.theme;
+  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1)%THEME_ORDER.length]||'mono';
+  applyTheme(next); saveSettings();
+};
+$('settingsSfxBtn').onclick=()=>{
+  S.sound=!S.sound;
+  $('sfxToggle').setAttribute('aria-pressed', S.sound);
+  $('settingsSfxBtn').setAttribute('aria-pressed', S.sound);
+  try{
+    const snap={
+      theme: document.body.dataset.theme,
+      focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
+      longBreakEvery: S.longBreakEvery, remindersMin: S.remindersMin,
+      reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+    };
+    localStorage.setItem('pomofit:settings', JSON.stringify(snap));
+  }catch(e){ saveSettings(); }
 };
 wireToggle('autoBreak',()=>S.autoBreak,v=>S.autoBreak=v);
 wireToggle('autoFocus',()=>S.autoFocus,v=>S.autoFocus=v);
