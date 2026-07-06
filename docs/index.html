@@ -7,26 +7,18 @@
 <meta name="description" content="PomoFit is a free Pomodoro focus timer that turns your breaks into quick workouts. Stay on task, then move — with custom timers, exercise programmes, and progress tracking.">
 <link rel="canonical" href="https://www.pomofit.fit/">
 <meta name="robots" content="index, follow">
-<!-- Replace with the real tag from Google Search Console > Settings > Ownership verification > HTML tag -->
-<!-- <meta name="google-site-verification" content="PASTE_YOUR_CODE_HERE"> -->
 
-<!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="PomoFit — Pomodoro Focus Timer with Workout Breaks">
 <meta property="og:description" content="A free Pomodoro timer that turns your breaks into quick workouts. Stay on task, then get moving.">
 <meta property="og:url" content="https://www.pomofit.fit/">
 <meta property="og:site_name" content="PomoFit">
 
-<!-- Twitter card -->
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PomoFit — Pomodoro Focus Timer with Workout Breaks">
 <meta name="twitter:description" content="A free Pomodoro timer that turns your breaks into quick workouts.">
 
 <meta name="theme-color" content="#171C2B">
-
-<!-- ============ GOOGLE ADSENSE ============ -->
-<!-- Once approved, uncomment and replace ca-pub-XXXXXXXXXXXXXXXX with your real publisher ID -->
-<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
 
 <script type="application/ld+json">
 {
@@ -636,6 +628,12 @@
   .float-chat-head button{background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:2px 6px;}
   .float-chat .together-chat{flex:1; min-height:120px;}
   .float-chat .together-reacts button{padding:5px 8px; font-size:16px;}
+  /* locked state during focus */
+  .float-chat-lock-notice{display:none; text-align:center; font-size:12px; color:var(--muted); padding:2px 0;}
+  .float-chat.focus-locked .float-chat-lock-notice{display:block;}
+  .float-chat.focus-locked.guest .float-chat-input-row{display:none;}
+  .float-chat.focus-locked .float-chat-input-row{display:none;}
+  .float-chat.focus-locked.host .float-chat-input-row{display:flex;}
 
   /* ---------- floating member avatars (bottom-left, mirrors float-chat) ---------- */
   .float-members{
@@ -710,33 +708,33 @@
 <div class="mascot" id="mascot" aria-hidden="true">
   <div class="mascot-msg" id="mascotMsg">Great work! 🍅</div>
   <svg width="110" height="130" viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg">
-    <!-- stem -->
+    
     <path d="M55 18 C55 18 52 8 44 5" stroke="#4A7C3F" stroke-width="3" stroke-linecap="round" fill="none"/>
-    <!-- leaf -->
+    
     <ellipse cx="49" cy="9" rx="9" ry="5" fill="#5A9E47" transform="rotate(-30 49 9)"/>
     <ellipse cx="58" cy="7" rx="8" ry="4" fill="#4A8C38" transform="rotate(15 58 7)"/>
-    <!-- body -->
+    
     <ellipse cx="55" cy="72" rx="38" ry="40" fill="#E8452A"/>
-    <!-- shine -->
+    
     <ellipse cx="40" cy="52" rx="9" ry="6" fill="rgba(255,255,255,.22)" transform="rotate(-20 40 52)"/>
-    <!-- waving arm -->
+    
     <g class="wave-arm">
       <path d="M20 78 C10 72 4 62 8 54" stroke="#D63B22" stroke-width="7" stroke-linecap="round" fill="none"/>
-      <!-- hand -->
+      
       <circle cx="8" cy="51" r="6" fill="#E8452A"/>
       <path d="M5 46 C4 40 7 37 9 40" stroke="#D63B22" stroke-width="2.5" stroke-linecap="round" fill="none"/>
       <path d="M9 45 C9 39 12 37 13 40" stroke="#D63B22" stroke-width="2.5" stroke-linecap="round" fill="none"/>
       <path d="M13 46 C14 40 16 39 16 42" stroke="#D63B22" stroke-width="2.5" stroke-linecap="round" fill="none"/>
     </g>
-    <!-- eyes -->
+    
     <ellipse cx="43" cy="68" rx="5" ry="6" fill="#1A0A00"/>
     <ellipse cx="67" cy="68" rx="5" ry="6" fill="#1A0A00"/>
-    <!-- eye shine -->
+    
     <circle cx="45" cy="65" r="2" fill="white"/>
     <circle cx="69" cy="65" r="2" fill="white"/>
-    <!-- smile -->
+    
     <path d="M38 84 Q55 96 72 84" stroke="#1A0A00" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-    <!-- cheeks -->
+    
     <ellipse cx="35" cy="80" rx="7" ry="4" fill="rgba(255,150,130,.45)"/>
     <ellipse cx="75" cy="80" rx="7" ry="4" fill="rgba(255,150,130,.45)"/>
   </svg>
@@ -751,6 +749,7 @@
       <button type="button" id="floatChatCollapseBtn" aria-label="Close chat">✕</button>
     </div>
     <div class="together-chat" id="floatChatLog"></div>
+    <div class="float-chat-lock-notice" id="floatChatLockNotice">🔒 Chat locked during focus — reactions only</div>
     <div class="together-reacts" id="floatReacts">
       <button type="button" data-emoji="🔥">🔥</button>
       <button type="button" data-emoji="💪">💪</button>
@@ -759,13 +758,13 @@
       <button type="button" data-emoji="😅">😅</button>
       <button type="button" data-emoji="🎉">🎉</button>
     </div>
-    <div class="task-add" style="margin-top:8px;">
+    <div class="float-chat-input-row task-add" style="margin-top:8px;">
       <input id="floatChatInput" type="text" maxlength="200" placeholder="Say something…" autocomplete="off">
       <button class="btn" id="floatChatSendBtn" style="padding:0 18px;">Send</button>
     </div>
   </div>
   <button class="float-chat-toggle" id="floatChatToggleBtn">
-    💬 <span id="floatChatToggleLabel">Session chat</span>
+    <span id="floatChatIcon">💬</span> <span id="floatChatToggleLabel">Session chat</span>
     <span class="float-chat-badge" id="floatChatBadge" style="display:none;">0</span>
   </button>
 </div>
@@ -818,16 +817,16 @@
 </div>
 
 <main>
-  <!-- FOCUS -->
+  
   <div id="timerBlock" style="display:flex;flex-direction:column;align-items:center;width:100%;">
     <div class="current-task" id="currentTaskLabel">Time to focus!</div>
     <div class="timer" id="timer">25:00</div>
     <div class="controls">
-      <button class="btn" id="startBtn">START</button>
-      <button class="btn ghost" id="skipBtn">Skip →</button>
+      <button class="btn" id="startBtn" style="width:140px;font-size:14px;padding:13px 0;border-radius:12px;">START</button>
+      <button class="btn ghost" id="skipBtn" style="width:140px;font-size:14px;padding:13px 0;border-radius:12px;">Skip →</button>
     </div>
 
-    <!-- Pomofocus-style task list -->
+    
     <div class="tasks-panel">
       <div class="tp-head"><span id="tasksHeading">Tasks</span><span></span></div>
       <div id="taskListMain"></div>
@@ -848,7 +847,7 @@
     </div>
   </div>
 
-  <!-- WORKOUT -->
+  
   <div class="workout" id="workoutBlock">
     <div class="back-row">
       <button class="btn ghost" id="backBtn">← Back to study</button>
@@ -881,15 +880,8 @@
   <div class="footer-links"><a href="privacy.html" id="privacyLink">Privacy Policy</a></div>
 </footer>
 
-<!-- ============ AD SLOT (Google AdSense) ============ -->
-<!-- This box is just a placeholder so the layout doesn't shift once ads go live.
-     Once your AdSense account is approved:
-     1. Remove the "Ad space" placeholder div below.
-     2. Paste your <ins class="adsbygoogle">...</ins> ad unit code from AdSense in its place.
-     3. Make sure the <script> in the <head> above is uncommented with your real publisher ID. -->
 <div class="ad-slot" id="adSlot">Ad space</div>
 
-<!-- ================= SHEETS ================= -->
 <div class="sheet-bg" id="sheetBg"></div>
 
 <div class="sheet" id="settingsSheet">
@@ -898,7 +890,7 @@
     <button class="close-sheet" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;" aria-label="Close">✕</button>
   </div>
 
-  <!-- mobile-only: theme + sound shortcuts, hidden on desktop -->
+  
   <div class="toggle-row-compact settings-mobile-only" id="settingsMobileToggles">
     <button class="toggle-compact-btn" id="settingsThemeBtn">
       ◐<span class="toggle-compact-label">Theme</span>
@@ -944,7 +936,6 @@
   </div>
 </div>
 
-<!-- Hidden select for internal language state tracking -->
 <select id="langSelect" aria-hidden="true" style="display:none;">
   <option value="en">en</option>
   <option value="tr">tr</option>
@@ -981,8 +972,8 @@
     </div>
     <p class="signin-note" id="authMsg" style="min-height:16px;margin:0 0 6px;"></p>
     <div class="controls" style="justify-content:flex-start;gap:8px;margin-top:0;">
-      <button class="btn" id="signInBtn" style="font-size:14px;padding:11px 22px;">SIGN IN</button>
-      <button class="btn ghost" id="signUpBtn">Create account</button>
+      <button class="btn" id="signInBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">SIGN IN</button>
+      <button class="btn ghost" id="signUpBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">Create account</button>
     </div>
     <p class="signin-note" id="forgotNote" style="margin-top:8px;"><a href="#" id="forgotLink" style="color:var(--accent);text-decoration:none;font-weight:600;">Forgot password?</a></p>
     <p class="signin-note" id="storageNote">Accounts live in this browser — sign back in any time on this device. Passwords are stored only as a secure hash.</p>
@@ -1028,6 +1019,8 @@
         <button class="emoji-opt" data-emoji="🐼">🐼</button>
         <button class="emoji-opt" data-emoji="🐸">🐸</button>
         <button class="emoji-opt" data-emoji="🥸">🥸</button>
+        <button class="emoji-opt" data-emoji="👻">👻</button>
+        <button class="emoji-opt" data-emoji="🐙">🐙</button>
       </div>
     </div>
     <div class="stat-grid">
@@ -1041,7 +1034,7 @@
         <div class="lab2">Reset statistics</div>
         <div class="sub2">Clears your rounds, minutes, reps and history</div>
       </div>
-      <button class="btn danger" id="resetStatsBtn" style="font-size:13px;padding:11px 18px;white-space:nowrap;">Reset</button>
+      <button class="btn danger" id="resetStatsBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;white-space:nowrap;">Reset</button>
     </div>
     <div class="controls" style="justify-content:center;gap:8px;">
       <button class="btn ghost" id="signOutBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">Sign out</button>
@@ -2368,11 +2361,11 @@ function start(){
   S.running=true;
   S.endAt=Date.now()+S.remaining;
   startBtn.textContent=T().pauseBtn;
-  // reset skip button in case it was showing "Workout →"
   delete $('skipBtn').dataset.workout;
   $('skipBtn').textContent=T().skipBtn;
   tickInt=setInterval(tick,200);
   ac(); clickStart();
+  updateChatLockState();
   broadcastTimer();
 }
 function pause(){
@@ -2382,6 +2375,7 @@ function pause(){
   startBtn.textContent=T().resumeBtn;
   clearInterval(tickInt);
   clickPause();
+  updateChatLockState();
   broadcastTimer();
 }
 function tick(){
@@ -2434,6 +2428,7 @@ function nextPhase(natural){
     if(S.autoFocus) start(); else startBtn.textContent=T().startBtn;
   }
   broadcastTimer();
+  updateChatLockState();
 }
 function setPhase(p){
   S.phase=p;
@@ -2670,12 +2665,13 @@ async function joinOrCreateSession(code, asHost){
   });
   myMemberRef.onDisconnect().remove();
 
-  renderedChatKeys = new Set(); // fresh dedup set for this specific session join
+  renderedChatKeys = new Set();
   attachSessionListeners();
   $('sessionCodeDisplay').textContent = code;
   $('floatChatCode').textContent = 'Session '+code;
   showTogetherActive();
   togetherMsg('');
+  updateChatLockState();
 }
 
 function attachSessionListeners(){
@@ -2714,9 +2710,23 @@ function detachSessionListeners(){
 function applyRemoteTimer(v){
   if(v.updatedBy===fb.uid && suppressLocalBroadcast) return;
   suppressLocalBroadcast=true;
+
+  const prevPhase = S.phase;
   S.phase=v.phase; S.running=v.running; S.endAt=v.endAt; S.remaining=v.remaining;
   S.completed=v.completed; S.session=v.session; S.longBreakEvery=v.longBreakEvery;
   S.focusMin=v.focusMin; S.breakMin=v.breakMin; S.longMin=v.longMin;
+
+  // fire completion sounds/mascot/notify for guests when the host's phase changes
+  if(prevPhase !== S.phase){
+    if(prevPhase==='focus' && (S.phase==='sweat'||S.phase==='rest')){
+      bell(2); chimeFocusEnd();
+      notify('🍅 Focus complete!', 'Nice work — time for your sweat break.');
+      showMascot();
+    } else if((prevPhase==='sweat'||prevPhase==='rest') && S.phase==='focus'){
+      bell(1); chimeBreakEnd();
+      notify('⏰ Break over', 'Back to the books — you\'ve got this.');
+    }
+  }
 
   renderFooter();
   setPhaseUIOnly(S.phase);
@@ -2729,6 +2739,7 @@ function applyRemoteTimer(v){
   }
   render(S.remaining);
   suppressLocalBroadcast=false;
+  updateChatLockState();
 }
 // like setPhase() but skips resetting timer fields, since those come from the remote snapshot
 function setPhaseUIOnly(p){
@@ -2863,7 +2874,22 @@ function setChatExpanded(v){
     const log=$('floatChatLog'); log.scrollTop=log.scrollHeight;
   }
 }
-$('floatChatToggleBtn').onclick=()=> setChatExpanded(!chatExpanded);
+function updateChatLockState(){
+  const fc=$('floatChat');
+  if(!mySession){ fc.classList.remove('focus-locked','host','guest'); return; }
+  const locked = S.phase==='focus' && S.running;
+  fc.classList.toggle('focus-locked', locked);
+  fc.classList.toggle('host', isHost);
+  fc.classList.toggle('guest', !isHost);
+  $('floatChatIcon').textContent = locked ? '🔒' : '💬';
+  // guests: close the panel if it's open and we just locked
+  if(locked && !isHost && chatExpanded) setChatExpanded(false);
+}
+$('floatChatToggleBtn').onclick=()=>{
+  // guests can't open chat during focus
+  if(S.phase==='focus' && S.running && !isHost) return;
+  setChatExpanded(!chatExpanded);
+};
 $('floatChatCollapseBtn').onclick=()=> setChatExpanded(false);
 
 $('copyCodeBtn').onclick=async ()=>{
