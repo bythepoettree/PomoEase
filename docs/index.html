@@ -1043,8 +1043,9 @@
       </div>
       <button class="btn danger" id="resetStatsBtn" style="font-size:13px;padding:11px 18px;white-space:nowrap;">Reset</button>
     </div>
-    <div class="controls" style="justify-content:center;">
-      <button class="btn ghost" id="signOutBtn">Sign out</button>
+    <div class="controls" style="justify-content:center;gap:8px;">
+      <button class="btn ghost" id="signOutBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">Sign out</button>
+      <button class="btn ghost" id="deleteAccountBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;color:#E8604C;">Delete account</button>
     </div>
   </div>
 </div>
@@ -2199,6 +2200,26 @@ $('signOutBtn').onclick=async ()=>{
   renderProfile(); renderTasks();
 };
 
+let deleteArmed=false;
+$('deleteAccountBtn').onclick=async ()=>{
+  const b=$('deleteAccountBtn');
+  const t=T();
+  if(!deleteArmed){
+    deleteArmed=true; b.textContent=t.confirmReset; b.classList.add('armed');
+    setTimeout(()=>{ if(deleteArmed){ deleteArmed=false; b.textContent=t.deleteAccount; b.classList.remove('armed'); } }, 4000);
+    return;
+  }
+  deleteArmed=false; b.textContent=t.deleteAccount; b.classList.remove('armed');
+  if(DATA.name && ACCOUNTS[DATA.name]){
+    delete ACCOUNTS[DATA.name];
+    await store.set('pomofit:accounts', JSON.stringify(ACCOUNTS));
+  }
+  await store.set('pomofit:session','');
+  DATA=blankData();
+  S.activeTask=null;
+  renderProfile(); renderTasks();
+};
+
 /* ---------- profile personalisation: display name + avatar ---------- */
 $('displayNameInput').addEventListener('change', ()=>{
   DATA.displayName = $('displayNameInput').value.trim().slice(0,24) || null;
@@ -2906,7 +2927,7 @@ const LANGS = {
     timeToFocus:'Time to focus!', dir:'ltr',
     taskPlaceholder:'What are you working on?', estLabel:'Est. pomodoros 🍅',
     saveTask:'SAVE', cancelTask:'Cancel',
-    signOut:'Sign out', resetStats:'Reset statistics', resetStatsNote:'Clears your rounds, minutes, reps and history', resetBtn:'Reset', confirmReset:'Confirm?', progressTitle:(n)=>`${n}'s progress`,
+    signOut:'Sign out', deleteAccount:'Delete account', resetStats:'Reset statistics', resetStatsNote:'Clears your rounds, minutes, reps and history', resetBtn:'Reset', confirmReset:'Confirm?', progressTitle:(n)=>`${n}'s progress`,
     usernamePlaceholder:'Username', passwordPlaceholder:'Password', securityNote:'Creating an account? Set a security question in case you forget your password:', secAnswerPlaceholder:'Your answer', forgotPassword:'Forgot password?', storageNote:'Accounts live in this browser — sign back in any time on this device.',
     secQ:{pet:"What was the name of your first pet?",city:"What city were you born in?",school:"What was your first school?",word:"What's a word only you would remember?"},
     resetIntro:'Answer your security question to set a new password.', resetUserPlaceholder:'Username', resetAnswerPlaceholder:'Your answer', saveNewPassword:'SAVE NEW PASSWORD', continueBtn:'CONTINUE',
@@ -2951,7 +2972,7 @@ const LANGS = {
     timeToFocus:'Odaklanma zamanı!', dir:'ltr',
     taskPlaceholder:'Ne üzerinde çalışıyorsun?', estLabel:'Tahmini pomodoro 🍅',
     saveTask:'KAYDET', cancelTask:'İptal',
-    signOut:'Çıkış yap', resetStats:'İstatistikleri sıfırla', resetStatsNote:'Turlar, dakikalar, tekrarlar ve geçmişi temizler', resetBtn:'Sıfırla', confirmReset:'Emin misin?', progressTitle:(n)=>`${n} ilerleme`,
+    signOut:'Çıkış yap', deleteAccount:'Hesabı sil', resetStats:'İstatistikleri sıfırla', resetStatsNote:'Turlar, dakikalar, tekrarlar ve geçmişi temizler', resetBtn:'Sıfırla', confirmReset:'Emin misin?', progressTitle:(n)=>`${n} ilerleme`,
     usernamePlaceholder:'Kullanıcı adı', passwordPlaceholder:'Şifre', securityNote:'Hesap oluşturuyor musun? Şifreni unutursan kurtarmak için bir güvenlik sorusu belirle:', secAnswerPlaceholder:'Cevabın', forgotPassword:'Şifremi unuttum', storageNote:'Hesaplar bu tarayıcıda saklanır — istediğin zaman geri oturum aç.',
     secQ:{pet:'İlk evcil hayvanının adı neydi?',city:'Hangi şehirde doğdun?',school:'İlk okulun hangisiydi?',word:'Sadece senin bileceğin bir kelime nedir?'},
     resetIntro:'Yeni bir şifre belirlemek için güvenlik sorusunu yanıtla.', resetUserPlaceholder:'Kullanıcı adı', resetAnswerPlaceholder:'Cevabın', saveNewPassword:'YENİ ŞİFREYİ KAYDET', continueBtn:'DEVAM',
@@ -2996,7 +3017,7 @@ const LANGS = {
     timeToFocus:'Zeit zum Fokussieren!', dir:'ltr',
     taskPlaceholder:'Woran arbeitest du?', estLabel:'Geschätzte Pomodoros 🍅',
     saveTask:'SPEICHERN', cancelTask:'Abbrechen',
-    signOut:'Abmelden', resetStats:'Statistiken zurücksetzen', resetStatsNote:'Löscht Runden, Minuten, Wiederholungen und Verlauf', resetBtn:'Zurücksetzen', confirmReset:'Bestätigen?', progressTitle:(n)=>`${n}s Fortschritt`,
+    signOut:'Abmelden', deleteAccount:'Konto löschen', resetStats:'Statistiken zurücksetzen', resetStatsNote:'Löscht Runden, Minuten, Wiederholungen und Verlauf', resetBtn:'Zurücksetzen', confirmReset:'Bestätigen?', progressTitle:(n)=>`${n}s Fortschritt`,
     usernamePlaceholder:'Benutzername', passwordPlaceholder:'Passwort', securityNote:'Konto erstellen? Lege eine Sicherheitsfrage fest, falls du dein Passwort vergisst:', secAnswerPlaceholder:'Deine Antwort', forgotPassword:'Passwort vergessen', storageNote:'Konten werden in diesem Browser gespeichert — melde dich jederzeit wieder an.',
     secQ:{pet:'Wie hieß dein erstes Haustier?',city:'In welcher Stadt wurdest du geboren?',school:'Wie hieß deine erste Schule?',word:'Ein Wort, das nur du kennen würdest?'},
     resetIntro:'Beantworte deine Sicherheitsfrage, um ein neues Passwort zu setzen.', resetUserPlaceholder:'Benutzername', resetAnswerPlaceholder:'Deine Antwort', saveNewPassword:'NEUES PASSWORT SPEICHERN', continueBtn:'WEITER',
@@ -3041,7 +3062,7 @@ const LANGS = {
     timeToFocus:'وقت التركيز!', dir:'rtl',
     taskPlaceholder:'ماذا تعمل الآن؟', estLabel:'بومودورو متوقعة 🍅',
     saveTask:'حفظ', cancelTask:'إلغاء',
-    signOut:'تسجيل الخروج', resetStats:'إعادة تعيين الإحصائيات', resetStatsNote:'يمسح الجولات والدقائق والتكرارات والسجل', resetBtn:'إعادة تعيين', confirmReset:'تأكيد؟', progressTitle:(n)=>`تقدم ${n}`,
+    signOut:'تسجيل الخروج', deleteAccount:'حذف الحساب', resetStats:'إعادة تعيين الإحصائيات', resetStatsNote:'يمسح الجولات والدقائق والتكرارات والسجل', resetBtn:'إعادة تعيين', confirmReset:'تأكيد؟', progressTitle:(n)=>`تقدم ${n}`,
     usernamePlaceholder:'اسم المستخدم', passwordPlaceholder:'كلمة المرور', securityNote:'هل تنشئ حساباً؟ عيّن سؤال أمان لاستعادة حسابك:', secAnswerPlaceholder:'إجابتك', forgotPassword:'نسيت كلمة المرور', storageNote:'الحسابات مخزنة في هذا المتصفح — سجّل دخولك في أي وقت.',
     secQ:{pet:'ما اسم حيوانك الأليف الأول؟',city:'في أي مدينة وُلدت؟',school:'ما اسم أول مدرسة دخلتها؟',word:'كلمة لا يعرفها إلا أنت؟'},
     resetIntro:'أجب على سؤال الأمان لتعيين كلمة مرور جديدة.', resetUserPlaceholder:'اسم المستخدم', resetAnswerPlaceholder:'إجابتك', saveNewPassword:'حفظ كلمة المرور الجديدة', continueBtn:'متابعة',
@@ -3096,7 +3117,7 @@ const LANGS = {
     joinSession:'加入专注',
     taskPlaceholder:'你在做什么？', estLabel:'预计番茄数 🍅',
     saveTask:'保存', cancelTask:'取消',
-    signOut:'退出登录', resetStats:'重置统计', resetStatsNote:'清除轮次、分钟、次数和历史记录', resetBtn:'重置', confirmReset:'确认？', progressTitle:(n)=>`${n} 的进度`,
+    signOut:'退出登录', deleteAccount:'删除账户', resetStats:'重置统计', resetStatsNote:'清除轮次、分钟、次数和历史记录', resetBtn:'重置', confirmReset:'确认？', progressTitle:(n)=>`${n} 的进度`,
     usernamePlaceholder:'用户名', passwordPlaceholder:'密码', securityNote:'创建账户？设置一个安全问题以防忘记密码：', secAnswerPlaceholder:'你的答案', forgotPassword:'忘记密码', storageNote:'账户保存在此浏览器中 — 随时可以重新登录。',
     secQ:{pet:'你的第一只宠物叫什么名字？',city:'你出生在哪个城市？',school:'你的第一所学校叫什么？',word:'只有你知道的一个词是什么？'},
     resetIntro:'回答安全问题以设置新密码。', resetUserPlaceholder:'用户名', resetAnswerPlaceholder:'你的答案', saveNewPassword:'保存新密码', continueBtn:'继续',
@@ -3307,6 +3328,7 @@ function applyLang(lang){
   // stats box
   const resetStatsBtnEl=$('resetStatsBtn'); if(resetStatsBtnEl && resetStatsBtnEl.textContent!==t.confirmReset) resetStatsBtnEl.textContent=t.resetBtn;
   const signOutEl=$('signOutBtn'); if(signOutEl) signOutEl.textContent=t.signOut;
+  const delAccEl=$('deleteAccountBtn'); if(delAccEl && !delAccEl.classList.contains('armed')) delAccEl.textContent=t.deleteAccount;
   // reset stats label
   const resetStatsLab=document.querySelector('.lab2'); if(resetStatsLab) resetStatsLab.textContent=t.resetStats;
   const resetStatsSub=document.querySelector('.sub2'); if(resetStatsSub) resetStatsSub.textContent=t.resetStatsNote;
