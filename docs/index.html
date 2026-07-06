@@ -1095,21 +1095,6 @@
 
     <div class="together-status" id="togetherStatus">Waiting for everyone to be ready…</div>
 
-    <div class="together-chat" id="togetherChat"></div>
-
-    <div class="together-reacts" id="togetherReacts">
-      <button type="button" data-emoji="🔥">🔥</button>
-      <button type="button" data-emoji="💪">💪</button>
-      <button type="button" data-emoji="👏">👏</button>
-      <button type="button" data-emoji="☕">☕</button>
-      <button type="button" data-emoji="😅">😅</button>
-      <button type="button" data-emoji="🎉">🎉</button>
-    </div>
-    <div class="task-add">
-      <input id="chatInput" type="text" maxlength="200" placeholder="Say something…" autocomplete="off">
-      <button class="btn" id="chatSendBtn" style="padding:0 18px;">Send</button>
-    </div>
-
     <div class="controls" style="justify-content:center;margin-top:18px;">
       <button class="btn ghost" id="leaveSessionBtn">Leave session</button>
     </div>
@@ -2828,8 +2813,7 @@ function buildChatRow(m){
 }
 function renderChatMessage(m){
   if(!m) return;
-  const sheetLog=$('togetherChat'), floatLog=$('floatChatLog');
-  sheetLog.appendChild(buildChatRow(m)); sheetLog.scrollTop=sheetLog.scrollHeight;
+  const floatLog=$('floatChatLog');
   floatLog.appendChild(buildChatRow(m)); floatLog.scrollTop=floatLog.scrollHeight;
 
   const fromOther = m.type!=='system' && m.uid && fb && m.uid!==fb.uid;
@@ -2844,18 +2828,14 @@ function renderChatMessage(m){
 }
 function sendChat(text){
   if(!mySession || !sessionRefs || !text.trim()) return;
+  // text messages are host-only while a focus round is running
+  if(S.phase==='focus' && S.running && !isHost) return;
   sessionRefs.chatRef.push({ type:'text', name:myNickname(), text:text.trim().slice(0,200), uid:fb.uid, at:firebase.database.ServerValue.TIMESTAMP });
 }
 function sendReact(emoji){
   if(!mySession || !sessionRefs) return;
   sessionRefs.chatRef.push({ type:'react', name:myNickname(), emoji, uid:fb.uid, at:firebase.database.ServerValue.TIMESTAMP });
 }
-$('chatSendBtn').onclick=()=>{ sendChat($('chatInput').value); $('chatInput').value=''; };
-$('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ sendChat($('chatInput').value); $('chatInput').value=''; } });
-$('togetherReacts').addEventListener('click', e=>{
-  const b=e.target.closest('button[data-emoji]');
-  if(b) sendReact(b.dataset.emoji);
-});
 
 /* floating chat widget (front page) */
 $('floatChatSendBtn').onclick=()=>{ sendChat($('floatChatInput').value); $('floatChatInput').value=''; };
@@ -2907,7 +2887,7 @@ $('leaveSessionBtn').onclick=async ()=>{
     detachSessionListeners();
   }
   mySession=null; sessionRefs=null; isHost=false;
-  $('togetherChat').innerHTML=''; $('floatChatLog').innerHTML='';
+  $('floatChatLog').innerHTML='';
   unreadCount=0; $('floatChatBadge').style.display='none';
   showTogetherIntro();
 };
@@ -3288,8 +3268,6 @@ function applyLang(lang){
   if(leaveSessionEl) leaveSessionEl.textContent=t.leaveSession;
   const floatToggleLabel=$('floatChatToggleLabel');
   if(floatToggleLabel) floatToggleLabel.textContent=t.sessionChat;
-  const chatInputEl=$('chatInput');
-  if(chatInputEl) chatInputEl.placeholder=t.saySomething;
   const floatChatInputEl=$('floatChatInput');
   if(floatChatInputEl) floatChatInputEl.placeholder=t.saySomething;
   const nicknameEl=$('nicknameInput');
