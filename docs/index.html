@@ -662,10 +662,11 @@
     position:fixed; bottom:16px; z-index:998;
     left:max(16px, calc(50vw - 280px));
     display:none; align-items:flex-end; gap:8px;
+    isolation:isolate;
   }
   .float-members.show{display:flex;}
   .float-members.sheet-open{display:none;}
-  .float-member{position:relative;}
+  .float-member{
     position:relative; width:42px; height:42px; flex:none;
     border-radius:50%; overflow:hidden; background:var(--chip);
     border:2px solid var(--bg); box-shadow:0 6px 18px rgba(0,0,0,.3);
@@ -726,7 +727,6 @@
 <body data-mode="focus" data-theme="ember">
 
 <div class="toast" id="toast" role="status">💧 Hydration check</div>
-
 <div class="mascot" id="mascot" aria-hidden="true">
   <div class="mascot-msg" id="mascotMsg">Great work! 🍅</div>
   <svg width="110" height="130" viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg">
