@@ -63,6 +63,19 @@
     --bg:#000000; --bg2:#111111; --fg:#FFFFFF; --muted:#777777;
     --accent:#FFFFFF; --accent-ink:#000000; --line:rgba(255,255,255,.10); --chip:#1A1A1A;
   }
+  /* ---------- THEME: Pink & White ---------- */
+  body[data-theme="pink"][data-mode="focus"]{
+    --bg:#EF8AAE; --bg2:#E8799F; --fg:#FFFFFF; --muted:rgba(255,255,255,.7);
+    --accent:#FFFFFF; --accent-ink:#C4527A; --line:rgba(255,255,255,.2); --chip:#D4607E;
+  }
+  body[data-theme="pink"][data-mode="sweat"]{
+    --bg:#E8799F; --bg2:#DA6590; --fg:#FFFFFF; --muted:rgba(255,255,255,.7);
+    --accent:#FFFFFF; --accent-ink:#B04268; --line:rgba(255,255,255,.2); --chip:#C55280;
+  }
+  body[data-theme="pink"][data-mode="rest"]{
+    --bg:#F59BBB; --bg2:#EF8AAE; --fg:#FFFFFF; --muted:rgba(255,255,255,.7);
+    --accent:#FFFFFF; --accent-ink:#C4527A; --line:rgba(255,255,255,.2); --chip:#D4607E;
+  }
 
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   button{touch-action:manipulation; user-select:none;}
@@ -539,15 +552,6 @@
     border-radius:4px; padding:1px 4px; line-height:1.4;
     vertical-align:middle; margin-left:2px;
   }
-  .float-member{position:relative; overflow:visible;}
-  .float-host-badge{
-    position:absolute; top:-5px; left:-5px;
-    font-size:7px; font-weight:800; letter-spacing:.04em;
-    background:var(--accent); color:var(--accent-ink);
-    border-radius:4px; padding:1px 4px; line-height:1.5;
-    white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.3);
-    z-index:2;
-  }
   .cowork-settings-notice{
     display:none; background:var(--chip); border-radius:10px;
     padding:10px 12px; font-size:12px; color:var(--muted);
@@ -661,7 +665,7 @@
   }
   .float-members.show{display:flex;}
   .float-members.sheet-open{display:none;}
-  .float-member{
+  .float-member{position:relative;}
     position:relative; width:42px; height:42px; flex:none;
     border-radius:50%; overflow:hidden; background:var(--chip);
     border:2px solid var(--bg); box-shadow:0 6px 18px rgba(0,0,0,.3);
@@ -2888,8 +2892,6 @@ function renderMembers(members){
       bubble.appendChild(dot);
     }
     if(isThisHost){
-      const hbadge=document.createElement('span'); hbadge.className='float-host-badge';
-      hbadge.textContent='HOST'; bubble.appendChild(hbadge);
     }
     floatWrap.appendChild(bubble);
   });
@@ -3532,14 +3534,15 @@ sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
 /* themes: cycles between Ember and Mono */
-const THEME_ORDER=['ember','mono'];
-const THEME_ICON={ember:'◐', mono:'◑'};
+const THEME_ORDER=['ember','mono','pink'];
+const THEME_ICON={ember:'◐', mono:'◑', pink:'◓'};
 const THEME_NAMES={ember:'Field Grey', mono:'Black & White'};
 const themeToggleBtn=$('themeToggleBtn');
 function applyTheme(k){
   document.body.dataset.theme=k;
   themeToggleBtn.textContent=THEME_ICON[k]||'◐';
-  themeToggleBtn.title='Theme: '+(k==='mono'?'Mono':'Ember')+' (tap to switch)';
+  const themeNames={ember:'Field Green', mono:'Black & White', pink:'Pink & White'};
+  themeToggleBtn.title='Theme: '+(themeNames[k]||k)+' (tap to switch)';
   const stb=$('settingsThemeBtn');
   if(stb) stb.firstChild.textContent=THEME_ICON[k]||'◐';
 }
