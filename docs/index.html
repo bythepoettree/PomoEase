@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PomoFit — Pomodoro Focus Timer with Workout Breaks</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzFCM0EyRCIvPgogIDxsaW5lIHgxPSIxNiIgeTE9IjgiIHgyPSIxNiIgeTI9IjYiIHN0cm9rZT0iIzRBOEMzOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSIxNCIgY3k9IjYiIHJ4PSIzIiByeT0iMS41IiBmaWxsPSIjNEE4QzM4IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMTQgNikiLz4KICA8ZWxsaXBzZSBjeD0iMTgiIGN5PSI1LjUiIHJ4PSIyLjUiIHJ5PSIxLjIiIGZpbGw9IiM1QUFBNDQiIHRyYW5zZm9ybT0icm90YXRlKDIwIDE4IDUuNSkiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE5IiByPSIxMCIgZmlsbD0iI0U4NDUyQSIvPgogIDxlbGxpcHNlIGN4PSIxMi41IiBjeT0iMTQiIHJ4PSIyLjUiIHJ5PSIxLjgiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjI1KSIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEyLjUgMTQpIi8+Cjwvc3ZnPg==">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzFCM0EyRCIvPgogIDxsaW5lIHgxPSIxNiIgeTE9IjgiIHgyPSIxNiIgeTI9IjYiIHN0cm9rZT0iIzRBOEMzOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSIxNCIgY3k9IjYiIHJ4PSIzIiByeT0iMS41IiBmaWxsPSIjNEE4QzM4IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMTQgNikiLz4KICA8ZWxsaXBzZSBjeD0iMTgiIGN5PSI1LjUiIHJ4PSIyLjUiIHJ5PSIxLjIiIGZpbGw9IiM1QUFBNDQiIHRyYW5zZm9ybT0icm90YXRlKDIwIDE4IDUuNSkiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE5IiByPSIxMCIgZmlsbD0iI0U4NDUyQSIvPgogIDxlbGxpcHNlIGN4PSIxMi41IiBjeT0iMTQiIHJ4PSIyLjUiIHJ5PSIxLjgiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjI1KSIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEyLjUgMTQpIi8+Cjwvc3ZnPg==">
 <meta name="description" content="PomoFit is a free Pomodoro focus timer that turns your breaks into quick workouts. Stay on task, then move — with custom timers, exercise programmes, and progress tracking.">
 <link rel="canonical" href="https://www.pomofit.fit/">
 <meta name="robots" content="index, follow">
@@ -2765,10 +2767,10 @@ function applyRemoteTimer(v){
   if(typeof v.autoBreak==='boolean') S.autoBreak=v.autoBreak;
   if(typeof v.autoFocus==='boolean') S.autoFocus=v.autoFocus;
 
-  // fire completion sounds/mascot/notify for guests when the host's phase changes
-  if(prevPhase !== S.phase){
+  // fire completion sounds/mascot/notify for guests only when timer was running before the phase changed
+  if(prevPhase !== S.phase && prevRunning){
     if(prevPhase==='focus' && (S.phase==='sweat'||S.phase==='rest')){
-      const wasNatural = v.remaining <= 2000; // natural if timer ran out (allow 2s buffer)
+      const wasNatural = v.remaining <= 2000;
       bell(2); chimeFocusEnd();
       notify('🍅 Focus complete!', 'Nice work — time for your sweat break.');
       if(wasNatural) showMascot();
