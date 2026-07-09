@@ -631,9 +631,7 @@
   /* locked state during focus */
   .float-chat-lock-notice{display:none; text-align:center; font-size:12px; color:var(--muted); padding:2px 0;}
   .float-chat.focus-locked .float-chat-lock-notice{display:block;}
-  .float-chat.focus-locked.guest .float-chat-input-row{display:none;}
   .float-chat.focus-locked .float-chat-input-row{display:none;}
-  .float-chat.focus-locked.host .float-chat-input-row{display:flex;}
 
   /* ---------- floating member avatars (bottom-left, mirrors float-chat) ---------- */
   .float-members{
@@ -749,7 +747,7 @@
       <button type="button" id="floatChatCollapseBtn" aria-label="Close chat">✕</button>
     </div>
     <div class="together-chat" id="floatChatLog"></div>
-    <div class="float-chat-lock-notice" id="floatChatLockNotice">🔒 Chat locked during focus — reactions only</div>
+    <div class="float-chat-lock-notice" id="floatChatLockNotice">🔒 Chat locked while timer is running — unlocks on pause or break</div>
     <div class="together-reacts" id="floatReacts">
       <button type="button" data-emoji="🔥">🔥</button>
       <button type="button" data-emoji="💪">💪</button>
@@ -1462,14 +1460,17 @@ function selectProgramme(pkey, keys){
   $('progStartBtn').textContent=T().startProgramme;
   renderTraj();
   beep(880,.08,.05);
-  if(typeof broadcastWorkout==='function') broadcastWorkout({action:'select', key:PROG._pkey, keys:PROG._keys});
+  // broadcast card selection (not start) so others see the same card highlighted
+  if(typeof broadcastWorkout==='function' && !suppressWorkoutBroadcast)
+    broadcastWorkout({action:'select', key:PROG._pkey, keys:PROG._keys});
 }
 $('progStartBtn').onclick=()=>{
   if(!PROG) return;
   $('progStartBtn').style.display='none';
   beep(1100,.1,.05);
   beginStep();
-  if(typeof broadcastWorkout==='function') broadcastWorkout({action:'start', key:PROG._pkey, keys:PROG._keys});
+  if(typeof broadcastWorkout==='function')
+    broadcastWorkout({action:'start', key:PROG._pkey, keys:PROG._keys});
 };
 function beginStep(){
   const st=PROG.steps[PROG.idx], ex=EX[st.key];
@@ -2498,6 +2499,7 @@ Object.keys(PROGRAMMES).forEach(k=>{
 $('shuffleBtn').onclick=()=>{
   const keys=Object.keys(EX).sort(()=>Math.random()-0.5).slice(0,3);
   selectProgramme(null, keys);
+  if(typeof broadcastWorkout==='function') broadcastWorkout({action:'start', key:null, keys});
 };
 $('restBtn').onclick=()=>{
   PROG=null; S.reps=0;
@@ -2662,6 +2664,13 @@ async function joinOrCreateSession(code, asHost){
   showTogetherActive();
   togetherMsg('');
   updateChatLockState();
+  // one-time hint: only shown on very first co-work session ever
+  try{
+    if(!localStorage.getItem('pomofit:coworkHintSeen')){
+      localStorage.setItem('pomofit:coworkHintSeen','1');
+      setTimeout(()=> showToast('🔒 Chat locks while the timer is running — unlocks on pause or break!'), 1200);
+    }
+  }catch(e){}
 }
 
 function attachSessionListeners(){
@@ -2750,7 +2759,7 @@ function applyRemoteTimer(v){
 /* ---------- collaborative workouts: host's programme mirrors to guests ---------- */
 let suppressWorkoutBroadcast=false;
 function broadcastWorkout(payload){
-  if(!mySession || !sessionRefs || !isHost || suppressWorkoutBroadcast) return;
+  if(!mySession || !sessionRefs || suppressWorkoutBroadcast) return;
   sessionRefs.workoutRef.set({ ...payload, updatedBy: fb.uid, at: firebase.database.ServerValue.TIMESTAMP });
 }
 function applyRemoteWorkout(v){
@@ -2879,8 +2888,7 @@ function renderChatMessage(m){
 }
 function sendChat(text){
   if(!mySession || !sessionRefs || !text.trim()) return;
-  // text messages are host-only while a focus round is running
-  if(S.phase==='focus' && S.running && !isHost) return;
+  if(S.phase==='focus' && S.running) return; // no text during focus for anyone
   sessionRefs.chatRef.push({ type:'text', name:myNickname(), text:text.trim().slice(0,200), uid:fb.uid, at:firebase.database.ServerValue.TIMESTAMP });
 }
 function sendReact(emoji){
@@ -2917,8 +2925,7 @@ function updateChatLockState(){
   if(locked && !isHost && chatExpanded) setChatExpanded(false);
 }
 $('floatChatToggleBtn').onclick=()=>{
-  // guests can't open chat during focus
-  if(S.phase==='focus' && S.running && !isHost) return;
+  if(S.phase==='focus' && S.running) return;
   setChatExpanded(!chatExpanded);
 };
 $('floatChatCollapseBtn').onclick=()=> setChatExpanded(false);
