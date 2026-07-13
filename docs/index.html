@@ -195,6 +195,61 @@
   }
   .entry-btn:hover{ transform:scale(1.05); }
   .entry-btn:active{ transform:scale(.97); opacity:.85; }
+  /* intention input */
+  .intention-wrap{
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    max-width:min(460px, 90vw);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .intention-wrap.fizzle{ opacity:0; transform:scale(.95); pointer-events:none; }
+  .intention-label{
+    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--muted); font-weight:600;
+  }
+  .intention-row{
+    display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,.08); backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.15); border-radius:14px;
+    padding:6px 6px 6px 18px; width:min(460px, 90vw);
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .intention-row:focus-within{ border-color:var(--accent); }
+  .intention-input{
+    flex:1; background:none; border:none; outline:none;
+    color:var(--fg); font-family:inherit; font-size:15px; font-weight:400;
+    padding:12px 4px;
+  }
+  .intention-input::placeholder{ color:var(--muted); opacity:.7; }
+  .intention-submit{
+    flex:none; width:40px; height:40px; border-radius:10px;
+    background:var(--accent); color:var(--accent-ink);
+    border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .intention-submit:hover{ transform:scale(1.05); }
+  .intention-submit:active{ transform:scale(.94); }
+  .intention-submit:disabled{ opacity:.4; cursor:not-allowed; }
+  /* fizzle particles */
+  .fizzle-particle{
+    position:fixed; pointer-events:none; z-index:10001;
+    color:var(--fg); font-family:inherit; font-size:15px;
+    will-change:transform, opacity;
+    animation: fizzleFly 1.4s cubic-bezier(.22,.9,.3,1) forwards;
+  }
+  @keyframes fizzleFly{
+    0%   { opacity:1; transform:translate(0,0) scale(1); filter:blur(0); }
+    30%  { opacity:.9; }
+    100% { opacity:0; transform:translate(var(--dx), var(--dy)) scale(1.6); filter:blur(4px); }
+  }
+  /* entry-btn appearance */
+  .entry-btn.reveal-in{
+    animation: entryBtnAppear .8s cubic-bezier(.22,.9,.3,1) forwards;
+  }
+  @keyframes entryBtnAppear{
+    0%   { opacity:0; transform:scale(.6); filter:blur(6px); }
+    100% { opacity:1; transform:scale(1); filter:blur(0); }
+  }
   .entry-glow{
     position:fixed; pointer-events:none;
     width:220px; height:220px; border-radius:50%;
@@ -877,7 +932,16 @@
 <div id="entryPage" aria-label="Enter Pomofit">
   <div class="entry-glow" id="entryGlow"></div>
   <div class="entry-wordmark">POMO<em>FIT</em></div>
-  <button class="entry-btn" id="entryBtn">ENTER</button>
+  <div class="intention-wrap" id="intentionWrap">
+    <div class="intention-label">Set your intention</div>
+    <div class="intention-row">
+      <input class="intention-input" id="intentionInput" type="text" maxlength="80" placeholder="What are you here to do?" autocomplete="off">
+      <button class="intention-submit" id="intentionSubmit" aria-label="Confirm intention" title="Confirm">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <button class="entry-btn" id="entryBtn" style="display:none;">ENTER</button>
 </div>
 
 <div class="focus-hint" id="focusHint">TAP ANYWHERE TO EXIT FOCUS</div>
@@ -4034,6 +4098,48 @@ $('focusModeBtn').addEventListener('click', e=>{
     r.style.top=e.clientY+'px';
     page.appendChild(r);
     r.addEventListener('animationend', ()=> r.remove());
+  });
+
+  // intention submit — fizzles the input into character particles then reveals ENTER
+  const intWrap = document.getElementById('intentionWrap');
+  const intInput = document.getElementById('intentionInput');
+  const intSubmit = document.getElementById('intentionSubmit');
+
+  function fizzleIntention(){
+    const text = (intInput.value || '').trim();
+    // spawn particle for each character in the input value (or a set of dots if empty)
+    const chars = text ? text.split('') : ['·','·','·','·','·','·'];
+    const rect = intInput.getBoundingClientRect();
+    const startX = rect.left + 24;
+    const startY = rect.top + rect.height/2;
+    chars.forEach((ch, i)=>{
+      const p = document.createElement('span');
+      p.className = 'fizzle-particle';
+      p.textContent = ch;
+      const cx = startX + i * 9;
+      p.style.left = cx + 'px';
+      p.style.top = startY + 'px';
+      // random outward direction
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 120 + Math.random() * 180;
+      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      p.style.animationDelay = (i * 15) + 'ms';
+      page.appendChild(p);
+      setTimeout(()=> p.remove(), 1600 + i * 15);
+    });
+    // collapse the input container
+    intWrap.classList.add('fizzle');
+    setTimeout(()=>{
+      intWrap.style.display = 'none';
+      btn.style.display = '';
+      btn.classList.add('reveal-in');
+    }, 500);
+  }
+
+  intSubmit.addEventListener('click', fizzleIntention);
+  intInput.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); fizzleIntention(); }
   });
 
   function enter(){
