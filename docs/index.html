@@ -2961,7 +2961,11 @@ async function attemptJoin(code){
     await joinOrCreateSession(code, false);
   }catch(e){ togetherMsg('Couldn\'t join — check your connection and try again.'); }
 }
-$('joinFromLinkBtn').onclick=()=> attemptJoin(pendingJoinCode);
+$('joinFromLinkBtn').onclick=async ()=>{
+  await attemptJoin(pendingJoinCode);
+  // close the join sheet so the focus screen has a clean screen if timer is already running
+  closeSheets();
+};
 
 async function joinOrCreateSession(code, asHost){
   // Always detach any existing listeners before creating new ones
