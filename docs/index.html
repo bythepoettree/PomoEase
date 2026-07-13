@@ -3003,18 +3003,20 @@ function applyRemoteTimer(v){
   if(typeof v.autoBreak==='boolean') S.autoBreak=v.autoBreak;
   if(typeof v.autoFocus==='boolean') S.autoFocus=v.autoFocus;
 
-  // reset guest completion flag when a new phase starts
-  if(prevPhase !== S.phase || (S.running && !prevRunning)){
-    guestFocusCompletedForPhase = false;
-  }
-
   // fire completion sounds/mascot/notify for guests only when timer was running before the phase changed
   if(prevPhase !== S.phase && prevRunning){
     if(prevPhase==='focus' && (S.phase==='sweat'||S.phase==='rest')){
       const wasNatural = prevRemaining <= 5000;
       bell(2); chimeFocusEnd();
       notify('🍅 Focus complete!', 'Nice work — time for your sweat break.');
-      if(wasNatural) showMascot();
+      if(wasNatural){
+        showMascot();
+        // guest's focus round completed — increment their active task if not already done
+        if(!guestFocusCompletedForPhase){
+          guestFocusCompletedForPhase = true;
+          logFocus(S.focusMin, true);
+        }
+      }
     } else if((prevPhase==='sweat'||prevPhase==='rest') && S.phase==='focus'){
       bell(1); chimeBreakEnd();
       notify('⏰ Break over', 'Back to the books — you\'ve got this.');
@@ -3024,7 +3026,16 @@ function applyRemoteTimer(v){
     bell(2); chimeFocusEnd();
     notify('🍅 Focus complete!', 'Nice work — time for your sweat break.');
     showMascot();
+    if(!guestFocusCompletedForPhase){
+      guestFocusCompletedForPhase = true;
+      logFocus(S.focusMin, true);
+    }
     $('skipBtn').dataset.workout='1';
+  }
+
+  // reset guest completion flag AFTER handling any completion, so a new focus phase can complete again
+  if(prevPhase !== S.phase && S.phase==='focus'){
+    guestFocusCompletedForPhase = false;
   }
 
   renderFooter();
