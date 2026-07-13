@@ -259,11 +259,22 @@
     border:1px solid rgba(255,255,255,.08);
     border-radius:16px;
     font-size:13px; line-height:1.4; color:var(--muted);
+    font-style:normal !important;
     text-align:center;
-    pointer-events:none;
+    cursor:pointer;
     opacity:0;
     animation: intentionDrift 12s ease-in-out forwards;
   }
+  .intention-bubble:hover{ background:rgba(255,255,255,.07); }
+  .intention-bubble.popped{
+    animation: intentionPop .5s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes intentionPop{
+    0%   { opacity:.75; transform:scale(1); filter:blur(0); }
+    30%  { opacity:1; transform:scale(1.15); filter:blur(0); }
+    100% { opacity:0; transform:scale(.3); filter:blur(8px); }
+  }
+  .intention-bubble *{ font-style:normal !important; }
   .intention-bubble .intention-eyebrow{
     display:block;
     font-size:9px; letter-spacing:.2em; text-transform:uppercase;
@@ -4164,9 +4175,20 @@ checkJoinLink();
     bubble.style.setProperty('--drift-to-y', driftY + 'px');
     document.body.appendChild(bubble);
     // spawn magical particles slightly after arrival, then again on departure
-    setTimeout(()=> spawnParticles(bubble), 200);
-    setTimeout(()=> spawnParticles(bubble), 9500);
-    setTimeout(()=> bubble.remove(), 12500);
+    const arrivalTimer = setTimeout(()=> spawnParticles(bubble), 200);
+    const exitTimer    = setTimeout(()=> spawnParticles(bubble), 9500);
+    const removeTimer  = setTimeout(()=> bubble.remove(), 12500);
+    // click to pop the bubble early - spawns extra particles and removes it
+    bubble.addEventListener('click', ()=>{
+      if(bubble.classList.contains('popped')) return;
+      clearTimeout(exitTimer);
+      clearTimeout(removeTimer);
+      spawnParticles(bubble);
+      // extra burst of particles on pop
+      setTimeout(()=> spawnParticles(bubble), 80);
+      bubble.classList.add('popped');
+      setTimeout(()=> bubble.remove(), 550);
+    });
     lastShownAt = Date.now();
   }
 
