@@ -8,10 +8,19 @@
 <link rel="canonical" href="https://www.pomofit.fit/privacy.html">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#1B3A2D; --bg2:#224535; --fg:#F8FBF8; --muted:#7AAE90; --accent:#FFFFFF; --line:rgba(255,255,255,.12); }
+  /* THEME: Ember (default) */
+  body{ --bg:#1B3A2D; --bg2:#224535; --fg:#F8FBF8; --muted:#7AAE90; --accent:#FFFFFF; --line:rgba(255,255,255,.12); }
+  /* THEME: Mono */
+  body[data-theme="mono"]{ --bg:#0B0B0B; --bg2:#141414; --fg:#FFFFFF; --muted:#8A8A8A; --accent:#FFFFFF; --line:rgba(255,255,255,.12); }
+  /* THEME: Pink */
+  body[data-theme="pink"]{ --bg:#EF8AAE; --bg2:#E8799F; --fg:#FFFFFF; --muted:rgba(255,255,255,.75); --accent:#FFFFFF; --line:rgba(255,255,255,.2); }
+  /* THEME: Ocean */
+  body[data-theme="ocean"]{ --bg:#3E92B8; --bg2:#3583A7; --fg:#FFFFFF; --muted:rgba(255,255,255,.78); --accent:#FFFFFF; --line:rgba(255,255,255,.22); }
+
   body{
     background:var(--bg); color:var(--fg); font-family:'Space Grotesk', system-ui, sans-serif;
     min-height:100vh; margin:0; padding:32px 18px 60px; display:flex; flex-direction:column; align-items:center;
+    transition:background .3s ease, color .3s ease;
   }
   .wrap{width:100%; max-width:620px;}
   .wordmark{font-family:'Anton',sans-serif; font-size:20px; letter-spacing:.06em; margin-bottom:6px;}
@@ -22,10 +31,19 @@
   p, li{font-size:14.5px; line-height:1.6; color:var(--fg);}
   ul{margin:6px 0; padding-left:20px;}
   a{color:var(--accent);}
-  .back{display:inline-block; margin-top:36px; color:var(--muted); font-size:13px; text-decoration:none; border-top:1px solid var(--line); padding-top:18px; width:100%;}
 </style>
 </head>
 <body>
+<script>
+  // apply saved theme so this page matches the user's preference
+  try{
+    const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
+    if(s && s.theme){
+      const t = s.theme === 'cream' ? 'ocean' : s.theme; // migrate deprecated
+      document.body.dataset.theme = t;
+    }
+  }catch(e){}
+</script>
 <div class="wrap">
   <div class="wordmark">POMO<em>FIT</em></div>
   <h1>Privacy Policy</h1>
@@ -70,7 +88,7 @@
   <h2>Contact</h2>
   <p>Questions about this policy can be sent via the contact details listed on our Ko-fi page.</p>
 
-  <a class="back" href="/">← Back to PomoFit</a>
+  <div style="height:36px;"></div>
 </div>
 </body>
 </html>
