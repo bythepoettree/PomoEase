@@ -79,18 +79,18 @@
     --bg:#F59BBB; --bg2:#EF8AAE; --fg:#FFFFFF; --muted:rgba(255,255,255,.7);
     --accent:#FFFFFF; --accent-ink:#C4527A; --line:rgba(255,255,255,.2); --chip:#D4607E;
   }
-  /* ---------- THEME: Warm Brown & Cream ---------- */
-  body[data-theme="cream"][data-mode="focus"]{
-    --bg:#6B5B47; --bg2:#5F5040; --fg:#F4EDE0; --muted:rgba(244,237,224,.65);
-    --accent:#F4EDE0; --accent-ink:#5C4B38; --line:rgba(244,237,224,.15); --chip:#524436;
+  /* ---------- THEME: Ocean Blue & White ---------- */
+  body[data-theme="ocean"][data-mode="focus"]{
+    --bg:#4FA3C9; --bg2:#4293B9; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
+    --accent:#FFFFFF; --accent-ink:#2D7599; --line:rgba(255,255,255,.22); --chip:#3986AC;
   }
-  body[data-theme="cream"][data-mode="sweat"]{
-    --bg:#5F5040; --bg2:#544639; --fg:#F4EDE0; --muted:rgba(244,237,224,.65);
-    --accent:#F4EDE0; --accent-ink:#4E402F; --line:rgba(244,237,224,.15); --chip:#463A2E;
+  body[data-theme="ocean"][data-mode="sweat"]{
+    --bg:#4293B9; --bg2:#3986AC; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
+    --accent:#FFFFFF; --accent-ink:#256987; --line:rgba(255,255,255,.22); --chip:#2F7A9F;
   }
-  body[data-theme="cream"][data-mode="rest"]{
-    --bg:#75634E; --bg2:#695849; --fg:#F4EDE0; --muted:rgba(244,237,224,.65);
-    --accent:#F4EDE0; --accent-ink:#5C4B38; --line:rgba(244,237,224,.15); --chip:#524436;
+  body[data-theme="ocean"][data-mode="rest"]{
+    --bg:#5DB2D6; --bg2:#4FA3C9; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
+    --accent:#FFFFFF; --accent-ink:#2D7599; --line:rgba(255,255,255,.22); --chip:#3986AC;
   }
 
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
@@ -966,7 +966,11 @@
   // apply saved theme immediately so the entry page matches the user's preference
   try{
     const s = JSON.parse(localStorage.getItem('pomofit:settings')||'null');
-    if(s && s.theme) document.body.dataset.theme = s.theme;
+    if(s && s.theme){
+      // migrate deprecated cream theme to ocean
+      if(s.theme === 'cream') s.theme = 'ocean';
+      document.body.dataset.theme = s.theme;
+    }
   }catch(e){}
 </script>
 
@@ -3949,8 +3953,8 @@ sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
 /* themes: cycles between Ember and Mono */
-const THEME_ORDER=['ember','mono','pink','cream'];
-const THEME_ICON={ember:'◐', mono:'◑', pink:'◓', cream:'◒'};
+const THEME_ORDER=['ember','mono','pink','ocean'];
+const THEME_ICON={ember:'◐', mono:'◑', pink:'◓', ocean:'◒'};
 const THEME_NAMES={ember:'Field Grey', mono:'Black & White'};
 const themeToggleBtn=$('themeToggleBtn');
 function applyTheme(k){
