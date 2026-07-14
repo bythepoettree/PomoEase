@@ -81,16 +81,16 @@
   }
   /* ---------- THEME: Ocean Blue & White ---------- */
   body[data-theme="ocean"][data-mode="focus"]{
-    --bg:#4FA3C9; --bg2:#4293B9; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
-    --accent:#FFFFFF; --accent-ink:#2D7599; --line:rgba(255,255,255,.22); --chip:#3986AC;
+    --bg:#3E92B8; --bg2:#3583A7; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
+    --accent:#FFFFFF; --accent-ink:#256987; --line:rgba(255,255,255,.22); --chip:#2E779A;
   }
   body[data-theme="ocean"][data-mode="sweat"]{
-    --bg:#4293B9; --bg2:#3986AC; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
-    --accent:#FFFFFF; --accent-ink:#256987; --line:rgba(255,255,255,.22); --chip:#2F7A9F;
+    --bg:#3583A7; --bg2:#2E779A; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
+    --accent:#FFFFFF; --accent-ink:#1E5C79; --line:rgba(255,255,255,.22); --chip:#276B8D;
   }
   body[data-theme="ocean"][data-mode="rest"]{
-    --bg:#5DB2D6; --bg2:#4FA3C9; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
-    --accent:#FFFFFF; --accent-ink:#2D7599; --line:rgba(255,255,255,.22); --chip:#3986AC;
+    --bg:#4CA1C6; --bg2:#3E92B8; --fg:#FFFFFF; --muted:rgba(255,255,255,.78);
+    --accent:#FFFFFF; --accent-ink:#256987; --line:rgba(255,255,255,.22); --chip:#2E779A;
   }
 
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
@@ -3018,6 +3018,8 @@ async function joinOrCreateSession(code, asHost){
   await ensureFirebase();
   mySession = code;
   isHost = asHost;
+  // persist session so it can be restored after page reload (e.g. navigating to privacy and back)
+  try{ sessionStorage.setItem('pomofit:activeSession', JSON.stringify({code, asHost})); }catch(e){}
   const sessionRef = fb.db.ref('sessions/'+code);
   const timerRef = sessionRef.child('timer');
   const membersRef = sessionRef.child('members');
@@ -3421,6 +3423,7 @@ $('leaveSessionBtn').onclick=async ()=>{
     detachSessionListeners();
   }
   mySession=null; sessionRefs=null; isHost=false;
+  try{ sessionStorage.removeItem('pomofit:activeSession'); }catch(e){}
   $('floatChatLog').innerHTML='';
   unreadCount=0; $('floatChatBadge').style.display='none';
   showTogetherIntro();
@@ -3446,6 +3449,29 @@ function checkJoinLink(){
       togetherMsg(T().invitedNote);
     }
   }catch(e){ console.error('checkJoinLink failed:', e); }
+}
+
+// restore active co-work session after page reload (e.g. navigating to privacy and back)
+async function restoreSessionIfAny(){
+  try{
+    const saved = sessionStorage.getItem('pomofit:activeSession');
+    if(!saved) return;
+    const { code, asHost } = JSON.parse(saved);
+    if(!code) return;
+    // check session still exists in Firebase before restoring
+    await ensureFirebase();
+    const snap = await fb.db.ref('sessions/'+code+'/createdAt').get();
+    if(!snap.exists()){
+      sessionStorage.removeItem('pomofit:activeSession');
+      return;
+    }
+    await joinOrCreateSession(code, asHost);
+    showTogetherActive();
+    $('sessionCodeDisplay').textContent = code;
+  }catch(e){
+    console.error('restoreSession failed:', e);
+    try{ sessionStorage.removeItem('pomofit:activeSession'); }catch(_){}
+  }
 }
 
 /* ---------- language / i18n ---------- */
@@ -4096,6 +4122,7 @@ loadSettings();
 loadIntroState();
 initLocalFacts();
 checkJoinLink();
+restoreSessionIfAny();
 
 /* ---------- intention reminder — magical bubble that floats in every ~60min when idle ---------- */
 (function(){
@@ -4256,6 +4283,14 @@ $('focusModeBtn').addEventListener('click', e=>{
 (function(){
   const page=$('entryPage'), glow=$('entryGlow'), btn=$('entryBtn');
   if(!page) return;
+
+  // if intention is already set in this session, skip the entry page entirely
+  try{
+    if(sessionStorage.getItem('pomofit:intention')){
+      page.style.display='none';
+      return;
+    }
+  }catch(e){}
 
   document.addEventListener('mousemove', e=>{
     glow.style.left=e.clientX+'px';
