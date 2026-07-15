@@ -749,7 +749,47 @@
     pointer-events:none;
   }
 
-  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0;}
+  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:20px 0;}
+
+  /* ---------- profile revamp ---------- */
+  .emoji-grid-compact{
+    display:flex; gap:6px; margin:16px 0 4px; justify-content:space-between;
+    padding:8px; background:var(--chip); border-radius:12px;
+  }
+  .emoji-grid-compact .emoji-opt{
+    width:36px; height:36px; font-size:18px;
+  }
+  .profile-section{
+    margin:6px 0 4px; padding:12px 14px;
+    background:var(--chip); border-radius:12px;
+  }
+  .profile-section summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    font-size:13px; font-weight:600; color:var(--fg); letter-spacing:.02em;
+  }
+  .profile-section summary::-webkit-details-marker{ display:none; }
+  .profile-section .chev{
+    font-size:18px; color:var(--muted); transition:transform .2s ease;
+    display:inline-block; line-height:1;
+  }
+  .profile-section[open] .chev{ transform:rotate(90deg); }
+  .profile-notice{
+    font-size:11.5px; line-height:1.5; color:var(--muted);
+    text-align:center; margin:20px 0 8px;
+    opacity:.75;
+  }
+  .profile-actions{
+    display:flex; flex-direction:column; gap:2px; margin-top:4px;
+  }
+  .profile-action-btn{
+    width:100%; padding:12px 14px; text-align:left;
+    background:transparent; border:none; border-radius:10px;
+    color:var(--fg); font-family:inherit; font-size:13.5px; font-weight:500;
+    cursor:pointer; transition:background .12s ease;
+  }
+  .profile-action-btn:hover{ background:var(--chip); }
+  .profile-action-btn.danger{ color:#E8604C; }
+  .profile-action-btn.danger:hover{ background:rgba(232,96,76,.08); }
   .stat{background:var(--chip); border:none; border-radius:16px; padding:14px;}
   .stat .num{font-family:'Anton',sans-serif; font-size:26px;}
   .stat .lab{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:2px;}
@@ -846,8 +886,13 @@
   .together-chat{
     max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;
     margin-bottom:10px; padding-right:2px;
+    overflow-wrap:break-word; word-wrap:break-word; word-break:break-word;
   }
-  .chat-msg{font-size:13.5px; line-height:1.4;}
+  .chat-msg{
+    font-size:13.5px; line-height:1.4;
+    overflow-wrap:break-word; word-wrap:break-word; word-break:break-word;
+    max-width:100%; white-space:pre-wrap;
+  }
   .chat-msg .who{font-weight:700; color:var(--accent); margin-right:6px;}
   .chat-msg.system{color:var(--muted); font-style:italic; font-size:12.5px;}
   .chat-msg.react{font-size:20px;}
@@ -1326,7 +1371,7 @@
       <button class="btn ghost" id="signUpBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">Create account</button>
     </div>
     <p class="signin-note" id="forgotNote" style="margin-top:8px;"><a href="#" id="forgotLink" style="color:var(--accent);text-decoration:none;font-weight:600;">Forgot password?</a></p>
-    <p class="signin-note" id="storageNote">Accounts live in this browser — sign back in any time on this device. Passwords are stored only as a secure hash.</p>
+    <p class="signin-note" id="storageNote">🔒 Your account is stored locally on this browser only. It won't sync to other devices, and clearing your browser data will erase it.</p>
   </div>
   <div id="resetBox" style="display:none;">
     <p class="signin-note" style="margin-top:0;">Answer your security question to set a new password.</p>
@@ -1359,35 +1404,35 @@
         <input id="displayNameInput" type="text" maxlength="24" placeholder="What should we call you?">
       </div>
     </div>
-    <div class="emoji-picker" id="emojiPicker">
-      <div class="lab" style="margin-bottom:8px;">Or pick an emoji</div>
-      <div class="emoji-grid">
-        <button class="emoji-opt" data-emoji="😈">😈</button>
-        <button class="emoji-opt" data-emoji="🤖">🤖</button>
-        <button class="emoji-opt" data-emoji="👾">👾</button>
-        <button class="emoji-opt" data-emoji="🦊">🦊</button>
-        <button class="emoji-opt" data-emoji="🐼">🐼</button>
-        <button class="emoji-opt" data-emoji="🐸">🐸</button>
-        <button class="emoji-opt" data-emoji="🥸">🥸</button>
-        <button class="emoji-opt" data-emoji="👻">👻</button>
-      </div>
+
+    <div class="emoji-grid emoji-grid-compact">
+      <button class="emoji-opt" data-emoji="😈">😈</button>
+      <button class="emoji-opt" data-emoji="🤖">🤖</button>
+      <button class="emoji-opt" data-emoji="👾">👾</button>
+      <button class="emoji-opt" data-emoji="🦊">🦊</button>
+      <button class="emoji-opt" data-emoji="🐼">🐼</button>
+      <button class="emoji-opt" data-emoji="🐸">🐸</button>
+      <button class="emoji-opt" data-emoji="🥸">🥸</button>
+      <button class="emoji-opt" data-emoji="👻">👻</button>
     </div>
+
     <div class="stat-grid">
       <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Focus rounds</div></div>
-      <div class="stat"><div class="num" id="stMinutes">0</div><div class="lab">Minutes studied</div></div>
+      <div class="stat"><div class="num" id="stMinutes">0</div><div class="lab">Minutes</div></div>
       <div class="stat"><div class="num" id="stReps">0</div><div class="lab">Total reps</div></div>
     </div>
-    <div class="set-row"><div class="lab">Recent activity</div><div id="histList"></div></div>
-    <div class="danger-row">
-      <div>
-        <div class="lab2">Reset statistics</div>
-        <div class="sub2">Clears your rounds, minutes, reps and history</div>
-      </div>
-      <button class="btn danger" id="resetStatsBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;white-space:nowrap;">Reset</button>
-    </div>
-    <div class="controls" style="justify-content:center;gap:8px;">
-      <button class="btn ghost" id="signOutBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">Sign out</button>
-      <button class="btn ghost" id="deleteAccountBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;color:#E8604C;">Delete account</button>
+
+    <details class="profile-section">
+      <summary>Recent activity <span class="chev">›</span></summary>
+      <div id="histList" style="margin-top:8px;"></div>
+    </details>
+
+    <p class="profile-notice">Your account lives on this device only — clearing browser data will erase it.</p>
+
+    <div class="profile-actions">
+      <button class="profile-action-btn" id="resetStatsBtn">Reset statistics</button>
+      <button class="profile-action-btn" id="signOutBtn">Sign out</button>
+      <button class="profile-action-btn danger" id="deleteAccountBtn">Delete account</button>
     </div>
   </div>
 </div>
@@ -2552,7 +2597,7 @@ function renderProfile(){
     $('stReps').textContent=DATA.totals.reps;
     const h=$('histList'); h.innerHTML='';
     if(!DATA.history.length) h.innerHTML='<p class="empty-note">Nothing logged yet — finish a focus round or a workout.</p>';
-    DATA.history.slice(0,8).forEach(e=>{
+    DATA.history.slice(0,5).forEach(e=>{
       const d=new Date(e.ts);
       const when=d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       const row=document.createElement('div'); row.className='hist-item';
@@ -3192,8 +3237,10 @@ function applyRemoteTimer(v){
   const prevRemaining = S.running ? Math.max(0, S.endAt - Date.now()) : S.remaining;
   S.phase=v.phase; S.running=v.running; S.endAt=v.endAt; S.remaining=v.remaining;
   S.completed=v.completed; S.session=v.session; S.longBreakEvery=v.longBreakEvery;
-  S.focusMin=v.focusMin; S.breakMin=v.breakMin; S.longMin=v.longMin;
-  // guests follow host's auto settings
+  // settings come only from host - only apply if the payload includes them
+  if(typeof v.focusMin==='number') S.focusMin=v.focusMin;
+  if(typeof v.breakMin==='number') S.breakMin=v.breakMin;
+  if(typeof v.longMin==='number') S.longMin=v.longMin;
   if(typeof v.autoBreak==='boolean') S.autoBreak=v.autoBreak;
   if(typeof v.autoFocus==='boolean') S.autoFocus=v.autoFocus;
 
@@ -3298,15 +3345,19 @@ function setPhaseUIOnly(p){
 }
 function broadcastTimer(){
   if(!mySession || !sessionRefs || suppressLocalBroadcast) return;
-  // only the host can broadcast timer state - prevents guests overwriting host's settings (autoBreak, autoFocus, durations)
-  if(!isHost) return;
-  sessionRefs.timerRef.set({
+  // anyone in the session can start/pause the timer, but only host controls the settings
+  // (autoBreak, autoFocus, durations) — guests broadcast state changes only
+  const payload = {
     phase:S.phase, running:S.running, endAt:S.endAt, remaining:S.remaining,
     completed:S.completed, session:S.session, longBreakEvery:S.longBreakEvery,
-    focusMin:S.focusMin, breakMin:S.breakMin, longMin:S.longMin,
-    autoBreak:S.autoBreak, autoFocus:S.autoFocus,
     updatedBy: fb.uid,
-  });
+  };
+  if(isHost){
+    // host also broadcasts settings so guests follow them
+    payload.focusMin=S.focusMin; payload.breakMin=S.breakMin; payload.longMin=S.longMin;
+    payload.autoBreak=S.autoBreak; payload.autoFocus=S.autoFocus;
+  }
+  sessionRefs.timerRef.update(payload);
 }
 
 function renderMembers(members){
