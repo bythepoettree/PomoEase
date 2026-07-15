@@ -779,17 +779,18 @@
     opacity:.75;
   }
   .profile-actions{
-    display:flex; flex-direction:column; gap:2px; margin-top:4px;
+    display:flex; flex-direction:row; gap:8px; margin-top:8px;
   }
   .profile-action-btn{
-    width:100%; padding:12px 14px; text-align:left;
-    background:transparent; border:none; border-radius:10px;
-    color:var(--fg); font-family:inherit; font-size:13.5px; font-weight:500;
-    cursor:pointer; transition:background .12s ease;
+    flex:1; padding:10px 8px; text-align:center;
+    background:var(--chip); border:none; border-radius:10px;
+    color:var(--fg); font-family:inherit; font-size:12px; font-weight:600;
+    cursor:pointer; transition:background .12s ease, opacity .12s ease;
+    letter-spacing:.02em; white-space:nowrap;
   }
-  .profile-action-btn:hover{ background:var(--chip); }
+  .profile-action-btn:hover{ opacity:.85; }
   .profile-action-btn.danger{ color:#E8604C; }
-  .profile-action-btn.danger:hover{ background:rgba(232,96,76,.08); }
+  .profile-action-btn.danger:hover{ background:rgba(232,96,76,.12); }
   .stat{background:var(--chip); border:none; border-radius:16px; padding:14px;}
   .stat .num{font-family:'Anton',sans-serif; font-size:26px;}
   .stat .lab{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:2px;}
@@ -1422,7 +1423,7 @@
       <div class="stat"><div class="num" id="stReps">0</div><div class="lab">Total reps</div></div>
     </div>
 
-    <details class="profile-section">
+    <details class="profile-section" open>
       <summary>Recent activity <span class="chev">›</span></summary>
       <div id="histList" style="margin-top:8px;"></div>
     </details>
@@ -1430,9 +1431,9 @@
     <p class="profile-notice">Your account lives on this device only — clearing browser data will erase it.</p>
 
     <div class="profile-actions">
-      <button class="profile-action-btn" id="resetStatsBtn">Reset statistics</button>
+      <button class="profile-action-btn" id="resetStatsBtn">Reset</button>
       <button class="profile-action-btn" id="signOutBtn">Sign out</button>
-      <button class="profile-action-btn danger" id="deleteAccountBtn">Delete account</button>
+      <button class="profile-action-btn danger" id="deleteAccountBtn">Delete</button>
     </div>
   </div>
 </div>
@@ -2846,6 +2847,9 @@ function nextPhase(natural){
       notify('🍅 Focus complete!', 'Nice work — time for your sweat break.');
       showMascot();
       S.completed++;
+      // a completed focus round always advances the session counter
+      S.session++;
+      renderFooter();
       if(S.completed>=S.longBreakEvery){
         setPhase('rest'); S.completed=0;
         if(S.autoBreak){ start(); didStart=true; } else syncStartBtn();
@@ -2857,13 +2861,10 @@ function nextPhase(natural){
         S.remaining=phaseDuration(); render(S.remaining);
         S.endAt=Date.now()+S.remaining;
         syncStartBtn();
-        // session counts a completed focus round even without taking a break
-        S.session++;
-        renderFooter();
         $('skipBtn').dataset.workout='1';
       }
     } else {
-      // manual skip — go to break but don't count as a completed round (no dot)
+      // manual skip — go to break but don't count as a completed round (no dot, no session bump)
       if(S.completed>=S.longBreakEvery){ setPhase('rest'); S.completed=0; }
       else setPhase('sweat');
       syncStartBtn();
@@ -2872,8 +2873,6 @@ function nextPhase(natural){
     if(natural){
       bell(1); chimeBreakEnd();
       notify('⏰ Break over', 'Back to the books — you\'ve got this.');
-      S.session++;
-      renderFooter();
     }
     setPhase('focus');
     // auto-focus only when the break ran out naturally, not on a manual skip
@@ -3236,7 +3235,10 @@ function applyRemoteTimer(v){
   // compute actual current remaining time on the guest (S.remaining is stale during running)
   const prevRemaining = S.running ? Math.max(0, S.endAt - Date.now()) : S.remaining;
   S.phase=v.phase; S.running=v.running; S.endAt=v.endAt; S.remaining=v.remaining;
-  S.completed=v.completed; S.session=v.session; S.longBreakEvery=v.longBreakEvery;
+  // guard against undefined/null values that could break rendering
+  if(typeof v.completed === 'number') S.completed = v.completed;
+  if(typeof v.session === 'number') S.session = v.session;
+  if(typeof v.longBreakEvery === 'number') S.longBreakEvery = v.longBreakEvery;
   // settings come only from host - only apply if the payload includes them
   if(typeof v.focusMin==='number') S.focusMin=v.focusMin;
   if(typeof v.breakMin==='number') S.breakMin=v.breakMin;
@@ -4454,10 +4456,13 @@ $('focusModeBtn').addEventListener('click', e=>{
     });
     // collapse the input container, then transition straight into the app
     intWrap.classList.add('fizzle');
+    // fade the wordmark out quickly so it doesn't linger over the timer
+    const wordmark = document.querySelector('.entry-wordmark');
+    if(wordmark){ wordmark.style.transition = 'opacity .3s ease'; wordmark.style.opacity = '0'; }
     setTimeout(()=>{
       intWrap.style.display = 'none';
       enter();
-    }, 700);
+    }, 550);
   }
 
   intSubmit.addEventListener('click', fizzleIntention);
