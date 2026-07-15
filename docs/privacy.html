@@ -1,11 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background:#1B3A2D;">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Privacy Policy — PomoFit</title>
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://www.pomofit.fit/privacy.html">
+<script>
+  // apply saved theme instantly (before body renders) to prevent white flash
+  (function(){
+    try{
+      const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
+      if(s && s.theme){
+        const t = s.theme === 'cream' ? 'ocean' : s.theme;
+        const bgMap = { ember:'#1B3A2D', mono:'#0B0B0B', pink:'#EF8AAE', ocean:'#3E92B8' };
+        document.documentElement.style.background = bgMap[t] || '#1B3A2D';
+        document.documentElement.dataset.pendingTheme = t;
+      }
+    }catch(e){}
+  })();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   /* THEME: Ember (default) */
@@ -37,13 +51,10 @@
 </head>
 <body>
 <script>
-  // apply saved theme so this page matches the user's preference
+  // apply the theme that was already detected in the head
   try{
-    const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
-    if(s && s.theme){
-      const t = s.theme === 'cream' ? 'ocean' : s.theme; // migrate deprecated
-      document.body.dataset.theme = t;
-    }
+    const t = document.documentElement.dataset.pendingTheme;
+    if(t) document.body.dataset.theme = t;
   }catch(e){}
 </script>
 <div class="wrap">
@@ -90,7 +101,7 @@
   <h2>Contact</h2>
   <p>Questions about this policy can be sent via the contact details listed on our Ko-fi page.</p>
 
-  <a class="back" href="/">← Back to PomoFit</a>
+  <div style="height:36px;"></div>
 </div>
 </body>
 </html>
