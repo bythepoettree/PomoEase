@@ -1,9 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background:#1B3A2D; color-scheme:dark;">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PomoFit — Pomodoro Focus Timer with Workout Breaks</title>
+<style>html,body{background:#1B3A2D;}</style>
+<script>
+  // apply saved theme instantly (before body renders) to prevent white flash
+  (function(){
+    try{
+      const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
+      if(s && s.theme){
+        const t = s.theme === 'cream' ? 'ocean' : s.theme;
+        const bgMap = { ember:'#1B3A2D', mono:'#0B0B0B', pink:'#EF8AAE', ocean:'#3E92B8' };
+        const bg = bgMap[t] || '#1B3A2D';
+        document.documentElement.style.background = bg;
+        document.documentElement.dataset.pendingTheme = t;
+        // update theme-color meta so browser chrome (status bar) also matches
+        setTimeout(()=>{
+          const meta = document.getElementById('metaThemeColor');
+          if(meta) meta.setAttribute('content', bg);
+        }, 0);
+      }
+    }catch(e){}
+  })();
+</script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2375662453335999" crossorigin="anonymous"></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzFCM0EyRCIvPgogIDxsaW5lIHgxPSIxNiIgeTE9IjgiIHgyPSIxNiIgeTI9IjYiIHN0cm9rZT0iIzRBOEMzOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSIxNCIgY3k9IjYiIHJ4PSIzIiByeT0iMS41IiBmaWxsPSIjNEE4QzM4IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMTQgNikiLz4KICA8ZWxsaXBzZSBjeD0iMTgiIGN5PSI1LjUiIHJ4PSIyLjUiIHJ5PSIxLjIiIGZpbGw9IiM1QUFBNDQiIHRyYW5zZm9ybT0icm90YXRlKDIwIDE4IDUuNSkiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE5IiByPSIxMCIgZmlsbD0iI0U4NDUyQSIvPgogIDxlbGxpcHNlIGN4PSIxMi41IiBjeT0iMTQiIHJ4PSIyLjUiIHJ5PSIxLjgiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjI1KSIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEyLjUgMTQpIi8+Cjwvc3ZnPg==">
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzFCM0EyRCIvPgogIDxsaW5lIHgxPSIxNiIgeTE9IjgiIHgyPSIxNiIgeTI9IjYiIHN0cm9rZT0iIzRBOEMzOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSIxNCIgY3k9IjYiIHJ4PSIzIiByeT0iMS41IiBmaWxsPSIjNEE4QzM4IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMTQgNikiLz4KICA8ZWxsaXBzZSBjeD0iMTgiIGN5PSI1LjUiIHJ4PSIyLjUiIHJ5PSIxLjIiIGZpbGw9IiM1QUFBNDQiIHRyYW5zZm9ybT0icm90YXRlKDIwIDE4IDUuNSkiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE5IiByPSIxMCIgZmlsbD0iI0U4NDUyQSIvPgogIDxlbGxpcHNlIGN4PSIxMi41IiBjeT0iMTQiIHJ4PSIyLjUiIHJ5PSIxLjgiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjI1KSIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEyLjUgMTQpIi8+Cjwvc3ZnPg==">
@@ -21,7 +42,7 @@
 <meta name="twitter:title" content="PomoFit — Pomodoro Focus Timer with Workout Breaks">
 <meta name="twitter:description" content="A free Pomodoro timer that turns your breaks into quick workouts.">
 
-<meta name="theme-color" content="#171C2B">
+<meta name="theme-color" content="#1B3A2D" id="metaThemeColor">
 
 <script type="application/ld+json">
 {
