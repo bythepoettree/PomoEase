@@ -2772,8 +2772,7 @@ function nextPhase(natural){
         $('skipBtn').dataset.workout='1';
       }
     } else {
-      // manual skip — go to break but never auto-start it
-      S.completed++;
+      // manual skip — go to break but don't count as a completed round (no dot)
       if(S.completed>=S.longBreakEvery){ setPhase('rest'); S.completed=0; }
       else setPhase('sweat');
       syncStartBtn();
@@ -3019,7 +3018,7 @@ async function joinOrCreateSession(code, asHost){
   mySession = code;
   isHost = asHost;
   // persist session so it can be restored after page reload (e.g. navigating to privacy and back)
-  try{ sessionStorage.setItem('pomofit:activeSession', JSON.stringify({code, asHost})); }catch(e){}
+  try{ localStorage.setItem("pomofit:activeSession", JSON.stringify({code, asHost})); }catch(e){}
   const sessionRef = fb.db.ref('sessions/'+code);
   const timerRef = sessionRef.child('timer');
   const membersRef = sessionRef.child('members');
@@ -3423,7 +3422,7 @@ $('leaveSessionBtn').onclick=async ()=>{
     detachSessionListeners();
   }
   mySession=null; sessionRefs=null; isHost=false;
-  try{ sessionStorage.removeItem('pomofit:activeSession'); }catch(e){}
+  try{ localStorage.removeItem("pomofit:activeSession"); }catch(e){}
   $('floatChatLog').innerHTML='';
   unreadCount=0; $('floatChatBadge').style.display='none';
   showTogetherIntro();
@@ -3454,7 +3453,7 @@ function checkJoinLink(){
 // restore active co-work session after page reload (e.g. navigating to privacy and back)
 async function restoreSessionIfAny(){
   try{
-    const saved = sessionStorage.getItem('pomofit:activeSession');
+    const saved = localStorage.getItem("pomofit:activeSession");
     if(!saved) return;
     const { code, asHost } = JSON.parse(saved);
     if(!code) return;
@@ -3462,7 +3461,7 @@ async function restoreSessionIfAny(){
     await ensureFirebase();
     const snap = await fb.db.ref('sessions/'+code+'/createdAt').get();
     if(!snap.exists()){
-      sessionStorage.removeItem('pomofit:activeSession');
+      localStorage.removeItem("pomofit:activeSession");
       return;
     }
     await joinOrCreateSession(code, asHost);
@@ -3470,7 +3469,7 @@ async function restoreSessionIfAny(){
     $('sessionCodeDisplay').textContent = code;
   }catch(e){
     console.error('restoreSession failed:', e);
-    try{ sessionStorage.removeItem('pomofit:activeSession'); }catch(_){}
+    try{ localStorage.removeItem("pomofit:activeSession"); }catch(_){}
   }
 }
 
@@ -4132,7 +4131,17 @@ restoreSessionIfAny();
   let scheduleTimer = null;
 
   function getIntention(){
-    try{ return sessionStorage.getItem('pomofit:intention') || ''; }catch(e){ return ''; }
+    try{
+      const raw = localStorage.getItem('pomofit:intention');
+      if(!raw) return '';
+      const parsed = JSON.parse(raw);
+      // expire after 24 hours so users start fresh each day
+      if(!parsed.savedAt || (Date.now() - parsed.savedAt) > 24*60*60*1000){
+        localStorage.removeItem('pomofit:intention');
+        return '';
+      }
+      return parsed.text || '';
+    }catch(e){ return ''; }
   }
 
   function canShowNow(){
@@ -4284,11 +4293,17 @@ $('focusModeBtn').addEventListener('click', e=>{
   const page=$('entryPage'), glow=$('entryGlow'), btn=$('entryBtn');
   if(!page) return;
 
-  // if intention is already set in this session, skip the entry page entirely
+  // if intention is already set (localStorage, expires 24h), skip the entry page entirely
   try{
-    if(sessionStorage.getItem('pomofit:intention')){
-      page.style.display='none';
-      return;
+    const raw = localStorage.getItem('pomofit:intention');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed.savedAt && (Date.now() - parsed.savedAt) < 24*60*60*1000){
+        page.style.display='none';
+        return;
+      } else {
+        localStorage.removeItem('pomofit:intention');
+      }
     }
   }catch(e){}
 
@@ -4315,8 +4330,9 @@ $('focusModeBtn').addEventListener('click', e=>{
   function fizzleIntention(){
     const text = (intInput.value || '').trim();
     // save intention so it can float back in later as a reminder
+    // localStorage (not sessionStorage) so it survives navigating to privacy.html and back
     if(text){
-      try{ sessionStorage.setItem('pomofit:intention', text); }catch(e){}
+      try{ localStorage.setItem('pomofit:intention', JSON.stringify({text, savedAt: Date.now()})); }catch(e){}
     }
     // spawn particle for each character in the input value (or a set of dots if empty)
     const chars = text ? text.split('') : ['·','·','·','·','·','·'];
