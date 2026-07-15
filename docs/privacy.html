@@ -18,7 +18,7 @@
       const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
       if(s && s.theme){
         const t = s.theme === 'cream' ? 'ocean' : s.theme;
-        const bgMap = { ember:'#1B3A2D', mono:'#0B0B0B', pink:'#EF8AAE', ocean:'#3E92B8' };
+        const bgMap = { ember:'#1B3A2D', mono:'#0B0B0B', pink:'#EF8AAE', ocean:'#3E92B8', light:'#F5F5F4' };
         const bg = bgMap[t] || '#1B3A2D';
         document.documentElement.style.background = bg;
         document.documentElement.dataset.pendingTheme = t;
@@ -38,6 +38,8 @@
   body[data-theme="pink"]{ --bg:#EF8AAE; --bg2:#E8799F; --fg:#FFFFFF; --muted:rgba(255,255,255,.75); --accent:#FFFFFF; --line:rgba(255,255,255,.2); }
   /* THEME: Ocean */
   body[data-theme="ocean"]{ --bg:#3E92B8; --bg2:#3583A7; --fg:#FFFFFF; --muted:rgba(255,255,255,.78); --accent:#FFFFFF; --line:rgba(255,255,255,.22); }
+  /* THEME: Light */
+  body[data-theme="light"]{ --bg:#F5F5F4; --bg2:#EDEDEC; --fg:#3A3A3A; --muted:rgba(58,58,58,.55); --accent:#3A3A3A; --line:rgba(58,58,58,.12); }
 
   body{
     background:var(--bg); color:var(--fg); font-family:'Space Grotesk', system-ui, sans-serif;
