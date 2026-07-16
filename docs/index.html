@@ -236,10 +236,32 @@
     letter-spacing:.12em;
     color:var(--fg);
     line-height:1;
-    margin-bottom:56px;
+    margin-bottom:2px;
     user-select:none;
   }
   .entry-wordmark em{ font-style:normal; color:var(--accent); }
+  .entry-tagline{
+    font-size:clamp(11px, 2.4vw, 13px);
+    letter-spacing:0;
+    color:var(--muted);
+    text-transform:uppercase;
+    font-weight:500;
+    margin-bottom:44px;
+    user-select:none;
+    opacity:0;
+    animation: taglineUnfoldFade 5s cubic-bezier(.22,.9,.3,1) .2s forwards;
+    will-change:opacity, letter-spacing, transform;
+  }
+  @keyframes taglineUnfoldFade{
+    0%   { opacity:0; letter-spacing:0; transform:translateY(-4px); filter:blur(3px); }
+    12%  { opacity:.4; filter:blur(1px); }
+    30%  { opacity:.85; letter-spacing:.18em; transform:translateY(0); filter:blur(0); }
+    60%  { opacity:.85; letter-spacing:.18em; }
+    100% { opacity:0; letter-spacing:.18em; filter:blur(2px); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .entry-tagline{ animation:none; opacity:.85; letter-spacing:.18em; }
+  }
   .entry-btn{
     font-family:'Anton', sans-serif;
     font-size:clamp(12px, 2.5vw, 16px);
@@ -1183,6 +1205,7 @@
 <div id="entryPage" aria-label="Enter PomoEase">
   <div class="entry-glow" id="entryGlow"></div>
   <div class="entry-wordmark">POMO<em>EASE</em></div>
+  <div class="entry-tagline" id="entryTagline">Exercise and Study Environment</div>
   <div class="intention-wrap" id="intentionWrap">
     <div class="intention-label">Set your intention</div>
     <div class="intention-row">
