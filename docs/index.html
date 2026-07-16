@@ -242,7 +242,7 @@
   .entry-wordmark em{ font-style:normal; color:var(--accent); }
   .entry-tagline{
     font-size:clamp(11px, 2.4vw, 13px);
-    letter-spacing:0;
+    letter-spacing:.13em;
     color:var(--muted);
     text-transform:uppercase;
     font-weight:500;
@@ -250,22 +250,22 @@
     user-select:none;
     opacity:0;
     animation: taglineUnfoldFade 4s cubic-bezier(.22,.9,.3,1) .2s forwards;
-    will-change:opacity, letter-spacing, transform;
+    will-change:opacity, transform;
   }
   @keyframes taglineUnfoldFade{
-    0%   { opacity:0; letter-spacing:0; transform:translateY(-4px); }
-    20%  { opacity:.85; letter-spacing:.18em; transform:translateY(0); }
-    75%  { opacity:.85; letter-spacing:.18em; }
-    100% { opacity:0; letter-spacing:.18em; }
+    0%   { opacity:0; transform:translateY(-4px); }
+    20%  { opacity:.85; transform:translateY(0); }
+    75%  { opacity:.85; }
+    100% { opacity:0; }
   }
   /* after the intro animation ends, hover to reveal briefly */
   .entry-tagline.done{
-    animation:none; opacity:0; letter-spacing:.18em;
+    animation:none; opacity:0;
     transition:opacity .3s ease;
   }
   .entry-tagline.done.show{ opacity:.85; }
   @media (prefers-reduced-motion:reduce){
-    .entry-tagline{ animation:none; opacity:.85; letter-spacing:.18em; }
+    .entry-tagline{ animation:none; opacity:.85; }
   }
   .entry-btn{
     font-family:'Anton', sans-serif;
