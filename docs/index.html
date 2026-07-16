@@ -1604,8 +1604,6 @@
 
     <div class="together-members" id="togetherMembers"></div>
 
-    <div class="together-status" id="togetherStatus">Waiting for someone to join…</div>
-
     <button class="together-leave" id="leaveSessionBtn">Leave session</button>
   </div>
 </div>
@@ -3179,6 +3177,14 @@ function showTogetherIntro(){
   $('floatMembers').classList.remove('show');
   $('togetherBtn').classList.remove('active');
   setChatExpanded(false);
+  // reset intro UI: show create by default, only show join-from-link if there is a pending code
+  if(pendingJoinCode){
+    $('createSessionBtn').style.display='';
+    $('joinFromLinkRow').style.display='flex';
+  } else {
+    $('createSessionBtn').style.display='';
+    $('joinFromLinkRow').style.display='none';
+  }
 }
 
 $('togetherBtn').onclick=()=>{
@@ -3211,7 +3217,9 @@ async function attemptJoin(code){
   }catch(e){ togetherMsg('Couldn\'t join — check your connection and try again.'); }
 }
 $('joinFromLinkBtn').onclick=async ()=>{
-  await attemptJoin(pendingJoinCode);
+  const code = pendingJoinCode;
+  pendingJoinCode = null; // clear so leaving-and-reopening starts fresh
+  await attemptJoin(code);
   // close the join sheet so the focus screen has a clean screen if timer is already running
   closeSheets();
 };
@@ -3540,9 +3548,12 @@ function renderMembers(members){
     }
     floatWrap.appendChild(bubble);
   });
-  $('togetherStatus').textContent = list.length<=1
-    ? T().justYou
-    : T().peopleInSession(list.length);
+  const status = $('togetherStatus');
+  if(status){
+    status.textContent = list.length<=1
+      ? T().justYou
+      : T().peopleInSession(list.length);
+  }
   // update settings notice visibility
   const notice=$('coworkSettingsNotice');
   if(notice) notice.classList.toggle('show', !!mySession && isHost);
@@ -3643,6 +3654,16 @@ $('leaveSessionBtn').onclick=async ()=>{
   }
   mySession=null; sessionRefs=null; isHost=false;
   try{ localStorage.removeItem("pomofit:activeSession"); }catch(e){}
+  // clear the pending join code so the user gets the create-session flow again
+  pendingJoinCode = null;
+  // strip ?join=CODE from URL so refresh doesn't rejoin
+  try{
+    const url = new URL(location.href);
+    if(url.searchParams.has('join')){
+      url.searchParams.delete('join');
+      history.replaceState(null, '', url.pathname + (url.search || '') + url.hash);
+    }
+  }catch(e){}
   $('floatChatLog').innerHTML='';
   unreadCount=0; $('floatChatBadge').style.display='none';
   showTogetherIntro();
