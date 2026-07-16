@@ -249,16 +249,21 @@
     margin-bottom:44px;
     user-select:none;
     opacity:0;
-    animation: taglineUnfoldFade 5s cubic-bezier(.22,.9,.3,1) .2s forwards;
+    animation: taglineUnfoldFade 4s cubic-bezier(.22,.9,.3,1) .2s forwards;
     will-change:opacity, letter-spacing, transform;
   }
   @keyframes taglineUnfoldFade{
-    0%   { opacity:0; letter-spacing:0; transform:translateY(-4px); filter:blur(3px); }
-    12%  { opacity:.4; filter:blur(1px); }
-    30%  { opacity:.85; letter-spacing:.18em; transform:translateY(0); filter:blur(0); }
-    60%  { opacity:.85; letter-spacing:.18em; }
-    100% { opacity:0; letter-spacing:.18em; filter:blur(2px); }
+    0%   { opacity:0; letter-spacing:0; transform:translateY(-4px); }
+    20%  { opacity:.85; letter-spacing:.18em; transform:translateY(0); }
+    75%  { opacity:.85; letter-spacing:.18em; }
+    100% { opacity:0; letter-spacing:.18em; }
   }
+  /* after the intro animation ends, hover to reveal briefly */
+  .entry-tagline.done{
+    animation:none; opacity:0; letter-spacing:.18em;
+    transition:opacity .3s ease;
+  }
+  .entry-tagline.done.show{ opacity:.85; }
   @media (prefers-reduced-motion:reduce){
     .entry-tagline{ animation:none; opacity:.85; letter-spacing:.18em; }
   }
@@ -4609,6 +4614,24 @@ $('focusModeBtn').addEventListener('click', e=>{
     glow.style.left=e.clientX+'px';
     glow.style.top=e.clientY+'px';
   }, {passive:true});
+
+  // after the tagline intro animation ends, allow hover on the wordmark to reveal it briefly
+  const tagline = $('entryTagline');
+  const wordmark = document.querySelector('.entry-wordmark');
+  if(tagline && wordmark){
+    // switch tagline into hover-controlled mode once the intro animation finishes
+    setTimeout(()=>{
+      tagline.classList.add('done');
+      let hideTimer = null;
+      wordmark.addEventListener('mouseenter', ()=>{
+        clearTimeout(hideTimer);
+        tagline.classList.add('show');
+      });
+      wordmark.addEventListener('mouseleave', ()=>{
+        hideTimer = setTimeout(()=> tagline.classList.remove('show'), 500);
+      });
+    }, 4400); // matches CSS animation duration + delay + small buffer
+  }
 
   // ripple on click anywhere on the entry page
   page.addEventListener('pointerdown', e=>{
