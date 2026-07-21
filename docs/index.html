@@ -378,17 +378,40 @@
     100% { opacity:1; transform:translateY(0); }
   }
   .explainer-card{
-    display:flex; flex-direction:column; align-items:center; text-align:center;
+    position:relative;
+    background:none; border:none; padding:0;
+    min-height:112px;
+    perspective:900px;
+    cursor:pointer;
+    font-family:inherit; text-align:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .explainer-inner{
+    position:relative; width:100%; height:100%; min-height:inherit;
+    transition:transform .5s cubic-bezier(.4,.2,.2,1);
+    transform-style:preserve-3d;
+  }
+  .explainer-card.flipped .explainer-inner{ transform:rotateY(180deg); }
+  .explainer-face{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:10px;
     background:rgba(255,255,255,.06);
     border:1px solid rgba(255,255,255,.1);
     border-radius:14px;
     padding:18px 12px;
+    -webkit-backface-visibility:hidden; backface-visibility:hidden;
   }
-  body[data-theme="light"] .explainer-card{
+  .explainer-back{
+    transform:rotateY(180deg);
+    justify-content:center;
+    background:rgba(255,255,255,.09);
+  }
+  body[data-theme="light"] .explainer-face{
     background:rgba(58,58,58,.03);
     border-color:rgba(58,58,58,.14);
   }
+  body[data-theme="light"] .explainer-back{ background:rgba(58,58,58,.06); }
   .explainer-icon{ width:24px; height:24px; color:var(--accent); flex:none; }
   .explainer-body{ display:flex; flex-direction:column; gap:3px; align-items:center; }
   .explainer-title{
@@ -397,13 +420,20 @@
   .explainer-desc{
     font-size:10.5px; line-height:1.45; color:var(--muted);
   }
+  .explainer-back-text{
+    font-size:10.5px; line-height:1.5; color:var(--fg);
+  }
   @media (max-width:520px){
     .entry-explainers{ grid-template-columns:1fr; gap:8px; margin-top:18px; }
-    .explainer-card{ flex-direction:row; align-items:center; text-align:left; padding:14px 16px; gap:14px; }
+    .explainer-card{ min-height:0; }
+    .explainer-face{ position:relative; inset:auto; flex-direction:row; align-items:center; text-align:left; padding:14px 16px; gap:14px; min-height:64px; }
+    .explainer-back{ position:absolute; inset:0; flex-direction:column; text-align:center; }
     .explainer-body{ align-items:flex-start; }
+    .explainer-card.flipped .explainer-face{ visibility:hidden; }
   }
   @media (prefers-reduced-motion:reduce){
     .entry-explainers{ animation:none; opacity:1; }
+    .explainer-inner{ transition:none; }
   }
   /* ---------- intention reminder bubble ---------- */
   .intention-bubble{
@@ -457,25 +487,6 @@
   @keyframes entryPulse{
     0%,100%{ opacity:.5; transform:translate(-50%,-50%) scale(1); }
     50%{ opacity:.9; transform:translate(-50%,-50%) scale(1.2); }
-  }
-  /* ---------- Spain World Cup celebration: falling flags ---------- */
-  #flagRain{
-    position:fixed; inset:0; z-index:99999; pointer-events:none; overflow:hidden;
-  }
-  .flag-drop{
-    position:absolute; top:-40px;
-    font-size:26px; line-height:1;
-    will-change:transform, opacity;
-    animation:flagFall linear forwards;
-  }
-  @keyframes flagFall{
-    0%   { transform:translateY(-40px) rotate(0deg); opacity:0; }
-    8%   { opacity:1; }
-    90%  { opacity:1; }
-    100% { transform:translateY(105vh) rotate(320deg); opacity:.85; }
-  }
-  @media (prefers-reduced-motion:reduce){
-    .flag-drop{ animation-duration:.01ms !important; opacity:0 !important; }
   }
   .entry-ripple{
     position:fixed; pointer-events:none; z-index:10001;
@@ -579,6 +590,7 @@
     display:flex; flex-direction:column; align-items:center;
     gap:8px; padding:14px 0 0;
   }
+  .tasks-panel{width:100%; max-width:430px; margin-top:28px;}
   .current-task{color:var(--muted); font-size:14.5px; margin-bottom:2px; text-align:center; max-width:40ch;}
   .current-task b{color:var(--fg); font-weight:600;}
   .timer{
@@ -603,13 +615,28 @@
   .btn:focus-visible,.icon-btn:focus-visible,.chip:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
 
   /* ---------- tasks (Pomofocus style) ---------- */
-  .tasks-panel{width:100%; max-width:430px; margin-top:28px;}
   .tp-head{
-    display:flex; justify-content:space-between; align-items:baseline;
-    border-bottom:2px solid var(--line); padding-bottom:8px;
-    font-weight:700; font-size:16px;
+    display:flex; justify-content:space-between; align-items:center;
+    width:100%; background:none; border:none; cursor:pointer;
+    border-bottom:1px solid var(--line); padding:0 2px 10px;
+    font-family:inherit; font-weight:600; font-size:13px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    transition:color .15s ease;
   }
-  .tp-head span:last-child{font-size:12px; color:var(--muted); font-weight:500;}
+  .tp-head:hover{ color:var(--fg); }
+  .tp-chevron{
+    font-size:16px; line-height:1; transition:transform .25s ease;
+    display:inline-block;
+  }
+  .tp-head[aria-expanded="false"] .tp-chevron{ transform:rotate(-90deg); }
+  .tp-body{
+    overflow:hidden;
+    max-height:1000px;
+    transition:max-height .3s ease, opacity .25s ease, margin .3s ease;
+  }
+  .tp-head[aria-expanded="false"] + .tp-body{
+    max-height:0; opacity:0; margin-top:0;
+  }
   .task-item{
     display:flex; align-items:center; gap:10px;
     background:var(--bg2); border-radius:10px; margin-top:8px; padding:12px;
@@ -806,8 +833,18 @@
     transition:bottom .55s cubic-bezier(.22,1.4,.36,1);
     text-align:center;
   }
-  .mascot.show{ bottom:24px; }
+  .mascot.show{ bottom:24px; pointer-events:auto; cursor:pointer; }
   .mascot svg{ filter:drop-shadow(0 8px 24px rgba(0,0,0,.35)); }
+  /* poof when tapped, like the intention bubble */
+  .mascot.poofed{
+    animation: mascotPoof .45s cubic-bezier(.34,1.56,.64,1) forwards !important;
+    transition:none !important;
+  }
+  @keyframes mascotPoof{
+    0%   { opacity:1; transform:translateX(-50%) scale(1); filter:blur(0); }
+    30%  { opacity:1; transform:translateX(-50%) scale(1.15); filter:blur(0); }
+    100% { opacity:0; transform:translateX(-50%) scale(.35); filter:blur(7px); }
+  }
   .mascot-msg{
     background:var(--fg); color:var(--bg);
     border-radius:999px; padding:7px 18px;
@@ -892,6 +929,7 @@
     border-radius:inherit;
     pointer-events:none;
   }
+
 
   .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:20px 0;}
 
@@ -1334,48 +1372,76 @@
     </div>
   </div>
   <div class="entry-explainers" id="entryExplainers">
-    <div class="explainer-card">
-      <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-        <rect x="3" y="5" width="18" height="11" rx="4"/>
-        <path d="M8.5 16l-1 4 4.5-4"/>
-      </svg>
-      <div class="explainer-body">
-        <div class="explainer-title">Set your intention</div>
-        <div class="explainer-desc">Name today's goal — it floats back as a gentle reminder.</div>
+    <button type="button" class="explainer-card" aria-label="Set your intention — tap for more">
+      <div class="explainer-inner">
+        <div class="explainer-face explainer-front">
+          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="11" rx="4"/>
+            <path d="M8.5 16l-1 4 4.5-4"/>
+          </svg>
+          <div class="explainer-body">
+            <div class="explainer-title">Set your intention</div>
+            <div class="explainer-desc">Name today's goal — it floats back as a gentle reminder.</div>
+          </div>
+        </div>
+        <div class="explainer-face explainer-back">
+          <div class="explainer-back-text">Before you start, jot down what you're here to do. As you work, that intention gently drifts back onto the screen every so often — a quiet nudge to keep you pointed at what matters.</div>
+        </div>
       </div>
-    </div>
-    <div class="explainer-card">
-      <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-        <circle cx="12" cy="12" r="8.5"/>
-        <path d="M12 7.5v5l3.2 1.8"/>
-      </svg>
-      <div class="explainer-body">
-        <div class="explainer-title">Focus timer</div>
-        <div class="explainer-desc">Work in rounds, breaks built in — link a task to track it.</div>
+    </button>
+    <button type="button" class="explainer-card" aria-label="Focus timer — tap for more">
+      <div class="explainer-inner">
+        <div class="explainer-face explainer-front">
+          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/>
+            <path d="M12 7.5v5l3.2 1.8"/>
+          </svg>
+          <div class="explainer-body">
+            <div class="explainer-title">Focus timer</div>
+            <div class="explainer-desc">Work in rounds, breaks built in — link a task to track it.</div>
+          </div>
+        </div>
+        <div class="explainer-face explainer-back">
+          <div class="explainer-back-text">Study in focused rounds with short breaks built in between. Add a task and link it to the timer, and every completed round counts towards it — so you can see real progress stack up over the day.</div>
+        </div>
       </div>
-    </div>
-    <div class="explainer-card">
-      <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-        <circle cx="12" cy="4.5" r="2"/>
-        <path d="M5 8.5l7 2 7-2"/>
-        <path d="M12 10.5V15"/>
-        <path d="M8.5 21l3.5-6 3.5 6"/>
-      </svg>
-      <div class="explainer-body">
-        <div class="explainer-title">Workout breaks</div>
-        <div class="explainer-desc">Turn rest time into a quick set.</div>
+    </button>
+    <button type="button" class="explainer-card" aria-label="Workout breaks — tap for more">
+      <div class="explainer-inner">
+        <div class="explainer-face explainer-front">
+          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
+            <circle cx="12" cy="4.5" r="2"/>
+            <path d="M5 8.5l7 2 7-2"/>
+            <path d="M12 10.5V15"/>
+            <path d="M8.5 21l3.5-6 3.5 6"/>
+          </svg>
+          <div class="explainer-body">
+            <div class="explainer-title">Workout breaks</div>
+            <div class="explainer-desc">Turn rest time into a quick set.</div>
+          </div>
+        </div>
+        <div class="explainer-face explainer-back">
+          <div class="explainer-back-text">When a break lands, swap sitting still for a quick burst of movement. Pick a short programme — jumping jacks, high knees, squats — sized to fit your break, so you come back sharper.</div>
+        </div>
       </div>
-    </div>
-    <div class="explainer-card">
-      <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-        <circle cx="9" cy="12" r="6.5"/>
-        <circle cx="15" cy="12" r="6.5"/>
-      </svg>
-      <div class="explainer-body">
-        <div class="explainer-title">Study together</div>
-        <div class="explainer-desc">Sync timers with a friend, live.</div>
+    </button>
+    <button type="button" class="explainer-card" aria-label="Study together — tap for more">
+      <div class="explainer-inner">
+        <div class="explainer-face explainer-front">
+          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
+            <circle cx="9" cy="12" r="6.5"/>
+            <circle cx="15" cy="12" r="6.5"/>
+          </svg>
+          <div class="explainer-body">
+            <div class="explainer-title">Study together</div>
+            <div class="explainer-desc">Sync timers with a friend, live.</div>
+          </div>
+        </div>
+        <div class="explainer-face explainer-back">
+          <div class="explainer-back-text">Share a link and study in sync with friends. Your timers run together, and a live chat keeps you connected through each round — the gentle accountability of working alongside someone.</div>
+        </div>
       </div>
-    </div>
+    </button>
   </div>
   <button class="entry-btn" id="entryBtn" style="display:none;">ENTER</button>
 </div>
@@ -1517,10 +1583,14 @@
         </svg>
       </button>
     </div>
+  </div>
 
-    
-    <div class="tasks-panel">
-      <div class="tp-head"><span id="tasksHeading">Tasks</span><span></span></div>
+  <div class="tasks-panel" id="tasksPanel">
+    <button class="tp-head" id="tasksToggle" aria-expanded="true">
+      <span id="tasksHeading">Tasks</span>
+      <span class="tp-chevron" aria-hidden="true">⌄</span>
+    </button>
+    <div class="tp-body" id="tasksBody">
       <div id="taskListMain"></div>
       <button class="add-task" id="addTaskOpen">＋ Add Task</button>
       <div class="task-form" id="taskForm">
@@ -1539,7 +1609,6 @@
     </div>
   </div>
 
-  
   <div class="workout" id="workoutBlock">
     <div class="back-row">
       <button class="btn ghost" id="backBtn">← Back to study</button>
@@ -2696,10 +2765,37 @@ function showMascot(){
   clearTimeout(mascotTimer);
   mascotTimer = setTimeout(()=> el.classList.remove('show'), 4000);
 }
-$('mascot').addEventListener('click', ()=>{
-  $('mascot').classList.remove('show');
+function poofMascot(){
+  const el=$('mascot');
+  if(!el.classList.contains('show') || el.classList.contains('poofed')) return;
   clearTimeout(mascotTimer);
-});
+  // burst a few particles from the mascot's position
+  try{
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    for(let i=0;i<10;i++){
+      const p = document.createElement('span');
+      p.textContent = '·';
+      p.style.cssText = 'position:fixed;z-index:201;pointer-events:none;font-size:26px;color:var(--fg);left:'+cx+'px;top:'+cy+'px;will-change:transform,opacity;';
+      document.body.appendChild(p);
+      const angle = Math.random()*Math.PI*2;
+      const dist = 40 + Math.random()*70;
+      const dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist - 20;
+      p.animate([
+        { transform:'translate(-50%,-50%) scale(1)', opacity:.9 },
+        { transform:'translate('+(dx-50)+'%,'+(dy-50)+'%) scale(0)', opacity:0 }
+      ], { duration:600 + Math.random()*300, easing:'cubic-bezier(.22,.9,.3,1)' });
+      setTimeout(()=>p.remove(), 950);
+    }
+  }catch(e){}
+  el.classList.add('poofed');
+  setTimeout(()=>{
+    el.classList.remove('show');
+    el.classList.remove('poofed');
+  }, 460);
+}
+$('mascot').addEventListener('click', poofMascot);
 
 function showToast(msg){
   toast.textContent = typeof msg==='function' ? msg() : msg;
@@ -2745,6 +2841,19 @@ $('addTaskOpen').onclick=()=>{
   setEst(1);
   newTaskInput.focus();
 };
+// collapsible tasks panel
+$('tasksToggle').onclick=()=>{
+  const t = $('tasksToggle');
+  const expanded = t.getAttribute('aria-expanded') === 'true';
+  t.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  try{ localStorage.setItem('pomofit:tasksCollapsed', expanded ? '1' : '0'); }catch(e){}
+};
+// restore collapsed preference
+try{
+  if(localStorage.getItem('pomofit:tasksCollapsed') === '1'){
+    $('tasksToggle').setAttribute('aria-expanded', 'false');
+  }
+}catch(e){}
 $('cancelTaskBtn').onclick=()=>{
   taskForm.classList.remove('show');
   newTaskInput.value='';
@@ -3254,11 +3363,18 @@ function setPhase(p){
   renderDots();
   render(S.remaining);
 }
+let lastTabTitle='';
 function render(left){
   const txt=fmt(left);
   timerEl.textContent=txt;
   breakClock.textContent = S.phase!=='focus' ? (txt+' '+T().leftInBreak) : '';
-  document.title = txt+' · '+(S.phase==='focus'?'Focus':'Break')+' — PomoEase';
+  // only touch document.title when the text actually changes — reassigning it on
+  // every 200ms tick makes some browsers (notably Safari) flash/repaint the tab
+  const newTitle = txt+' · '+(S.phase==='focus'?'Focus':'Break')+' — PomoEase';
+  if(newTitle !== lastTabTitle){
+    document.title = newTitle;
+    lastTabTitle = newTitle;
+  }
   if(S.phase!=='focus' && S.running) S.remaining=Math.max(0,left);
 }
 function renderFooter(){
@@ -4486,12 +4602,14 @@ function openSheet(id){
   $(id).classList.add('show'); sheetBg.classList.add('show');
   $('floatChat').classList.add('sheet-open');
   $('floatMembers').classList.add('sheet-open');
+  document.body.classList.add('sheet-open');
 }
 function closeSheets(){
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('show'));
   sheetBg.classList.remove('show');
   $('floatChat').classList.remove('sheet-open');
   $('floatMembers').classList.remove('sheet-open');
+  document.body.classList.remove('sheet-open');
 }
 $('settingsBtn').onclick=()=>openSheet('settingsSheet');
 $('profileBtn').onclick=()=>openSheet('profileSheet');
@@ -4846,6 +4964,12 @@ $('focusModeBtn').addEventListener('click', e=>{
     } else {
       localStorage.setItem('pomofit:hasVisited', '1');
     }
+    // tap a card to flip it over for a fuller explanation
+    if(explainers){
+      explainers.querySelectorAll('.explainer-card').forEach(card=>{
+        card.addEventListener('click', ()=> card.classList.toggle('flipped'));
+      });
+    }
   }catch(e){}
 
   // after the tagline intro animation ends, allow hover on the wordmark to reveal it briefly
@@ -4933,44 +5057,6 @@ $('focusModeBtn').addEventListener('click', e=>{
   }
 
   btn.addEventListener('click', enter);
-})();
-
-/* ---------- Spain World Cup celebration 🇪🇸 (one-time per visitor, expires after Tue 21 Jul 2026) ---------- */
-(function(){
-  try{
-    // expires at the end of Tuesday 21 July 2026 (i.e. midnight into Wednesday, local time)
-    const EXPIRY = new Date(2026, 6, 22, 0, 0, 0).getTime(); // month is 0-indexed: 6 = July
-    if(Date.now() >= EXPIRY) return;                 // promo is over
-    if(localStorage.getItem('pomofit:spainCelebrated')) return; // already shown to this visitor
-    localStorage.setItem('pomofit:spainCelebrated', '1');
-
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-    if(reduce) return;
-
-    const layer = document.createElement('div');
-    layer.id = 'flagRain';
-    document.body.appendChild(layer);
-
-    const COUNT = 42;
-    let maxDur = 0;
-    for(let i=0; i<COUNT; i++){
-      const f = document.createElement('div');
-      f.className = 'flag-drop';
-      f.textContent = '🇪🇸';
-      const left = Math.random()*100;                 // vw
-      const dur = 4 + Math.random()*3.5;              // 4–7.5s fall
-      const delay = Math.random()*2.5;                // staggered start
-      const size = 20 + Math.random()*20;             // 20–40px
-      f.style.left = left + 'vw';
-      f.style.fontSize = size + 'px';
-      f.style.animationDuration = dur + 's';
-      f.style.animationDelay = delay + 's';
-      layer.appendChild(f);
-      maxDur = Math.max(maxDur, dur + delay);
-    }
-    // clean up the layer once the last flag has fallen
-    setTimeout(()=>{ layer.remove(); }, (maxDur + 0.5) * 1000);
-  }catch(e){}
 })();
 </script>
 </body>
