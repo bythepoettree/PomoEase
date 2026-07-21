@@ -425,11 +425,10 @@
   }
   @media (max-width:520px){
     .entry-explainers{ grid-template-columns:1fr; gap:8px; margin-top:18px; }
-    .explainer-card{ min-height:0; }
-    .explainer-face{ position:relative; inset:auto; flex-direction:row; align-items:center; text-align:left; padding:14px 16px; gap:14px; min-height:64px; }
-    .explainer-back{ position:absolute; inset:0; flex-direction:column; text-align:center; }
+    .explainer-card{ min-height:88px; }
+    .explainer-front{ flex-direction:row; align-items:center; justify-content:flex-start; text-align:left; padding:14px 16px; gap:14px; }
+    .explainer-back{ padding:12px 16px; overflow:auto; }
     .explainer-body{ align-items:flex-start; }
-    .explainer-card.flipped .explainer-face{ visibility:hidden; }
   }
   @media (prefers-reduced-motion:reduce){
     .entry-explainers{ animation:none; opacity:1; }
