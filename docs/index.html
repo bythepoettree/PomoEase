@@ -1303,6 +1303,7 @@
   .hist-item{display:flex; justify-content:space-between; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px;}
   .hist-item .when{color:var(--muted); flex:none;}
   .signin-note{font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:10px;}
+  #authMsg:empty{ display:none; }
   .oauth-divider{
     display:flex; align-items:center; gap:10px;
     margin:14px 0; color:var(--muted); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
@@ -1758,12 +1759,13 @@
       <input id="passInput" name="password" type="password" maxlength="80" placeholder="Password" autocomplete="current-password">
     </div>
     <div id="securityFields" style="display:none;"></div>
-    <p class="signin-note" id="authMsg" style="min-height:16px;margin:0 0 6px;"></p>
-    <div class="controls" style="justify-content:flex-start;gap:8px;margin-top:0;">
+    <p class="signin-note" id="authMsg" style="min-height:0;margin:0;line-height:1.5;"></p>
+    <div class="controls" style="justify-content:flex-start;gap:8px;margin-top:8px;">
       <button type="submit" class="btn" id="signInBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">SIGN IN</button>
       <button type="button" class="btn ghost" id="signUpBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">Create account</button>
     </div>
     </form>
+    <p class="signin-note" id="forgotNote" style="margin-top:8px;"><a href="#" id="forgotLink" style="color:var(--accent);text-decoration:none;font-weight:600;">Forgot password?</a></p>
     <div class="oauth-divider"><span>or</span></div>
     <button type="button" class="google-btn" id="googleSignInBtn">
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -1774,7 +1776,6 @@
       </svg>
       <span>Continue with Google</span>
     </button>
-    <p class="signin-note" id="forgotNote" style="margin-top:8px;"><a href="#" id="forgotLink" style="color:var(--accent);text-decoration:none;font-weight:600;">Forgot password?</a></p>
     <p class="signin-note" id="storageNote">☁️ Sign in to sync your tasks and progress across all your devices.</p>
   </div>
   <div id="resetBox" style="display:none;">
@@ -2126,6 +2127,7 @@ function saveCloudData(){
   cloudSaveQueued = true;
   setTimeout(async ()=>{
     cloudSaveQueued = false;
+    lastLocalWriteAt = Date.now();
     try{
       await cloudDataRef.set({
         displayName: DATA.displayName || null,
@@ -2140,6 +2142,57 @@ function saveCloudData(){
   }, 400);
 }
 
+// ---- migration: fold guest / old-local-account data into a cloud account ----
+// snapshot whatever data the user has locally right now (guest session in memory,
+// or an old localStorage account) so we can merge it into their cloud account
+function captureLocalData(){
+  const snap = {
+    tasks: Array.isArray(DATA.tasks) ? DATA.tasks.slice() : [],
+    history: Array.isArray(DATA.history) ? DATA.history.slice() : [],
+    totals: Object.assign({sessions:0,minutes:0,reps:0}, DATA.totals||{}),
+    displayName: DATA.displayName || null,
+    avatar: DATA.avatar || null
+  };
+  return snap;
+}
+
+// true if a snapshot actually contains anything worth migrating
+function hasMeaningfulData(s){
+  if(!s) return false;
+  const t = s.totals||{};
+  return (s.tasks && s.tasks.length) ||
+         (s.history && s.history.length) ||
+         (t.sessions||0) > 0 || (t.minutes||0) > 0 || (t.reps||0) > 0;
+}
+
+// merge a local snapshot into a cloud doc (cloud is the base; local fills gaps)
+function mergeData(cloudDoc, local){
+  const base = Object.assign(blankData(), cloudDoc || {});
+  if(!local) return base;
+  // tasks: append local tasks whose id isn't already present in the cloud
+  const seen = new Set((base.tasks||[]).map(t=>t && t.id).filter(Boolean));
+  (local.tasks||[]).forEach(t=>{ if(t && (!t.id || !seen.has(t.id))) base.tasks.push(t); });
+  // history: concatenate then de-dupe by a stable signature (date+type+value)
+  const hist = (base.history||[]).slice();
+  const hseen = new Set(hist.map(h=>JSON.stringify([h && h.date, h && h.type, h && h.min, h && h.reps])));
+  (local.history||[]).forEach(h=>{
+    const sig = JSON.stringify([h && h.date, h && h.type, h && h.min, h && h.reps]);
+    if(!hseen.has(sig)){ hist.push(h); hseen.add(sig); }
+  });
+  base.history = hist;
+  // totals: take the larger of each (cloud already reflects its own history)
+  const ct = base.totals||{}, lt = local.totals||{};
+  base.totals = {
+    sessions: Math.max(ct.sessions||0, lt.sessions||0),
+    minutes:  Math.max(ct.minutes||0,  lt.minutes||0),
+    reps:     Math.max(ct.reps||0,     lt.reps||0)
+  };
+  // profile: keep cloud's if set, else adopt local
+  if(!base.displayName && local.displayName) base.displayName = local.displayName;
+  if(!base.avatar && local.avatar) base.avatar = local.avatar;
+  return base;
+}
+
 // apply a cloud data document (or fresh blank) to DATA and refresh UI
 function applyCloudUser(user, cloudDoc){
   cloudUser = user;
@@ -2151,6 +2204,32 @@ function applyCloudUser(user, cloudDoc){
   if(!DATA.displayName && cloudDoc && cloudDoc.displayName) DATA.displayName = cloudDoc.displayName;
   S.activeTask = null;
   try{ localStorage.setItem('pomofit:cloudSession', '1'); }catch(e){}
+  attachLiveSync();
+}
+
+// ---- live sync: reflect changes made on other devices, without a refresh ----
+let liveSyncRef = null;
+let lastLocalWriteAt = 0;   // timestamp of our most recent own save
+function attachLiveSync(){
+  detachLiveSync();
+  if(!cloudUser || !cloudDataRef) return;
+  liveSyncRef = cloudDataRef;
+  liveSyncRef.on('value', snap=>{
+    if(!snap.exists()) return;
+    const remote = snap.val();
+    // ignore the echo of our own recent write (within 3s) to avoid clobbering
+    // edits the user is actively making on this device
+    if(remote.updatedAt && (Date.now() - lastLocalWriteAt) < 3000) return;
+    // don't disrupt an in-progress task edit or a running session mid-tick
+    if(document.body.classList.contains('timer-running')) return;
+    // apply remote data
+    DATA = Object.assign(blankData(), remote);
+    DATA.name = cloudUser.email || ('user-'+cloudUser.uid.slice(0,6));
+    renderProfile(); renderTasks();
+  }, err=>{ console.error('live sync error', err); });
+}
+function detachLiveSync(){
+  if(liveSyncRef){ try{ liveSyncRef.off('value'); }catch(e){} liveSyncRef=null; }
 }
 
 function validEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
@@ -2160,6 +2239,8 @@ async function cloudSignUp(){
   if(!validEmail(email)) return authMsg('Please enter a valid email address.');
   if(pw.length<6) return authMsg('Password must be at least 6 characters.');
   authMsg('Creating your account…');
+  // capture any guest/local data BEFORE auth swaps DATA out
+  const localSnap = captureLocalData();
   let cred;
   try{
     await ensureFirebase();
@@ -2168,9 +2249,9 @@ async function cloudSignUp(){
   }catch(e){
     return authMsg(cloudAuthError(e));
   }
-  // account created — the initial cloud write is separate so a rules issue
-  // doesn't read as a failed signup
-  applyCloudUser(cred.user, null);
+  // brand-new account: seed it with the guest's existing data (migration)
+  const merged = hasMeaningfulData(localSnap) ? mergeData(null, localSnap) : null;
+  applyCloudUser(cred.user, merged);
   saveCloudData();
   $('passInput').value=''; authMsg('');
   renderProfile(); renderTasks();
@@ -2181,6 +2262,8 @@ async function cloudSignIn(){
   if(!validEmail(email)) return authMsg('Please enter a valid email address.');
   if(!pw) return authMsg('Please enter your password.');
   authMsg('Signing in…');
+  // capture any guest/local data BEFORE auth swaps DATA out
+  const localSnap = captureLocalData();
   let cred;
   try{
     await ensureFirebase();
@@ -2197,7 +2280,15 @@ async function cloudSignIn(){
   }catch(e){
     console.error('cloud data read failed', e);
   }
-  applyCloudUser(cred.user, cloudDoc);
+  // merge any local guest data into the cloud copy (protects data on first sign-in)
+  let finalDoc = cloudDoc;
+  let grew = false;
+  if(hasMeaningfulData(localSnap)){
+    finalDoc = mergeData(cloudDoc, localSnap);
+    grew = true;
+  }
+  applyCloudUser(cred.user, finalDoc);
+  if(grew) saveCloudData(); // push the merged result back up
   $('passInput').value=''; authMsg('');
   renderProfile(); renderTasks();
 }
@@ -2207,15 +2298,31 @@ async function finishGoogleUser(user){
   fb.uid = user.uid;
   let cloudDoc = null;
   try{ cloudDoc = await loadCloudData(user.uid); }catch(e){ console.error('cloud read failed', e); }
-  // first-ever Google sign-in: seed displayName/avatar from the Google profile
+  // gather any guest data to migrate: from memory (popup path) or from the
+  // snapshot we stashed before redirecting (mobile redirect path)
+  let localSnap = captureLocalData();
+  if(!hasMeaningfulData(localSnap)){
+    try{
+      const stashed = localStorage.getItem('pomofit:preAuthData');
+      if(stashed) localSnap = JSON.parse(stashed);
+    }catch(e){}
+  }
+  try{ localStorage.removeItem('pomofit:preAuthData'); }catch(e){}
+
+  let finalDoc = cloudDoc;
+  let grew = false;
+  if(hasMeaningfulData(localSnap)){
+    finalDoc = mergeData(cloudDoc, localSnap);
+    grew = true;
+  }
+  applyCloudUser(user, finalDoc);
+  // first-ever Google sign-in with no data: seed profile from the Google account
   if(!cloudDoc){
-    applyCloudUser(user, null);
     if(user.displayName && !DATA.displayName) DATA.displayName = user.displayName.slice(0,24);
     if(user.photoURL && !DATA.avatar) DATA.avatar = user.photoURL;
-    saveCloudData();
-  } else {
-    applyCloudUser(user, cloudDoc);
+    grew = true;
   }
+  if(grew) saveCloudData();
   authMsg('');
   renderProfile(); renderTasks();
 }
@@ -2228,6 +2335,11 @@ async function cloudSignInGoogle(){
     // on mobile, popups are often blocked — use redirect there, popup on desktop
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if(isMobile){
+      // stash any guest data so we can migrate it after the redirect returns
+      try{
+        const snap = captureLocalData();
+        if(hasMeaningfulData(snap)) localStorage.setItem('pomofit:preAuthData', JSON.stringify(snap));
+      }catch(e){}
       try{ localStorage.setItem('pomofit:googleRedirect','1'); }catch(e){}
       await fb.auth.signInWithRedirect(provider);
       return; // page navigates away; result handled on return via getRedirectResult
@@ -2263,6 +2375,7 @@ async function checkGoogleRedirect(){
 }
 
 async function cloudSignOut(){
+  detachLiveSync();
   try{ if(fb && fb.auth) await fb.auth.signOut(); }catch(e){}
   cloudUser=null; cloudDataRef=null;
   try{ localStorage.removeItem('pomofit:cloudSession'); }catch(e){}
@@ -3338,6 +3451,7 @@ $('deleteAccountBtn').onclick=async ()=>{
   deleteArmed=false; b.textContent='Delete account'; b.classList.remove('armed');
   // cloud account: remove cloud data + the auth user
   if(cloudUser){
+    detachLiveSync();
     try{ if(cloudDataRef) await cloudDataRef.remove(); }catch(e){}
     try{ await cloudUser.delete(); }catch(e){ /* may need recent login; sign out regardless */ }
     cloudUser=null; cloudDataRef=null;
