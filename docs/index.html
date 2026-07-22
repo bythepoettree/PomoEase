@@ -3861,13 +3861,17 @@ function setPhase(p){
   render(S.remaining);
 }
 let lastTabTitle='';
+const SEO_TITLE = 'PomoEase — Exercise and Study Environment';
 function render(left){
   const txt=fmt(left);
   timerEl.textContent=txt;
   breakClock.textContent = S.phase!=='focus' ? (txt+' '+T().leftInBreak) : '';
-  // only touch document.title when the text actually changes — reassigning it on
-  // every 200ms tick makes some browsers (notably Safari) flash/repaint the tab
-  const newTitle = txt+' · '+(S.phase==='focus'?'Focus':'Break')+' — PomoEase';
+  // Show the live countdown in the tab title ONLY while the timer is running.
+  // When idle (including on first load, which is what Googlebot indexes), keep
+  // the proper SEO title so search results show the site name, not "25:00".
+  const newTitle = S.running
+    ? (txt+' · '+(S.phase==='focus'?'Focus':'Break')+' — PomoEase')
+    : SEO_TITLE;
   if(newTitle !== lastTabTitle){
     document.title = newTitle;
     lastTabTitle = newTitle;
