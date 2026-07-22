@@ -1003,6 +1003,58 @@
     display:inline-block; line-height:1;
   }
   .profile-section[open] .chev{ transform:rotate(90deg); }
+  /* ---------- friends (Stage A) ---------- */
+  .friend-badge{
+    background:var(--accent); color:var(--accent-ink);
+    font-size:10px; font-weight:700; border-radius:999px;
+    padding:2px 7px; margin-left:auto; margin-right:8px;
+  }
+  .friend-code-card{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--bg2); border-radius:12px; padding:12px 14px; margin-bottom:10px;
+  }
+  .friend-code-label{
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+  }
+  .friend-code{
+    font-family:'Anton',sans-serif; font-size:22px; letter-spacing:.18em; color:var(--fg);
+  }
+  .friend-add-row{
+    display:flex; gap:8px; align-items:stretch;
+  }
+  .friend-add-row input{
+    flex:1; min-width:0; background:var(--bg2); border:none; color:var(--fg);
+    border-radius:12px; padding:11px 14px; font-family:inherit; font-size:14px;
+    letter-spacing:.12em; text-transform:uppercase;
+  }
+  .friend-add-row input::placeholder{ letter-spacing:normal; text-transform:none; }
+  .friend-add-btn{ font-size:12px; padding:0 18px; }
+  .friend-row{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px;
+  }
+  .friend-row:first-child{ border-top:none; }
+  .friend-row .fr-avatar{
+    width:30px; height:30px; border-radius:50%; overflow:hidden; flex:none;
+    background:var(--bg2); display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+  }
+  .friend-row .fr-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .friend-row .fr-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .friend-row .fr-actions{ display:flex; gap:6px; flex:none; }
+  .fr-btn{
+    background:var(--accent); color:var(--accent-ink); border:none; border-radius:9px;
+    font-family:inherit; font-size:11px; font-weight:700; padding:7px 12px; cursor:pointer;
+  }
+  .fr-btn.ghost{ background:var(--bg2); color:var(--muted); }
+  .fr-btn:hover{ opacity:.85; }
+  .friends-empty{
+    font-size:12px; color:var(--muted); padding:10px 2px 2px; opacity:.8;
+  }
+  .friends-subhead{
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+    margin:14px 0 4px;
+  }
   .profile-notice{
     font-size:11.5px; line-height:1.5; color:var(--muted);
     text-align:center; margin:20px 0 8px;
@@ -1967,7 +2019,27 @@
       <div id="histList" style="margin-top:8px;"></div>
     </details>
 
-    <p class="profile-notice">Your account lives on this device only — clearing browser data will erase it.</p>
+    <details class="profile-section" id="friendsSection" style="display:none;">
+      <summary>Friends <span class="friend-badge" id="friendReqBadge" style="display:none;">0</span><span class="chev">›</span></summary>
+      <div style="margin-top:10px;">
+        <div class="friend-code-card">
+          <div>
+            <div class="friend-code-label">Your friend code</div>
+            <div class="friend-code" id="myFriendCode">······</div>
+          </div>
+          <button class="btn together-copy-btn" id="copyFriendCodeBtn" type="button">Copy</button>
+        </div>
+        <div class="friend-add-row">
+          <input id="friendCodeInput" type="text" maxlength="6" placeholder="Enter a friend's code" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button class="btn friend-add-btn" id="addFriendBtn" type="button">Add</button>
+        </div>
+        <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
+        <div id="friendRequestsList"></div>
+        <div id="friendsList"></div>
+      </div>
+    </details>
+
+    <p class="profile-notice" id="profileNotice">Your account lives on this device only — clearing browser data will erase it.</p>
 
     <div class="profile-actions">
       <button class="profile-action-btn" id="resetStatsBtn">Reset</button>
@@ -2274,6 +2346,7 @@ function saveCloudData(){
       await cloudDataRef.set({
         displayName: DATA.displayName || null,
         avatar: DATA.avatar || null,
+        friendCode: DATA.friendCode || null,
         tasks: DATA.tasks || [],
         history: DATA.history || [],
         totals: DATA.totals || {sessions:0,minutes:0,reps:0},
@@ -2551,6 +2624,194 @@ function cloudAuthError(e){
   if(c==='auth/unauthorized-domain') return 'This site isn\'t authorised for Google sign-in yet.';
   if(c==='auth/operation-not-allowed') return 'Google sign-in isn\'t enabled for this project.';
   return 'Something went wrong. Please try again.';
+}
+
+/* ================= Friends (Stage A: codes, requests, list) =================
+   Signed-in (cloud) users only. Each user has a permanent friend code stored at
+   users/{uid}/friendCode with a lookup at friendCodes/{CODE}=uid. Requests live
+   at friendRequests/{targetUid}/{fromUid}; accepted friendships are written to
+   BOTH users' lists at friends/{uid}/{friendUid}. Names/avatars are denormalised
+   into the entries so no cross-reading of other users' data is needed. */
+function friendMsg(m){ const el=$('friendMsg'); if(el) el.textContent=m||''; }
+
+// avatars can be huge base64 images — only share compact ones (emoji / URLs)
+function shareableAvatar(){
+  const a = DATA.avatar || null;
+  if(!a) return null;
+  if(a.startsWith('emoji:')) return a;
+  if(a.startsWith('http')) return a;
+  return null; // skip base64 photos to keep friend entries small
+}
+function myShareName(){
+  return (DATA.displayName && DATA.displayName.trim()) || 'Someone';
+}
+
+// make sure the signed-in user has a friend code (generate + register once)
+async function ensureFriendCode(){
+  if(!cloudUser) return null;
+  if(DATA.friendCode) return DATA.friendCode;
+  await ensureFirebase();
+  for(let attempt=0; attempt<6; attempt++){
+    const code = genSessionCode();
+    const codeRef = fb.db.ref('friendCodes/'+code);
+    try{
+      const snap = await codeRef.get();
+      if(snap.exists()) continue; // taken — try another
+      await codeRef.set(cloudUser.uid);
+      DATA.friendCode = code;
+      saveCloudData();
+      return code;
+    }catch(e){ console.error('friend code registration failed', e); return null; }
+  }
+  return null;
+}
+
+// render the whole friends area (code, pending requests, friends list)
+async function renderFriends(){
+  const section=$('friendsSection');
+  if(!section) return;
+  if(!cloudUser){ section.style.display='none'; return; }
+  section.style.display='block';
+
+  // 1) your code
+  const code = await ensureFriendCode();
+  $('myFriendCode').textContent = code || '——————';
+
+  if(!fb || !fb.db) return;
+  const uid = cloudUser.uid;
+
+  // 2) pending requests
+  let requests={};
+  try{
+    const snap = await fb.db.ref('friendRequests/'+uid).get();
+    requests = snap.exists() ? (snap.val()||{}) : {};
+  }catch(e){ console.error('requests read failed', e); }
+  const reqWrap=$('friendRequestsList'); reqWrap.innerHTML='';
+  const reqEntries=Object.entries(requests);
+  const badge=$('friendReqBadge');
+  if(reqEntries.length){
+    badge.style.display=''; badge.textContent=reqEntries.length;
+    const head=document.createElement('div'); head.className='friends-subhead'; head.textContent='Requests';
+    reqWrap.appendChild(head);
+    reqEntries.forEach(([fromUid, r])=>{
+      reqWrap.appendChild(buildFriendRow(r, [
+        {label:'Accept', cls:'', fn:()=>acceptFriendRequest(fromUid, r)},
+        {label:'Decline', cls:'ghost', fn:()=>declineFriendRequest(fromUid)}
+      ]));
+    });
+  } else {
+    badge.style.display='none';
+  }
+
+  // 3) friends list
+  let friends={};
+  try{
+    const snap = await fb.db.ref('friends/'+uid).get();
+    friends = snap.exists() ? (snap.val()||{}) : {};
+  }catch(e){ console.error('friends read failed', e); }
+  const listWrap=$('friendsList'); listWrap.innerHTML='';
+  const frEntries=Object.entries(friends);
+  if(frEntries.length){
+    const head=document.createElement('div'); head.className='friends-subhead'; head.textContent='Your friends';
+    listWrap.appendChild(head);
+    frEntries.forEach(([fUid, f])=>{
+      listWrap.appendChild(buildFriendRow(f, [
+        {label:'Remove', cls:'ghost', fn:()=>removeFriend(fUid)}
+      ]));
+    });
+  } else if(!reqEntries.length){
+    const empty=document.createElement('div'); empty.className='friends-empty';
+    empty.textContent='No friends yet — share your code to connect.';
+    listWrap.appendChild(empty);
+  }
+}
+
+function buildFriendRow(person, actions){
+  const row=document.createElement('div'); row.className='friend-row';
+  const av=document.createElement('div'); av.className='fr-avatar';
+  const a=person && person.avatar;
+  if(a && a.startsWith('emoji:')){ av.textContent=a.slice(6); }
+  else if(a && a.startsWith('http')){ const img=document.createElement('img'); img.src=a; img.alt=''; av.appendChild(img); }
+  else { av.textContent=((person&&person.name)||'?').trim()[0]?.toUpperCase()||'?'; }
+  const nm=document.createElement('div'); nm.className='fr-name'; nm.textContent=(person&&person.name)||'Someone';
+  const acts=document.createElement('div'); acts.className='fr-actions';
+  (actions||[]).forEach(ac=>{
+    const b=document.createElement('button'); b.type='button';
+    b.className='fr-btn'+(ac.cls?' '+ac.cls:''); b.textContent=ac.label; b.onclick=ac.fn;
+    acts.appendChild(b);
+  });
+  row.appendChild(av); row.appendChild(nm); row.appendChild(acts);
+  return row;
+}
+
+async function sendFriendRequest(){
+  if(!cloudUser) return;
+  const input=$('friendCodeInput');
+  const code=(input.value||'').trim().toUpperCase();
+  if(code.length<6) return friendMsg('Enter a 6-character friend code.');
+  if(DATA.friendCode && code===DATA.friendCode) return friendMsg("That's your own code!");
+  friendMsg('Looking up code…');
+  try{
+    await ensureFirebase();
+    const snap = await fb.db.ref('friendCodes/'+code).get();
+    if(!snap.exists()) return friendMsg('No one has that code — double-check it.');
+    const targetUid = snap.val();
+    if(targetUid===cloudUser.uid) return friendMsg("That's your own code!");
+    // already friends?
+    const already = await fb.db.ref('friends/'+cloudUser.uid+'/'+targetUid).get();
+    if(already.exists()) return friendMsg('You\'re already friends!');
+    await fb.db.ref('friendRequests/'+targetUid+'/'+cloudUser.uid).set({
+      name: myShareName(),
+      avatar: shareableAvatar(),
+      at: firebase.database.ServerValue.TIMESTAMP
+    });
+    input.value='';
+    friendMsg('Request sent — they\'ll see it in their Friends section.');
+  }catch(e){
+    console.error('send request failed', e);
+    friendMsg('Couldn\'t send the request — try again.');
+  }
+}
+
+async function acceptFriendRequest(fromUid, req){
+  if(!cloudUser) return;
+  try{
+    await ensureFirebase();
+    const now = firebase.database.ServerValue.TIMESTAMP;
+    // write both sides of the friendship
+    await fb.db.ref('friends/'+cloudUser.uid+'/'+fromUid).set({
+      name:(req&&req.name)||'Someone', avatar:(req&&req.avatar)||null, at:now
+    });
+    await fb.db.ref('friends/'+fromUid+'/'+cloudUser.uid).set({
+      name:myShareName(), avatar:shareableAvatar(), at:now
+    });
+    await fb.db.ref('friendRequests/'+cloudUser.uid+'/'+fromUid).remove();
+    friendMsg('');
+    renderFriends();
+  }catch(e){
+    console.error('accept failed', e);
+    friendMsg('Couldn\'t accept — try again.');
+  }
+}
+
+async function declineFriendRequest(fromUid){
+  if(!cloudUser) return;
+  try{
+    await ensureFirebase();
+    await fb.db.ref('friendRequests/'+cloudUser.uid+'/'+fromUid).remove();
+    renderFriends();
+  }catch(e){ console.error('decline failed', e); }
+}
+
+async function removeFriend(fUid){
+  if(!cloudUser) return;
+  try{
+    await ensureFirebase();
+    await fb.db.ref('friends/'+cloudUser.uid+'/'+fUid).remove();
+    // also remove me from their list (mutual removal)
+    await fb.db.ref('friends/'+fUid+'/'+cloudUser.uid).remove();
+    renderFriends();
+  }catch(e){ console.error('remove failed', e); }
 }
 
 /* ---------- forgot password / account recovery ---------- */
@@ -3636,6 +3897,11 @@ function renderProfile(){
     $('stMinutes').textContent=DATA.totals.minutes;
     $('stReps').textContent=DATA.totals.reps;
     renderDashboard();
+    renderFriends();
+    const notice=$('profileNotice');
+    if(notice) notice.textContent = cloudUser
+      ? '☁️ Signed in — your progress syncs across your devices.'
+      : 'Your account lives on this device only — clearing browser data will erase it.';
     const h=$('histList'); h.innerHTML='';
     if(!DATA.history.length) h.innerHTML='<p class="empty-note">Nothing logged yet — finish a focus round or a workout.</p>';
     DATA.history.slice(0,5).forEach(e=>{
@@ -3653,6 +3919,18 @@ function renderProfile(){
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 $('signinForm').addEventListener('submit', e=>{ e.preventDefault(); cloudSignIn(); });
+/* friends wiring */
+$('addFriendBtn').onclick=sendFriendRequest;
+$('friendCodeInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendFriendRequest(); } });
+$('copyFriendCodeBtn').onclick=async ()=>{
+  const code=$('myFriendCode').textContent.trim();
+  if(!code || code.startsWith('·') || code.startsWith('—')) return;
+  try{
+    await navigator.clipboard.writeText(code);
+    const b=$('copyFriendCodeBtn'); const t=b.textContent; b.textContent='Copied!';
+    setTimeout(()=>{ b.textContent=t; }, 1400);
+  }catch(e){ friendMsg('Copy failed — your code is: '+code); }
+};
 $('googleSignInBtn').onclick=cloudSignInGoogle;
 $('signInBtn').onclick=(e)=>{ e.preventDefault(); cloudSignIn(); };
 $('signUpBtn').onclick=cloudSignUp;
