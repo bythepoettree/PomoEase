@@ -1044,33 +1044,34 @@
   }
   .friend-code-card{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:var(--bg2); border-radius:12px; padding:12px 14px; margin-bottom:10px;
+    background:var(--bg2); border-radius:12px; padding:10px 12px; margin-bottom:8px;
   }
+  .friend-code-card .together-copy-btn{ font-size:11px; padding:8px 14px; }
   .friend-code-label{
-    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+    font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
   }
   .friend-code{
-    font-family:'Anton',sans-serif; font-size:22px; letter-spacing:.18em; color:var(--fg);
+    font-family:'Anton',sans-serif; font-size:17px; letter-spacing:.14em; color:var(--fg);
   }
   .friend-add-row{
     display:flex; gap:8px; align-items:stretch;
   }
   .friend-add-row input{
     flex:1; min-width:0; background:var(--bg2); border:none; color:var(--fg);
-    border-radius:12px; padding:11px 14px; font-family:inherit; font-size:14px;
+    border-radius:11px; padding:9px 12px; font-family:inherit; font-size:13px;
     letter-spacing:.12em; text-transform:uppercase;
   }
   .friend-add-row input::placeholder{ letter-spacing:normal; text-transform:none; }
-  .friend-add-btn{ font-size:12px; padding:0 18px; }
+  .friend-add-btn{ font-size:11px; padding:0 15px; }
   .friend-row{
     display:flex; align-items:center; gap:10px;
-    padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px;
+    padding:8px 2px; border-top:1px solid var(--line); font-size:13px;
   }
   .friend-row:first-child{ border-top:none; }
   .friend-row .fr-avatar{
-    width:30px; height:30px; border-radius:50%; overflow:hidden; flex:none;
+    width:26px; height:26px; border-radius:50%; overflow:hidden; flex:none;
     background:var(--bg2); display:flex; align-items:center; justify-content:center;
-    font-size:16px;
+    font-size:13px;
   }
   .friend-row .fr-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
   .friend-row .fr-namecol{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
@@ -1108,8 +1109,8 @@
     font-size:12px; color:var(--muted); padding:10px 2px 2px; opacity:.8;
   }
   .friends-subhead{
-    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
-    margin:14px 0 4px;
+    font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+    margin:12px 0 2px;
   }
   .profile-notice{
     font-size:11.5px; line-height:1.5; color:var(--muted);
@@ -2047,8 +2048,9 @@
       </div>
     </div>
 
-    <div class="acct-section">
-      <div class="acct-section-title">Progress</div>
+    <details class="profile-section" id="progressSection" open>
+      <summary>Progress <span class="chev">›</span></summary>
+      <div style="margin-top:10px;">
       <div class="dash-hero">
         <div class="dash-card accent">
           <div class="dnum" id="dashStreak">0</div>
@@ -2080,7 +2082,8 @@
         <summary>Recent activity <span class="chev">›</span></summary>
         <div id="histList" style="margin-top:8px;"></div>
       </details>
-    </div>
+      </div>
+    </details>
 
     <details class="profile-section" id="friendsSection" style="display:none;">
       <summary>Friends <span class="friend-badge" id="friendReqBadge" style="display:none;">0</span><span class="chev">›</span></summary>
