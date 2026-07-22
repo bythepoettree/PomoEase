@@ -1303,6 +1303,24 @@
   .hist-item{display:flex; justify-content:space-between; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px;}
   .hist-item .when{color:var(--muted); flex:none;}
   .signin-note{font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:10px;}
+  .oauth-divider{
+    display:flex; align-items:center; gap:10px;
+    margin:14px 0; color:var(--muted); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  }
+  .oauth-divider::before, .oauth-divider::after{
+    content:''; flex:1; height:1px; background:var(--line);
+  }
+  .google-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    width:100%; padding:11px 14px;
+    background:#fff; color:#1f1f1f;
+    border:none; border-radius:12px;
+    font-family:inherit; font-size:13.5px; font-weight:600;
+    cursor:pointer; transition:opacity .15s ease, transform .1s ease;
+  }
+  .google-btn:hover{ opacity:.92; }
+  .google-btn:active{ transform:scale(.98); }
+  .google-btn svg{ flex:none; }
   .task-add{display:flex; gap:8px; margin-bottom:14px;}
   .task-add input{
     flex:1; background:var(--chip); border:none; color:var(--fg);
@@ -1746,6 +1764,16 @@
       <button type="button" class="btn ghost" id="signUpBtn" style="flex:1;max-width:150px;font-size:12px;padding:9px 0;letter-spacing:.03em;">Create account</button>
     </div>
     </form>
+    <div class="oauth-divider"><span>or</span></div>
+    <button type="button" class="google-btn" id="googleSignInBtn">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      <span>Continue with Google</span>
+    </button>
     <p class="signin-note" id="forgotNote" style="margin-top:8px;"><a href="#" id="forgotLink" style="color:var(--accent);text-decoration:none;font-weight:600;">Forgot password?</a></p>
     <p class="signin-note" id="storageNote">☁️ Sign in to sync your tasks and progress across all your devices.</p>
   </div>
@@ -2174,6 +2202,66 @@ async function cloudSignIn(){
   renderProfile(); renderTasks();
 }
 
+// finish a Google sign-in (shared by popup result and redirect result)
+async function finishGoogleUser(user){
+  fb.uid = user.uid;
+  let cloudDoc = null;
+  try{ cloudDoc = await loadCloudData(user.uid); }catch(e){ console.error('cloud read failed', e); }
+  // first-ever Google sign-in: seed displayName/avatar from the Google profile
+  if(!cloudDoc){
+    applyCloudUser(user, null);
+    if(user.displayName && !DATA.displayName) DATA.displayName = user.displayName.slice(0,24);
+    if(user.photoURL && !DATA.avatar) DATA.avatar = user.photoURL;
+    saveCloudData();
+  } else {
+    applyCloudUser(user, cloudDoc);
+  }
+  authMsg('');
+  renderProfile(); renderTasks();
+}
+
+async function cloudSignInGoogle(){
+  authMsg('Opening Google…');
+  try{
+    await ensureFirebase();
+    const provider = new firebase.auth.GoogleAuthProvider();
+    // on mobile, popups are often blocked — use redirect there, popup on desktop
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(isMobile){
+      try{ localStorage.setItem('pomofit:googleRedirect','1'); }catch(e){}
+      await fb.auth.signInWithRedirect(provider);
+      return; // page navigates away; result handled on return via getRedirectResult
+    }
+    const result = await fb.auth.signInWithPopup(provider);
+    await finishGoogleUser(result.user);
+  }catch(e){
+    // popup blocked/closed → fall back to redirect
+    if(e && (e.code==='auth/popup-blocked' || e.code==='auth/cancelled-popup-request')){
+      try{
+        try{ localStorage.setItem('pomofit:googleRedirect','1'); }catch(_){}
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await fb.auth.signInWithRedirect(provider);
+        return;
+      }catch(e2){ return authMsg(cloudAuthError(e2)); }
+    }
+    if(e && e.code==='auth/popup-closed-by-user'){ authMsg(''); return; }
+    authMsg(cloudAuthError(e));
+  }
+}
+
+// on load, if we came back from a Google redirect, complete the sign-in
+async function checkGoogleRedirect(){
+  let flagged=false;
+  try{ flagged = localStorage.getItem('pomofit:googleRedirect')==='1'; }catch(e){}
+  if(!flagged) return;
+  try{ localStorage.removeItem('pomofit:googleRedirect'); }catch(e){}
+  try{
+    await ensureFirebase();
+    const result = await fb.auth.getRedirectResult();
+    if(result && result.user){ await finishGoogleUser(result.user); }
+  }catch(e){ console.error('google redirect result failed', e); }
+}
+
 async function cloudSignOut(){
   try{ if(fb && fb.auth) await fb.auth.signOut(); }catch(e){}
   cloudUser=null; cloudDataRef=null;
@@ -2204,6 +2292,9 @@ function cloudAuthError(e){
   if(c==='auth/wrong-password' || c==='auth/invalid-credential') return 'Wrong email or password.';
   if(c==='auth/too-many-requests') return 'Too many attempts — please wait a moment and try again.';
   if(c==='auth/network-request-failed') return 'Network error — check your connection.';
+  if(c==='auth/account-exists-with-different-credential') return 'You already have an account with this email — sign in with your password instead.';
+  if(c==='auth/unauthorized-domain') return 'This site isn\'t authorised for Google sign-in yet.';
+  if(c==='auth/operation-not-allowed') return 'Google sign-in isn\'t enabled for this project.';
   return 'Something went wrong. Please try again.';
 }
 
@@ -3220,6 +3311,7 @@ function renderProfile(){
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 $('signinForm').addEventListener('submit', e=>{ e.preventDefault(); cloudSignIn(); });
+$('googleSignInBtn').onclick=cloudSignInGoogle;
 $('signInBtn').onclick=(e)=>{ e.preventDefault(); cloudSignIn(); };
 $('signUpBtn').onclick=cloudSignUp;
 $('passInput').addEventListener('keydown',e=>{ if(e.key==='Enter') cloudSignIn(); });
@@ -4950,6 +5042,8 @@ try{
     ensureFirebase().catch(e=>console.error('cloud session restore failed', e));
   }
 }catch(e){}
+// complete a Google sign-in if we just returned from the redirect flow
+checkGoogleRedirect();
 
 /* ---------- intention reminder — magical bubble that floats in every ~60min when idle ---------- */
 (function(){
