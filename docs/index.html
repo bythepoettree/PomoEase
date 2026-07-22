@@ -37,19 +37,19 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2375662453335999" crossorigin="anonymous"></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzFCM0EyRCIvPgogIDxsaW5lIHgxPSIxNiIgeTE9IjgiIHgyPSIxNiIgeTI9IjYiIHN0cm9rZT0iIzRBOEMzOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSIxNCIgY3k9IjYiIHJ4PSIzIiByeT0iMS41IiBmaWxsPSIjNEE4QzM4IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMTQgNikiLz4KICA8ZWxsaXBzZSBjeD0iMTgiIGN5PSI1LjUiIHJ4PSIyLjUiIHJ5PSIxLjIiIGZpbGw9IiM1QUFBNDQiIHRyYW5zZm9ybT0icm90YXRlKDIwIDE4IDUuNSkiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE5IiByPSIxMCIgZmlsbD0iI0U4NDUyQSIvPgogIDxlbGxpcHNlIGN4PSIxMi41IiBjeT0iMTQiIHJ4PSIyLjUiIHJ5PSIxLjgiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjI1KSIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEyLjUgMTQpIi8+Cjwvc3ZnPg==">
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzFCM0EyRCIvPgogIDxsaW5lIHgxPSIxNiIgeTE9IjgiIHgyPSIxNiIgeTI9IjYiIHN0cm9rZT0iIzRBOEMzOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxlbGxpcHNlIGN4PSIxNCIgY3k9IjYiIHJ4PSIzIiByeT0iMS41IiBmaWxsPSIjNEE4QzM4IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMTQgNikiLz4KICA8ZWxsaXBzZSBjeD0iMTgiIGN5PSI1LjUiIHJ4PSIyLjUiIHJ5PSIxLjIiIGZpbGw9IiM1QUFBNDQiIHRyYW5zZm9ybT0icm90YXRlKDIwIDE4IDUuNSkiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE5IiByPSIxMCIgZmlsbD0iI0U4NDUyQSIvPgogIDxlbGxpcHNlIGN4PSIxMi41IiBjeT0iMTQiIHJ4PSIyLjUiIHJ5PSIxLjgiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjI1KSIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEyLjUgMTQpIi8+Cjwvc3ZnPg==">
-<meta name="description" content="PomoEase is a free Pomodoro focus timer that turns your breaks into quick workouts. Stay on task, then move — with custom timers, exercise programmes, and progress tracking.">
+<meta name="description" content="PomoEase is a free Pomodoro timer for studying, working, and staying focused. Concentrate in timed rounds, then turn your breaks into quick workouts — with custom timers, exercise programmes, task tracking, and study-together sessions.">
 <link rel="canonical" href="https://www.pomoease.com/">
 <meta name="robots" content="index, follow">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="PomoEase — Exercise and Study Environment">
-<meta property="og:description" content="A free Pomodoro timer that turns your breaks into quick workouts. Stay on task, then get moving.">
+<meta property="og:description" content="A free Pomodoro timer for studying, working, and staying focused — with built-in workout breaks to keep you fresh.">
 <meta property="og:url" content="https://www.pomoease.com/">
 <meta property="og:site_name" content="PomoEase">
 
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PomoEase — Exercise and Study Environment">
-<meta name="twitter:description" content="A free Pomodoro timer that turns your breaks into quick workouts.">
+<meta name="twitter:description" content="A free Pomodoro timer for studying, working, and staying focused — with built-in workout breaks.">
 
 <meta name="theme-color" content="#1B3A2D" id="metaThemeColor">
 
@@ -538,6 +538,45 @@
   .icon-btn:hover{opacity:.85;}
   .icon-btn:active{transform:scale(.95);}
   .icon-btn[aria-pressed="true"]{outline:2px solid var(--accent);}
+  /* ---------- consolidated menu (minimalist header) ---------- */
+  .menu-wrap{ position:relative; }
+  .quick-settings{
+    background:none; border:none; cursor:pointer;
+    color:var(--fg); opacity:.22;
+    padding:8px; border-radius:10px; display:inline-flex;
+    transition:opacity .2s ease;
+  }
+  .quick-settings svg{ width:15px; height:15px; }
+  .quick-settings:hover{ opacity:.6; }
+  .quick-settings:active{ opacity:.8; }
+  .menu-btn{
+    background:none; color:var(--fg); opacity:.6;
+    padding:8px; border-radius:10px;
+    transition:opacity .15s ease, background .15s ease;
+  }
+  .menu-btn:hover{ opacity:1; background:var(--chip); }
+  .menu-btn[aria-expanded="true"]{ opacity:1; background:var(--chip); }
+  .menu-popover{
+    position:absolute; top:calc(100% + 8px); right:0; z-index:50;
+    background:var(--bg2); border-radius:16px; padding:6px;
+    min-width:190px;
+    box-shadow:0 12px 32px rgba(0,0,0,.28);
+    display:flex; flex-direction:column; gap:2px;
+    opacity:0; transform:translateY(-6px) scale(.98); pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  .menu-popover.open{ opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+  .menu-item{
+    display:flex; align-items:center; gap:11px;
+    padding:11px 12px; border-radius:11px;
+    background:none; border:none; cursor:pointer;
+    font-family:inherit; font-size:14px; color:var(--fg); text-align:left;
+    text-decoration:none; width:100%;
+    transition:background .12s ease;
+  }
+  .menu-item:hover{ background:var(--chip); }
+  .menu-ic{ width:20px; display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex:none; }
+  .menu-ic svg{ display:block; }
   /* language button + custom dropdown */
   .lang-wrap{position:relative;}
   .lang-dropdown{
@@ -574,12 +613,20 @@
   .phase-strip{
     width:100%; max-width:560px; margin-top:20px;
     display:flex; align-items:center; justify-content:space-between;
+    opacity:0; transition:opacity .4s ease;
   }
+  /* the round dots only appear once a session is running — clean on load */
+  body.timer-running .phase-strip{ opacity:1; }
   .phase-label{
     font-family:'Anton', sans-serif; font-size:14px; letter-spacing:.22em;
     text-transform:uppercase; color:var(--accent);
   }
   .dots{display:flex; gap:7px;}
+  .session-tag{
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); white-space:nowrap;
+  }
+  .session-tag b{ color:var(--fg); font-weight:700; }
   .dot{width:9px; height:9px; border-radius:50%; border:1.5px solid var(--muted); transition:all .3s;}
   .dot.done{background:var(--accent); border-color:var(--accent);}
   .dot.now{border-color:var(--accent); transform:scale(1.25);}
@@ -1360,9 +1407,11 @@
 
   footer{
     width:100%; max-width:560px; text-align:center;
-    color:var(--muted); font-size:12px; letter-spacing:.05em; padding-top:16px;
+    color:var(--muted); font-size:10.5px; letter-spacing:.05em; padding-top:16px;
+    opacity:.55; transition:opacity .2s ease;
   }
-  footer b{color:var(--accent); font-weight:600;}
+  footer:hover{ opacity:.9; }
+  footer b{color:var(--muted); font-weight:600;}
   .kofi-link{
     display:inline-flex; align-items:center; justify-content:center; gap:6px; margin:0;
     background:var(--accent); color:var(--accent-ink); text-decoration:none;
@@ -1579,20 +1628,34 @@
 </div>
 
 <header>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div class="wordmark">POMO<em>EASE</em></div>
-    <a class="kofi-link" id="supportLink" href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer" title="Support" aria-label="Support">☕</a>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">
-    <button class="cowork-fab" id="togetherBtn" aria-label="Co-work" title="Study together">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="m11 17l2 2a1 1 0 1 0 3-3"/>
-        <path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
-        <path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/>
+  <div></div>
+  <div style="display:flex;align-items:center;gap:4px;">
+    <button class="quick-settings" id="quickSettingsBtn" aria-label="Settings" title="Settings">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     </button>
-    <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
-    <button class="icon-btn" id="profileBtn" title="Sign in" aria-label="Sign in" style="width:38px;text-align:center;padding:8px 0;">👤</button>
+    <div class="menu-wrap">
+    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false" title="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="4" y1="7" x2="20" y2="7"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </button>
+    <div class="menu-popover" id="menuPopover" role="menu" aria-hidden="true">
+      <button class="menu-item" id="profileBtn" role="menuitem">
+        <span class="menu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg></span><span id="menuAccountLabel">Account</span>
+      </button>
+      <button class="menu-item" id="togetherBtn" role="menuitem" aria-label="Co-study">
+        <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17l2 2a1 1 0 1 0 3-3"/><path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/></svg></span><span>Co-study</span>
+      </button>
+      <a class="menu-item" id="supportLink" href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer" role="menuitem">
+        <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span><span>Support</span>
+      </a>
+    </div>
+    </div>
   </div>
 </header>
 
@@ -1618,7 +1681,10 @@
 
 <div class="phase-strip">
   <div class="phase-label" id="phaseLabel"></div>
-  <div class="dots" id="dots"></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="session-tag" id="sessionTag">Session <b id="sesNum">1</b></span>
+    <div class="dots" id="dots"></div>
+  </div>
 </div>
 
 <div class="intro-bubble" id="introBubble">
@@ -1703,7 +1769,6 @@
 </div>
 
 <footer>
-  <span id="footerSession">Session <b id="sesNum">1</b> · long break after <b id="longEveryLabel">4</b> rounds</span>
   <div class="footer-links"><a href="privacy.html" id="privacyLink" target="_blank" rel="noopener noreferrer">Privacy Policy</a></div>
 </footer>
 
@@ -2102,7 +2167,7 @@ async function loadIntroState(){
 }
 function syncSettingsUI(){
   $('rndVal').textContent = S.longBreakEvery;
-  $('longEveryLabel').textContent = S.longBreakEvery;
+  { const _le=$('longEveryLabel'); if(_le) _le.textContent = S.longBreakEvery; }
   renderFooter();
   // theme button
   if(typeof applyTheme==='function') applyTheme(document.body.dataset.theme);
@@ -3250,12 +3315,16 @@ $('tasksToggle').onclick=()=>{
   t.setAttribute('aria-expanded', expanded ? 'false' : 'true');
   try{ localStorage.setItem('pomofit:tasksCollapsed', expanded ? '1' : '0'); }catch(e){}
 };
-// restore collapsed preference
+// tasks panel defaults to collapsed (minimalist); respects a saved preference
 try{
-  if(localStorage.getItem('pomofit:tasksCollapsed') === '1'){
+  const pref = localStorage.getItem('pomofit:tasksCollapsed');
+  // collapsed unless the user has explicitly expanded it before
+  if(pref === null || pref === '1'){
     $('tasksToggle').setAttribute('aria-expanded', 'false');
   }
-}catch(e){}
+}catch(e){
+  $('tasksToggle').setAttribute('aria-expanded', 'false');
+}
 $('cancelTaskBtn').onclick=()=>{
   taskForm.classList.remove('show');
   newTaskInput.value='';
@@ -3488,21 +3557,30 @@ function renderProfile(){
   const db=$('deleteAccountBtn'); if(db){ deleteArmed=false; db.textContent='Delete account'; db.classList.remove('armed'); }
   const signed=!!DATA.name;
   const nm=displayName();
+  // menu label: show the user's first name when signed in, else "My account"
+  const menuAccLabel = $('menuAccountLabel');
+  if(menuAccLabel){
+    // prefer a real display name's first word; avoid using an email address
+    const dn = (DATA.displayName||'').trim();
+    const firstName = dn ? dn.split(/\s+/)[0] : '';
+    menuAccLabel.textContent = (signed && firstName) ? firstName : 'Account';
+  }
   const isEmoji = DATA.avatar && DATA.avatar.startsWith('emoji:');
   const emojiChar = isEmoji ? DATA.avatar.slice(6) : null;
   const profileBtnEl=$('profileBtn');
   profileBtnEl.title = signed ? nm : T().signIn;
   profileBtnEl.setAttribute('aria-label', signed ? 'Profile: '+nm : T().signIn);
-  if(signed){
-    if(isEmoji){
-      profileBtnEl.innerHTML = `<span style="font-size:18px;line-height:1;">${emojiChar}</span>`;
-    } else if(DATA.avatar){
-      profileBtnEl.innerHTML = `<img src="${DATA.avatar}" alt="${esc(nm)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;display:block;">`;
+  // update ONLY the icon span inside the menu item (never the whole button —
+  // that would wipe out the account label next to it)
+  const menuIcEl = profileBtnEl.querySelector('.menu-ic');
+  if(menuIcEl){
+    if(signed && isEmoji){
+      menuIcEl.innerHTML = `<span style="font-size:17px;line-height:1;">${emojiChar}</span>`;
+    } else if(signed && DATA.avatar){
+      menuIcEl.innerHTML = `<img src="${DATA.avatar}" alt="${esc(nm)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;display:block;">`;
     } else {
-      profileBtnEl.innerHTML = '👤';
+      menuIcEl.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
     }
-  } else {
-    profileBtnEl.innerHTML = '👤';
   }
   $('profileTitle').textContent = signed ? T().progressTitle(nm) : T().signIn;
   $('signinBox').style.display = signed?'none':'block';
@@ -3879,11 +3957,8 @@ function render(left){
   if(S.phase!=='focus' && S.running) S.remaining=Math.max(0,left);
 }
 function renderFooter(){
-  const t=T();
-  $('footerSession').innerHTML = t.sessionFooter(
-    `<b id="sesNum">${S.session}</b>`,
-    `<b id="longEveryLabel">${S.longBreakEvery}</b>`
-  );
+  const sesEl = $('sesNum');
+  if(sesEl) sesEl.textContent = S.session;
 }
 function renderDots(){
   dotsEl.innerHTML='';
@@ -4077,6 +4152,7 @@ function showTogetherIntro(){
 }
 
 $('togetherBtn').onclick=()=>{
+  if(typeof closeMenu==='function') closeMenu();
   openSheet('togetherSheet');
   if(!FIREBASE_READY){
     togetherMsg('Shared sessions aren\'t set up on this site yet — check back soon!');
@@ -5128,8 +5204,34 @@ function closeSheets(){
   $('floatMembers').classList.remove('sheet-open');
   document.body.classList.remove('sheet-open');
 }
-$('settingsBtn').onclick=()=>openSheet('settingsSheet');
-$('profileBtn').onclick=()=>openSheet('profileSheet');
+/* ---------- consolidated menu popover ---------- */
+const menuBtn = $('menuBtn'), menuPopover = $('menuPopover');
+function openMenu(){
+  menuPopover.classList.add('open');
+  menuBtn.setAttribute('aria-expanded','true');
+  menuPopover.setAttribute('aria-hidden','false');
+}
+function closeMenu(){
+  menuPopover.classList.remove('open');
+  menuBtn.setAttribute('aria-expanded','false');
+  menuPopover.setAttribute('aria-hidden','true');
+}
+menuBtn.onclick=(e)=>{
+  e.stopPropagation();
+  menuPopover.classList.contains('open') ? closeMenu() : openMenu();
+};
+// close when clicking outside, or pressing Escape
+document.addEventListener('click', (e)=>{
+  if(menuPopover.classList.contains('open') && !menuPopover.contains(e.target) && e.target!==menuBtn){
+    closeMenu();
+  }
+});
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+
+{ const sb=$('settingsBtn'); if(sb) sb.onclick=()=>{ closeMenu(); openSheet('settingsSheet'); }; }
+$('quickSettingsBtn').onclick=()=>openSheet('settingsSheet');
+$('profileBtn').onclick=()=>{ closeMenu(); openSheet('profileSheet'); };
+$('supportLink').addEventListener('click', ()=> closeMenu());
 sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
@@ -5207,7 +5309,7 @@ makeStepper('remSeg',   ()=>S.remindersMin, v=>{ S.remindersMin=v; restartHydrat
 function setLongBreakEvery(n){
   S.longBreakEvery = clamp(Math.round(n), 2, 12);
   $('rndVal').textContent = S.longBreakEvery;
-  $('longEveryLabel').textContent = S.longBreakEvery;
+  { const _le=$('longEveryLabel'); if(_le) _le.textContent = S.longBreakEvery; }
   renderFooter();
   saveSettings();
 }
