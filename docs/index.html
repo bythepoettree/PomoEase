@@ -979,19 +979,52 @@
   }
 
 
-  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:20px 0;}
+  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 4px;}
+
+  /* ---------- account sections (grouped, consistent) ---------- */
+  .acct-section{
+    background:var(--chip); border-radius:16px; padding:14px;
+    margin:10px 0;
+  }
+  .acct-section-title{
+    font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:10px;
+  }
+  .emoji-toggle{
+    background:none; border:none; cursor:pointer;
+    color:var(--muted); font-family:inherit; font-size:11.5px; font-weight:600;
+    letter-spacing:.03em; padding:6px 2px 0; opacity:.8; transition:opacity .15s ease;
+  }
+  .emoji-toggle:hover{ opacity:1; }
+  .emoji-collapse{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+  }
+  .emoji-toggle[aria-expanded="true"] + .emoji-collapse{ max-height:120px; }
+  .acct-sub{
+    border-top:1px solid var(--line); margin-top:12px; padding-top:11px;
+  }
+  .acct-sub summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    font-size:13px; font-weight:600; color:var(--fg); letter-spacing:.02em;
+  }
+  .acct-sub summary::-webkit-details-marker{ display:none; }
+  .acct-sub .chev{
+    font-size:18px; color:var(--muted); transition:transform .2s ease;
+    display:inline-block; line-height:1;
+  }
+  .acct-sub[open] .chev{ transform:rotate(90deg); }
 
   /* ---------- profile revamp ---------- */
   .emoji-grid-compact{
-    display:flex; gap:6px; margin:16px 0 4px; justify-content:space-between;
-    padding:8px; background:var(--chip); border-radius:12px;
+    display:flex; gap:6px; margin:10px 0 2px; justify-content:space-between;
+    padding:8px; background:var(--bg2); border-radius:12px;
   }
   .emoji-grid-compact .emoji-opt{
     width:36px; height:36px; font-size:18px;
   }
   .profile-section{
-    margin:6px 0 4px; padding:12px 14px;
-    background:var(--chip); border-radius:12px;
+    margin:10px 0; padding:14px;
+    background:var(--chip); border-radius:16px;
   }
   .profile-section summary{
     list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
@@ -1044,6 +1077,18 @@
   .friend-row .fr-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .fr-sub{ font-size:10.5px; color:var(--muted); opacity:.85; }
   .fr-sub.online{ color:#4CAF7A; opacity:1; }
+  /* incoming session invite toast */
+  .invite-toast{
+    position:fixed; top:16px; left:50%; transform:translate(-50%,-8px);
+    z-index:9000; display:flex; align-items:center; gap:10px;
+    background:var(--bg2); color:var(--fg);
+    border:1px solid var(--accent); border-radius:14px;
+    padding:12px 14px; box-shadow:0 14px 36px rgba(0,0,0,.32);
+    max-width:min(92vw, 420px);
+    opacity:0; transition:opacity .25s ease, transform .25s ease;
+  }
+  .invite-toast.show{ opacity:1; transform:translate(-50%,0); }
+  .invite-toast-text{ font-size:13px; line-height:1.35; flex:1; min-width:0; }
   .fr-dot{
     width:8px; height:8px; border-radius:50%; flex:none;
     background:var(--line); transition:background .3s ease, box-shadow .3s ease;
@@ -1101,20 +1146,20 @@
   .danger-note{
     font-size:11px; line-height:1.5; color:var(--muted); margin:0 0 8px;
   }
-  .stat{background:var(--chip); border:none; border-radius:16px; padding:14px;}
+  .stat{background:var(--bg2); border:none; border-radius:14px; padding:14px;}
   .stat .num{font-family:'Anton',sans-serif; font-size:26px;}
   .stat .lab{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:2px;}
 
   /* ---------- performance dashboard ---------- */
   .dash-hero{
-    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0 10px;
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 10px;
   }
   .dash-card{
-    background:var(--chip); border-radius:16px; padding:16px 14px;
+    background:var(--bg2); border-radius:14px; padding:16px 14px;
     display:flex; flex-direction:column; gap:2px;
   }
   .dash-card.accent{
-    background:var(--chip);
+    background:var(--bg2);
     color:var(--fg);
     border:1.5px solid var(--accent);
     position:relative;
@@ -1129,7 +1174,7 @@
   .dash-card .dsub{ font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; opacity:.85; margin-top:4px; }
   .dash-card .dnote{ font-size:11px; opacity:.7; margin-top:2px; }
   .dash-week{
-    background:var(--chip); border-radius:16px; padding:16px 14px; margin-bottom:10px;
+    background:var(--bg2); border-radius:14px; padding:16px 14px; margin-bottom:10px;
   }
   .dash-week-title{
     font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:12px;
@@ -1974,61 +2019,68 @@
     </div>
   </div>
   <div id="statsBox" style="display:none;">
-    <div class="profile-edit">
-      <button class="avatar-btn" id="avatarBtn" type="button" title="Change profile picture" aria-label="Change profile picture">
-        <span class="avatar-fallback" id="avatarFallback">＋</span>
-        <img id="avatarImg" style="display:none;" alt="">
-        <span class="avatar-edit">Edit</span>
-      </button>
-      <input type="file" id="avatarInput" accept="image/*" style="display:none;">
-      <div class="name-field">
-        <label for="displayNameInput">Display name</label>
-        <input id="displayNameInput" type="text" maxlength="24" placeholder="What should we call you?">
+    <div class="acct-section">
+      <div class="profile-edit">
+        <button class="avatar-btn" id="avatarBtn" type="button" title="Change profile picture" aria-label="Change profile picture">
+          <span class="avatar-fallback" id="avatarFallback">＋</span>
+          <img id="avatarImg" style="display:none;" alt="">
+          <span class="avatar-edit">Edit</span>
+        </button>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+        <div class="name-field">
+          <label for="displayNameInput">Display name</label>
+          <input id="displayNameInput" type="text" maxlength="24" placeholder="What should we call you?">
+        </div>
+      </div>
+      <button type="button" class="emoji-toggle" id="emojiToggle" aria-expanded="false">Use an emoji instead ⌄</button>
+      <div class="emoji-collapse" id="emojiCollapse">
+        <div class="emoji-grid emoji-grid-compact">
+          <button class="emoji-opt" data-emoji="😈">😈</button>
+          <button class="emoji-opt" data-emoji="🤖">🤖</button>
+          <button class="emoji-opt" data-emoji="👾">👾</button>
+          <button class="emoji-opt" data-emoji="🦊">🦊</button>
+          <button class="emoji-opt" data-emoji="🐼">🐼</button>
+          <button class="emoji-opt" data-emoji="🐸">🐸</button>
+          <button class="emoji-opt" data-emoji="🥸">🥸</button>
+          <button class="emoji-opt" data-emoji="👻">👻</button>
+        </div>
       </div>
     </div>
 
-    <div class="emoji-grid emoji-grid-compact">
-      <button class="emoji-opt" data-emoji="😈">😈</button>
-      <button class="emoji-opt" data-emoji="🤖">🤖</button>
-      <button class="emoji-opt" data-emoji="👾">👾</button>
-      <button class="emoji-opt" data-emoji="🦊">🦊</button>
-      <button class="emoji-opt" data-emoji="🐼">🐼</button>
-      <button class="emoji-opt" data-emoji="🐸">🐸</button>
-      <button class="emoji-opt" data-emoji="🥸">🥸</button>
-      <button class="emoji-opt" data-emoji="👻">👻</button>
-    </div>
-
-    <div class="dash-hero">
-      <div class="dash-card accent">
-        <div class="dnum" id="dashStreak">0</div>
-        <div class="dsub">Day streak 🔥</div>
-        <div class="dnote" id="dashStreakNote">Start today</div>
+    <div class="acct-section">
+      <div class="acct-section-title">Progress</div>
+      <div class="dash-hero">
+        <div class="dash-card accent">
+          <div class="dnum" id="dashStreak">0</div>
+          <div class="dsub">Day streak 🔥</div>
+          <div class="dnote" id="dashStreakNote">Start today</div>
+        </div>
+        <div class="dash-card">
+          <div class="dnum" id="dashToday">0m</div>
+          <div class="dsub">Focus today</div>
+          <div class="dnote" id="dashTodayNote">&nbsp;</div>
+        </div>
       </div>
-      <div class="dash-card">
-        <div class="dnum" id="dashToday">0m</div>
-        <div class="dsub">Focus today</div>
-        <div class="dnote" id="dashTodayNote">&nbsp;</div>
+
+      <div class="dash-week">
+        <div class="dash-week-title">
+          <span>This week</span>
+          <span class="dash-week-total" id="dashWeekTotal">0m</span>
+        </div>
+        <div class="week-bars" id="weekBars"></div>
       </div>
-    </div>
 
-    <div class="dash-week">
-      <div class="dash-week-title">
-        <span>This week</span>
-        <span class="dash-week-total" id="dashWeekTotal">0m</span>
+      <div class="stat-grid">
+        <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Focus rounds</div></div>
+        <div class="stat"><div class="num" id="stMinutes">0</div><div class="lab">Minutes</div></div>
+        <div class="stat"><div class="num" id="stReps">0</div><div class="lab">Total reps</div></div>
       </div>
-      <div class="week-bars" id="weekBars"></div>
-    </div>
 
-    <div class="stat-grid">
-      <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Focus rounds</div></div>
-      <div class="stat"><div class="num" id="stMinutes">0</div><div class="lab">Minutes</div></div>
-      <div class="stat"><div class="num" id="stReps">0</div><div class="lab">Total reps</div></div>
+      <details class="acct-sub" open>
+        <summary>Recent activity <span class="chev">›</span></summary>
+        <div id="histList" style="margin-top:8px;"></div>
+      </details>
     </div>
-
-    <details class="profile-section" open>
-      <summary>Recent activity <span class="chev">›</span></summary>
-      <div id="histList" style="margin-top:8px;"></div>
-    </details>
 
     <details class="profile-section" id="friendsSection" style="display:none;">
       <summary>Friends <span class="friend-badge" id="friendReqBadge" style="display:none;">0</span><span class="chev">›</span></summary>
@@ -2432,6 +2484,7 @@ function applyCloudUser(user, cloudDoc){
   try{ localStorage.setItem('pomofit:cloudSession', '1'); }catch(e){}
   attachLiveSync();
   setupPresence();
+  attachInviteListener();
 }
 
 // ---- live sync: reflect changes made on other devices, without a refresh ----
@@ -2605,6 +2658,7 @@ async function cloudSignOut(){
   detachLiveSync();
   teardownPresence();
   clearFriendPresenceWatch();
+  detachInviteListener();
   try{ if(fb && fb.auth) await fb.auth.signOut(); }catch(e){}
   cloudUser=null; cloudDataRef=null;
   try{ localStorage.removeItem('pomofit:cloudSession'); }catch(e){}
@@ -2767,6 +2821,11 @@ async function renderFriends(){
       const row=buildFriendRow(f, [
         {label:'Remove', cls:'ghost', fn:()=>removeFriend(fUid)}
       ]);
+      // invite button — appears only when this friend is online AND we're in a session
+      const inviteB=document.createElement('button'); inviteB.type='button';
+      inviteB.className='fr-btn'; inviteB.textContent='Invite'; inviteB.style.display='none';
+      inviteB.onclick=()=>sendSessionInvite(fUid, inviteB);
+      row.querySelector('.fr-actions').prepend(inviteB);
       // live online dot — updates as the friend connects/disconnects
       const dot=document.createElement('span'); dot.className='fr-dot'; dot.title='Offline';
       const nameCol=row.querySelector('.fr-namecol');
@@ -2778,6 +2837,7 @@ async function renderFriends(){
           const online = !!(v && v.online);
           dot.classList.toggle('online', online);
           dot.title = online ? 'Online now' : 'Offline';
+          inviteB.style.display = (online && mySession) ? '' : 'none';
           let sub=nameCol.querySelector('.fr-sub');
           if(online){
             if(!sub){ sub=document.createElement('div'); sub.className='fr-sub'; nameCol.appendChild(sub); }
@@ -2907,6 +2967,85 @@ async function removeFriend(fUid){
     await fb.db.ref('friends/'+fUid+'/'+cloudUser.uid).remove();
     renderFriends();
   }catch(e){ console.error('remove failed', e); }
+}
+
+/* ================= Session invites (Stage C) =================
+   While in a co-work session, you can invite online friends. The invite is a
+   node at invites/{targetUid}/{fromUid} = {name, code, at}; the target has a
+   live listener and gets a toast with Join / Dismiss. Invites are deleted once
+   handled, and stale ones (>2h) are ignored and cleaned up. */
+async function sendSessionInvite(fUid, btn){
+  if(!cloudUser || !mySession) return;
+  try{
+    await ensureFirebase();
+    await fb.db.ref('invites/'+fUid+'/'+cloudUser.uid).set({
+      name: myShareName(),
+      code: mySession,
+      at: firebase.database.ServerValue.TIMESTAMP
+    });
+    if(btn){ const t=btn.textContent; btn.textContent='Invited!'; btn.disabled=true;
+      setTimeout(()=>{ btn.textContent=t; btn.disabled=false; }, 2500); }
+  }catch(e){ console.error('invite failed', e); friendMsg('Couldn\'t send the invite — try again.'); }
+}
+
+let inviteListenerRef=null, inviteListenerHandler=null;
+function attachInviteListener(){
+  detachInviteListener();
+  if(!cloudUser || !fb || !fb.db) return;
+  inviteListenerRef = fb.db.ref('invites/'+cloudUser.uid);
+  inviteListenerHandler = inviteListenerRef.on('child_added', snap=>{
+    const inv=snap.val()||{};
+    const fromUid=snap.key;
+    // ignore + clean up stale invites (older than 2 hours)
+    if(inv.at && (Date.now()-inv.at) > 2*60*60*1000){
+      try{ inviteListenerRef.child(fromUid).remove(); }catch(e){}
+      return;
+    }
+    // don't offer to join the session we're already in
+    if(mySession && inv.code===mySession){
+      try{ inviteListenerRef.child(fromUid).remove(); }catch(e){}
+      return;
+    }
+    showInviteToast(fromUid, inv);
+  }, err=>{ console.error('invite listener error', err); });
+}
+function detachInviteListener(){
+  if(inviteListenerRef && inviteListenerHandler){
+    try{ inviteListenerRef.off('child_added', inviteListenerHandler); }catch(e){}
+  }
+  inviteListenerRef=null; inviteListenerHandler=null;
+}
+
+let activeInviteToast=null;
+function showInviteToast(fromUid, inv){
+  // one toast at a time — newest wins
+  if(activeInviteToast){ activeInviteToast.remove(); activeInviteToast=null; }
+  const toast=document.createElement('div'); toast.className='invite-toast';
+  const txt=document.createElement('span'); txt.className='invite-toast-text';
+  txt.textContent=(inv.name||'A friend')+' invited you to co-study';
+  const joinB=document.createElement('button'); joinB.className='fr-btn'; joinB.textContent='Join';
+  const disB=document.createElement('button'); disB.className='fr-btn ghost'; disB.textContent='Dismiss';
+  const clearInvite=()=>{ try{ fb.db.ref('invites/'+cloudUser.uid+'/'+fromUid).remove(); }catch(e){} };
+  joinB.onclick=async ()=>{
+    clearInvite(); toast.remove(); activeInviteToast=null;
+    try{
+      await ensureFirebase();
+      const snap=await fb.db.ref('sessions/'+inv.code+'/createdAt').get();
+      if(!snap.exists()){ togetherMsg && togetherMsg(''); alert('That session has already ended.'); return; }
+      myCapturedName = (DATA.displayName||'').trim() || 'Someone';
+      try{ localStorage.setItem('pomofit:coworkName', myCapturedName); }catch(e){}
+      closeSheets();
+      openSheet('togetherSheet');
+      await joinOrCreateSession(inv.code, false);
+    }catch(e){ console.error('invite join failed', e); }
+  };
+  disB.onclick=()=>{ clearInvite(); toast.remove(); activeInviteToast=null; };
+  toast.appendChild(txt); toast.appendChild(joinB); toast.appendChild(disB);
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>toast.classList.add('show'));
+  activeInviteToast=toast;
+  // auto-hide after 30s (invite stays in DB for their next visit)
+  setTimeout(()=>{ if(activeInviteToast===toast){ toast.remove(); activeInviteToast=null; } }, 30000);
 }
 
 /* ---------- forgot password / account recovery ---------- */
@@ -3937,6 +4076,7 @@ function renderProfile(){
   const b=$('resetStatsBtn'); if(b){ b.textContent='Reset'; b.classList.remove('armed'); }
   // keep the danger zone collapsed and delete disarmed each time the profile renders
   const dt=$('dangerToggle'); if(dt){ dt.setAttribute('aria-expanded','false'); dt.textContent='Advanced ⌄'; }
+  const et=$('emojiToggle'); if(et){ et.setAttribute('aria-expanded','false'); et.textContent='Use an emoji instead ⌄'; }
   const db=$('deleteAccountBtn'); if(db){ deleteArmed=false; db.textContent='Delete account'; db.classList.remove('armed'); }
   const signed=!!DATA.name;
   const nm=displayName();
@@ -4015,6 +4155,12 @@ function renderProfile(){
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 $('signinForm').addEventListener('submit', e=>{ e.preventDefault(); cloudSignIn(); });
 /* friends wiring */
+$('emojiToggle').onclick=()=>{
+  const t=$('emojiToggle');
+  const open = t.getAttribute('aria-expanded')==='true';
+  t.setAttribute('aria-expanded', open?'false':'true');
+  t.textContent = open ? 'Use an emoji instead ⌄' : 'Use an emoji instead ⌃';
+};
 $('addFriendBtn').onclick=sendFriendRequest;
 $('friendCodeInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendFriendRequest(); } });
 $('copyFriendCodeBtn').onclick=async ()=>{
@@ -4055,6 +4201,8 @@ $('deleteAccountBtn').onclick=async ()=>{
   if(cloudUser){
     detachLiveSync();
     teardownPresence();
+    clearFriendPresenceWatch();
+    detachInviteListener();
     try{ if(cloudDataRef) await cloudDataRef.remove(); }catch(e){}
     try{ await cloudUser.delete(); }catch(e){ /* may need recent login; sign out regardless */ }
     cloudUser=null; cloudDataRef=null;
