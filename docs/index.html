@@ -4009,10 +4009,8 @@ function dayKey(ts){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function fmtMins(m){
-  m = Math.round(m||0);
-  if(m < 60) return m+'m';
-  const h = Math.floor(m/60), r = m%60;
-  return r ? h+'h '+r+'m' : h+'h';
+  // plain minutes everywhere, matching the lifetime "Minutes" stat (e.g. "80m")
+  return Math.round(m||0)+'m';
 }
 function renderDashboard(){
   const focus = (DATA.history||[]).filter(e=>e && e.type==='focus' && e.ts);
