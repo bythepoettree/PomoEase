@@ -995,6 +995,35 @@
   .stat .num{font-family:'Anton',sans-serif; font-size:26px;}
   .stat .lab{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:2px;}
 
+  /* ---------- performance dashboard ---------- */
+  .dash-hero{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0 10px;
+  }
+  .dash-card{
+    background:var(--chip); border-radius:16px; padding:16px 14px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .dash-card.accent{ background:var(--accent); color:#fff; }
+  .dash-card .dnum{ font-family:'Anton',sans-serif; font-size:30px; line-height:1; }
+  .dash-card .dsub{ font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; opacity:.85; margin-top:4px; }
+  .dash-card .dnote{ font-size:11px; opacity:.7; margin-top:2px; }
+  .dash-week{
+    background:var(--chip); border-radius:16px; padding:16px 14px; margin-bottom:10px;
+  }
+  .dash-week-title{
+    font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:12px;
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .dash-week-total{ color:var(--fg); font-weight:600; letter-spacing:0; text-transform:none; font-size:12px; }
+  .week-bars{ display:flex; align-items:flex-end; justify-content:space-between; gap:6px; height:72px; }
+  .week-day{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end; }
+  .week-bar-track{ width:100%; display:flex; align-items:flex-end; justify-content:center; height:56px; }
+  .week-bar{ width:70%; max-width:22px; min-height:3px; background:var(--accent); border-radius:4px 4px 2px 2px; transition:height .4s cubic-bezier(.2,.8,.3,1); }
+  .week-bar.empty{ background:var(--line); opacity:.5; }
+  .week-bar.today{ box-shadow:0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+  .week-day-lab{ font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .week-day.is-today .week-day-lab{ color:var(--accent); font-weight:700; }
+
   /* ---------- profile editor (avatar + display name) ---------- */
   .profile-edit{display:flex; align-items:center; gap:14px; margin-bottom:6px;}
   .avatar-btn{
@@ -1819,6 +1848,27 @@
       <button class="emoji-opt" data-emoji="🐸">🐸</button>
       <button class="emoji-opt" data-emoji="🥸">🥸</button>
       <button class="emoji-opt" data-emoji="👻">👻</button>
+    </div>
+
+    <div class="dash-hero">
+      <div class="dash-card accent">
+        <div class="dnum" id="dashStreak">0</div>
+        <div class="dsub">Day streak 🔥</div>
+        <div class="dnote" id="dashStreakNote">Start today</div>
+      </div>
+      <div class="dash-card">
+        <div class="dnum" id="dashToday">0m</div>
+        <div class="dsub">Focus today</div>
+        <div class="dnote" id="dashTodayNote">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="dash-week">
+      <div class="dash-week-title">
+        <span>This week</span>
+        <span class="dash-week-total" id="dashWeekTotal">0m</span>
+      </div>
+      <div class="week-bars" id="weekBars"></div>
     </div>
 
     <div class="stat-grid">
@@ -3357,6 +3407,79 @@ function logFocus(minutes, completed){
   saveData(); renderTasks();
 }
 function displayName(){ return (DATA.displayName && DATA.displayName.trim()) || DATA.name || ''; }
+
+/* ---------- performance dashboard (Stage 5) ---------- */
+// local YYYY-MM-DD key for a timestamp
+function dayKey(ts){
+  const d = new Date(ts);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtMins(m){
+  m = Math.round(m||0);
+  if(m < 60) return m+'m';
+  const h = Math.floor(m/60), r = m%60;
+  return r ? h+'h '+r+'m' : h+'h';
+}
+function renderDashboard(){
+  const focus = (DATA.history||[]).filter(e=>e && e.type==='focus' && e.ts);
+  // minutes per day
+  const perDay = {};
+  focus.forEach(e=>{ const k=dayKey(e.ts); perDay[k]=(perDay[k]||0)+(e.min||0); });
+
+  const today = new Date();
+  const todayKey = dayKey(today.getTime());
+
+  // --- focus today ---
+  const todayMins = perDay[todayKey] || 0;
+  $('dashToday').textContent = fmtMins(todayMins);
+  $('dashTodayNote').innerHTML = todayMins>0 ? 'Keep it going' : '&nbsp;';
+
+  // --- streak: consecutive days (ending today or yesterday) with any focus ---
+  let streak = 0;
+  const dayHasFocus = (offset)=>{
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-offset);
+    return (perDay[dayKey(d.getTime())]||0) > 0;
+  };
+  // streak counts back from today; if nothing today but something yesterday, start at yesterday
+  let start = dayHasFocus(0) ? 0 : (dayHasFocus(1) ? 1 : -1);
+  if(start >= 0){
+    let off = start;
+    while(dayHasFocus(off)){ streak++; off++; }
+  }
+  $('dashStreak').textContent = streak;
+  $('dashStreakNote').textContent =
+    streak===0 ? 'Start today' :
+    (start===0 ? (streak===1?'Day one — nice':'On a roll') : 'Focus today to keep it');
+
+  // --- this week (Mon–Sun) bar chart ---
+  const dow = (today.getDay()+6)%7; // 0=Mon … 6=Sun
+  const labels = ['M','T','W','T','F','S','S'];
+  let weekTotal = 0;
+  const dayMins = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-(dow-i));
+    const mins = perDay[dayKey(d.getTime())]||0;
+    dayMins.push(mins); weekTotal += mins;
+  }
+  $('dashWeekTotal').textContent = fmtMins(weekTotal);
+  const peak = Math.max(1, ...dayMins);
+  const wrap = $('weekBars'); wrap.innerHTML='';
+  dayMins.forEach((mins,i)=>{
+    const isToday = i===dow;
+    const col = document.createElement('div');
+    col.className = 'week-day'+(isToday?' is-today':'');
+    const track = document.createElement('div'); track.className='week-bar-track';
+    const bar = document.createElement('div');
+    bar.className = 'week-bar'+(mins===0?' empty':'')+(isToday?' today':'');
+    bar.style.height = Math.max(3, Math.round((mins/peak)*56))+'px';
+    bar.title = fmtMins(mins);
+    track.appendChild(bar);
+    const lab = document.createElement('div'); lab.className='week-day-lab'; lab.textContent=labels[i];
+    col.appendChild(track); col.appendChild(lab);
+    wrap.appendChild(col);
+  });
+}
+
 function renderProfile(){
   resetArmed=false;
   const b=$('resetStatsBtn'); if(b){ b.textContent='Reset'; b.classList.remove('armed'); }
@@ -3407,6 +3530,7 @@ function renderProfile(){
     $('stSessions').textContent=DATA.totals.sessions;
     $('stMinutes').textContent=DATA.totals.minutes;
     $('stReps').textContent=DATA.totals.reps;
+    renderDashboard();
     const h=$('histList'); h.innerHTML='';
     if(!DATA.history.length) h.innerHTML='<p class="empty-note">Nothing logged yet — finish a focus round or a workout.</p>';
     DATA.history.slice(0,5).forEach(e=>{
