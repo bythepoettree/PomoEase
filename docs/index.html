@@ -1824,6 +1824,9 @@
       <button class="menu-item" id="togetherBtn" role="menuitem" aria-label="Co-work">
         <span class="menu-ic cowork-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17l2 2a1 1 0 1 0 3-3"/><path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/></svg></span><span>Co-work</span>
       </button>
+      <button class="menu-item" id="friendsMenuBtn" role="menuitem" aria-label="Friends">
+        <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/><path d="M16.5 5.4a3.2 3.2 0 0 1 0 6"/><path d="M18 14.9c2.1.5 3.5 2 3.5 4.1"/></svg></span><span>Friends</span><span class="friend-badge" id="menuFriendBadge" style="display:none;">0</span>
+      </button>
       <a class="menu-item" id="supportLink" href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer" role="menuitem">
         <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span><span>Support</span>
       </a>
@@ -2124,27 +2127,6 @@
       </div>
     </details>
 
-    <details class="profile-section" id="friendsSection" style="display:none;">
-      <summary>Friends <span class="friend-badge" id="friendReqBadge" style="display:none;">0</span><span class="chev">›</span></summary>
-      <div style="margin-top:10px;">
-        <div class="friend-top-row">
-          <button class="friend-code-btn" id="copyFriendCodeBtn" type="button" title="Tap to copy your code">
-            <span class="friend-code-label">Your code — tap to copy</span>
-            <span class="friend-code" id="myFriendCode">······</span>
-          </button>
-          <div class="friend-add-box">
-            <span class="friend-code-label">Add a friend</span>
-            <div class="friend-add-inline">
-              <input id="friendCodeInput" type="text" maxlength="6" placeholder="Their code" autocomplete="off" autocapitalize="characters" spellcheck="false">
-              <button class="friend-add-btn" id="addFriendBtn" type="button">Add</button>
-            </div>
-          </div>
-        </div>
-        <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
-        <div id="friendRequestsList"></div>
-        <div id="friendsList" class="friends-list-scroll"></div>
-      </div>
-    </details>
 
     <div class="profile-actions">
       <button class="profile-action-btn" id="resetStatsBtn">Reset</button>
@@ -2175,6 +2157,29 @@
   <div class="controls" style="justify-content:center;">
     <button class="btn ghost" id="cropCancelBtn">Cancel</button>
     <button class="btn" id="cropUseBtn">USE PHOTO</button>
+  </div>
+</div>
+
+<div class="sheet" id="friendsSheet">
+  <div class="sheet-head"><h2>Friends</h2><button class="close-sheet" aria-label="Close">✕</button></div>
+  <div id="friendsSignedOut" class="signin-note" style="display:none;">Sign in to your account to add friends, see who's online and study together.</div>
+  <div id="friendsBody" style="display:none;">
+    <div class="friend-top-row">
+      <button class="friend-code-btn" id="copyFriendCodeBtn" type="button" title="Tap to copy your code">
+        <span class="friend-code-label">Your code — tap to copy</span>
+        <span class="friend-code" id="myFriendCode">······</span>
+      </button>
+      <div class="friend-add-box">
+        <span class="friend-code-label">Add a friend</span>
+        <div class="friend-add-inline">
+          <input id="friendCodeInput" type="text" maxlength="6" placeholder="Their code" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button class="friend-add-btn" id="addFriendBtn" type="button">Add</button>
+        </div>
+      </div>
+    </div>
+    <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
+    <div id="friendRequestsList"></div>
+    <div id="friendsList" class="friends-list-scroll"></div>
   </div>
 </div>
 
@@ -2531,6 +2536,7 @@ function applyCloudUser(user, cloudDoc){
   attachLiveSync();
   setupPresence();
   attachInviteListener();
+  attachJoinRequestListener();
 }
 
 // ---- live sync: reflect changes made on other devices, without a refresh ----
@@ -2705,6 +2711,7 @@ async function cloudSignOut(){
   teardownPresence();
   clearFriendPresenceWatch();
   detachInviteListener();
+  detachJoinRequestListener();
   try{ if(fb && fb.auth) await fb.auth.signOut(); }catch(e){}
   cloudUser=null; cloudDataRef=null;
   try{ localStorage.removeItem('pomofit:cloudSession'); }catch(e){}
@@ -2755,11 +2762,79 @@ function setupPresence(){
       // register the server-side cleanup FIRST, then mark online
       // on disconnect, stamp offline + last-seen time (server-side) FIRST, then mark online
       myPresRef.onDisconnect().set({ online:false, at: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
-        myPresRef.set({ online:true, at: firebase.database.ServerValue.TIMESTAMP });
+        myPresRef.set({ online:true, at: firebase.database.ServerValue.TIMESTAMP, session: mySession || null });
       }).catch(()=>{});
     }
   });
 }
+// keep the session code in our presence record so friends can see we're in a room
+function publishPresenceSession(){
+  try{
+    if(!cloudUser || !fb || !fb.db) return;
+    fb.db.ref('presence/'+cloudUser.uid).update({ session: mySession || null });
+  }catch(e){}
+  if(typeof renderFriends==='function' && $('friendsBody') && $('friendsBody').style.display!=='none') renderFriends();
+}
+
+/* ---------- join requests ---------- */
+// A friend asks to join your room; you approve, which sends them an invite.
+async function askToJoinFriend(fUid, code, btn){
+  if(!cloudUser || !code) return;
+  try{
+    await ensureFirebase();
+    await fb.db.ref('joinRequests/'+fUid+'/'+cloudUser.uid).set({
+      name: myShareName(), code: code, at: firebase.database.ServerValue.TIMESTAMP
+    });
+    if(btn){ const t=btn.textContent; btn.textContent='Asked'; btn.disabled=true;
+      setTimeout(()=>{ btn.textContent=t; btn.disabled=false; }, 2500); }
+  }catch(e){ console.error('join request failed', e); friendMsg("Couldn't send that request — try again."); }
+}
+
+let joinReqRef=null, joinReqHandler=null;
+function attachJoinRequestListener(){
+  detachJoinRequestListener();
+  if(!cloudUser || !fb || !fb.db) return;
+  joinReqRef = fb.db.ref('joinRequests/'+cloudUser.uid);
+  joinReqHandler = joinReqRef.on('child_added', snap=>{
+    const req = snap.val()||{}; const fromUid = snap.key;
+    // stale, or for a room we've since left
+    if((req.at && Date.now()-req.at > 2*60*60*1000) || !mySession || req.code!==mySession){
+      try{ joinReqRef.child(fromUid).remove(); }catch(e){}
+      return;
+    }
+    showJoinRequestToast(fromUid, req);
+  }, err=>console.error('join request listener', err));
+}
+function detachJoinRequestListener(){
+  if(joinReqRef && joinReqHandler){ try{ joinReqRef.off('child_added', joinReqHandler); }catch(e){} }
+  joinReqRef=null; joinReqHandler=null;
+}
+
+function showJoinRequestToast(fromUid, req){
+  pingIncoming();
+  const toast=document.createElement('div'); toast.className='invite-toast';
+  const txt=document.createElement('span'); txt.className='invite-toast-text';
+  txt.textContent=(req.name||'A friend')+' wants to join your session';
+  const yes=document.createElement('button'); yes.className='fr-btn'; yes.textContent='Let them in';
+  const no=document.createElement('button'); no.className='fr-btn ghost'; no.textContent='Decline';
+  const clear=()=>{ try{ fb.db.ref('joinRequests/'+cloudUser.uid+'/'+fromUid).remove(); }catch(e){} };
+  yes.onclick=async ()=>{
+    clear(); toast.remove();
+    // approving simply sends them an invite to the room
+    try{ await sendSessionInvite(fromUid, null); }catch(e){}
+  };
+  no.onclick=()=>{ clear(); toast.remove(); };
+  toast.appendChild(txt); toast.appendChild(yes); toast.appendChild(no);
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>toast.classList.add('show'));
+  setTimeout(()=>{ if(toast.isConnected){ toast.remove(); } }, 30000);
+}
+
+// distinct two-note ping for incoming social notifications, audible in a background tab
+function pingIncoming(){
+  try{ beep(880, 0.12, 0.06, 'sine', 0); beep(1245, 0.16, 0.05, 'sine', 0.13); }catch(e){}
+}
+
 function teardownPresence(){
   try{
     if(presenceConnRef && presenceConnHandler) presenceConnRef.off('value', presenceConnHandler);
@@ -2816,10 +2891,10 @@ async function ensureFriendCode(){
 
 // render the whole friends area (code, pending requests, friends list)
 async function renderFriends(){
-  const section=$('friendsSection');
-  if(!section) return;
-  if(!cloudUser){ section.style.display='none'; return; }
-  section.style.display='block';
+  const body=$('friendsBody'), out=$('friendsSignedOut');
+  if(!body) return;
+  if(!cloudUser){ body.style.display='none'; if(out) out.style.display='block'; return; }
+  body.style.display='block'; if(out) out.style.display='none';
 
   // 1) your code
   const code = await ensureFriendCode();
@@ -2867,12 +2942,18 @@ async function renderFriends(){
       const row=buildFriendRow(f, [
         {label:'Remove', cls:'ghost', fn:()=>removeFriend(fUid)}
       ]);
-      // invite button — appears whenever this friend is online. If we're not in a
-      // session yet, it starts one first, then invites them.
+      // Two possible actions, shown per the four-state matrix (see docs below):
+      //   neither in a session      -> Start   (create one + invite them)
+      //   they're in one, I'm not   -> Ask to join
+      //   I'm in one, they're not   -> Invite
+      //   both in different ones    -> both
       const inviteB=document.createElement('button'); inviteB.type='button';
       inviteB.className='fr-btn'; inviteB.textContent='Invite'; inviteB.style.display='none';
       inviteB.onclick=()=>inviteFriendToSession(fUid, inviteB);
-      row.querySelector('.fr-actions').prepend(inviteB);
+      const joinB=document.createElement('button'); joinB.type='button';
+      joinB.className='fr-btn ghost'; joinB.textContent='Ask to join'; joinB.style.display='none';
+      const acts=row.querySelector('.fr-actions');
+      acts.prepend(joinB); acts.prepend(inviteB);
       // live online dot — updates as the friend connects/disconnects
       const dot=document.createElement('span'); dot.className='fr-dot'; dot.title='Offline';
       const nameCol=row.querySelector('.fr-namecol');
@@ -2882,22 +2963,32 @@ async function renderFriends(){
         const handler=ref.on('value', s=>{
           const v=s.val();
           const online = !!(v && v.online);
+          const theirSession = (v && v.session) || null;
           dot.classList.toggle('online', online);
           dot.title = online ? 'Online now' : 'Offline';
-          inviteB.style.display = online ? '' : 'none';
-          inviteB.textContent = mySession ? 'Invite' : 'Start';
-          let sub=nameCol.querySelector('.fr-sub');
-          if(online){
-            if(!sub){ sub=document.createElement('div'); sub.className='fr-sub'; nameCol.appendChild(sub); }
-            sub.textContent='Online now';
-            sub.classList.add('online');
-          } else if(v && v.at){
-            if(!sub){ sub=document.createElement('div'); sub.className='fr-sub'; nameCol.appendChild(sub); }
-            sub.textContent='Last online '+fmtLastSeen(v.at);
-            sub.classList.remove('online');
-          } else if(sub){
-            sub.remove(); // never seen online — show nothing
+
+          const sameRoom = theirSession && mySession && theirSession===mySession;
+          // Invite: only meaningful if I have a room they're not already in
+          inviteB.style.display = (online && mySession && !sameRoom) ? '' : 'none';
+          inviteB.textContent = 'Invite';
+          // Ask to join: only if they have a room I'm not already in
+          joinB.style.display = (online && theirSession && !sameRoom) ? '' : 'none';
+          joinB.onclick = ()=>askToJoinFriend(fUid, theirSession, joinB);
+          // Start: neither of us has a room
+          if(online && !mySession && !theirSession){
+            inviteB.style.display=''; inviteB.textContent='Start';
           }
+
+          let sub=nameCol.querySelector('.fr-sub');
+          const setSub=(txt, isOnline)=>{
+            if(!sub){ sub=document.createElement('div'); sub.className='fr-sub'; nameCol.appendChild(sub); }
+            sub.textContent=txt; sub.classList.toggle('online', !!isOnline);
+          };
+          if(online && sameRoom) setSub('In your session', true);
+          else if(online && theirSession) setSub('In a session', true);
+          else if(online) setSub('Online now', true);
+          else if(v && v.at) setSub('Last online '+fmtLastSeen(v.at), false);
+          else if(sub){ sub.remove(); }
         }, ()=>{});
         friendPresenceWatch[fUid]={ref, handler};
       }catch(e){}
@@ -3082,6 +3173,7 @@ function detachInviteListener(){
 
 let activeInviteToast=null;
 function showInviteToast(fromUid, inv){
+  pingIncoming();
   // one toast at a time — newest wins
   if(activeInviteToast){ activeInviteToast.remove(); activeInviteToast=null; }
   const toast=document.createElement('div'); toast.className='invite-toast';
@@ -3091,6 +3183,12 @@ function showInviteToast(fromUid, inv){
   const disB=document.createElement('button'); disB.className='fr-btn ghost'; disB.textContent='Dismiss';
   const clearInvite=()=>{ try{ fb.db.ref('invites/'+cloudUser.uid+'/'+fromUid).remove(); }catch(e){} };
   joinB.onclick=async ()=>{
+    // joining adopts the host's timer, so warn if a solo run is mid-flight
+    if(!mySession && S.running){
+      const mins = Math.max(0, Math.round((S.endAt - Date.now())/60000));
+      const ok = confirm('You have a timer running with about '+mins+' min left.\n\nJoining will replace it with the shared session timer. Continue?');
+      if(!ok) return;
+    }
     clearInvite(); toast.remove(); activeInviteToast=null;
     try{
       await ensureFirebase();
@@ -4247,6 +4345,7 @@ $('deleteAccountBtn').onclick=async ()=>{
     teardownPresence();
     clearFriendPresenceWatch();
     detachInviteListener();
+    detachJoinRequestListener();
     try{ if(cloudDataRef) await cloudDataRef.remove(); }catch(e){}
     try{ await cloudUser.delete(); }catch(e){ /* may need recent login; sign out regardless */ }
     cloudUser=null; cloudDataRef=null;
@@ -4858,6 +4957,7 @@ async function joinOrCreateSession(code, asHost){
   try{ localStorage.setItem("pomofit:activeSession", JSON.stringify({code, asHost})); }catch(e){}
   // remember this as the last session for the "Rejoin" option (survives leaving)
   try{ localStorage.setItem("pomofit:lastSession", JSON.stringify({code, asHost, at:Date.now()})); }catch(e){}
+  if(typeof publishPresenceSession==="function") publishPresenceSession();
   const sessionRef = fb.db.ref('sessions/'+code);
   const timerRef = sessionRef.child('timer');
   const membersRef = sessionRef.child('members');
@@ -5325,6 +5425,7 @@ $('leaveSessionBtn').onclick=async ()=>{
     detachSessionListeners();
   }
   mySession=null; sessionRefs=null; isHost=false;
+  if(typeof publishPresenceSession==='function') publishPresenceSession();
   myCapturedName = null;
   try{ localStorage.removeItem("pomofit:activeSession"); }catch(e){}
   try{ localStorage.removeItem("pomofit:coworkName"); }catch(e){}
@@ -5954,6 +6055,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); })
 
 { const sb=$('settingsBtn'); if(sb) sb.onclick=()=>{ closeMenu(); openSheet('settingsSheet'); }; }
 $('quickSettingsBtn').onclick=()=>openSheet('settingsSheet');
+$('friendsMenuBtn').onclick=()=>{ closeMenu(); openSheet('friendsSheet'); renderFriends(); };
 $('profileBtn').onclick=()=>{ closeMenu(); openSheet('profileSheet'); };
 $('supportLink').addEventListener('click', ()=> closeMenu());
 sheetBg.onclick=closeSheets;
