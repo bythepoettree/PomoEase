@@ -23,7 +23,7 @@
         const bgMap = { ember:'#1B3A2D', mono:'#141414', pink:'#E36F97', ocean:'#2E7191', light:'#5A5F66' };
         const bg = bgMap[t] || '#1B3A2D';
         document.documentElement.style.background = bg;
-        document.documentElement.style.colorScheme = (t === 'light') ? 'light' : 'dark';
+        document.documentElement.style.colorScheme = 'dark';
         document.documentElement.dataset.pendingTheme = t;
         // update theme-color meta so browser chrome (status bar) also matches
         setTimeout(()=>{
@@ -2131,11 +2131,6 @@
         <div class="stat"><div class="num" id="stMinutes">0</div><div class="lab">Minutes</div></div>
         <div class="stat"><div class="num" id="stReps">0</div><div class="lab">Total reps</div></div>
       </div>
-
-      <details class="acct-sub" open>
-        <summary>Recent activity <span class="chev">›</span></summary>
-        <div id="histList" style="margin-top:8px;"></div>
-      </details>
       </div>
     </details>
 
@@ -4210,19 +4205,6 @@ function renderProfile(){
     $('stReps').textContent=DATA.totals.reps;
     renderDashboard();
     renderFriends();
-    const h=$('histList'); h.innerHTML='';
-    if(!DATA.history.length) h.innerHTML='<p class="empty-note">Nothing logged yet — finish a focus round or a workout.</p>';
-    DATA.history.slice(0,5).forEach(e=>{
-      const d=new Date(e.ts);
-      const when=d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      const row=document.createElement('div'); row.className='hist-item';
-      const what = e.type==='focus'
-        ? `📖 ${e.min} min focus${e.task?' · '+e.task:''}`
-        : `💪 ${e.ex} — ${e.reps} ${e.unit}`;
-      row.innerHTML=`<span class="what"></span><span class="when">${when}</span>`;
-      row.querySelector('.what').textContent=what;
-      h.appendChild(row);
-    });
   }
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -5957,8 +5939,16 @@ const THEME_ORDER=['ember','mono','pink','ocean','light'];
 const THEME_ICON={ember:'◐', mono:'◑', pink:'◓', ocean:'◒', light:'○'};
 const THEME_NAMES={ember:'Field Grey', mono:'Black & White'};
 const themeToggleBtn=$('themeToggleBtn');
+const THEME_BG={ember:'#1B3A2D', mono:'#141414', pink:'#E36F97', ocean:'#2E7191', light:'#5A5F66'};
 function applyTheme(k){
   document.body.dataset.theme=k;
+  // keep the <html> background, colour-scheme and browser chrome colour in sync —
+  // otherwise the page edges / status bar keep the previously loaded theme's colour
+  const bg = THEME_BG[k] || THEME_BG.ember;
+  document.documentElement.style.background = bg;
+  document.documentElement.style.colorScheme = 'dark';
+  const meta = document.getElementById('metaThemeColor');
+  if(meta) meta.setAttribute('content', bg);
   themeToggleBtn.textContent=THEME_ICON[k]||'◐';
   const themeNames={ember:'Field Green', mono:'Black & White', pink:'Pink & White'};
   themeToggleBtn.title='Theme: '+(themeNames[k]||k)+' (tap to switch)';
