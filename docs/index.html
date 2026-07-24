@@ -1314,8 +1314,10 @@
   .together-name-block{ margin-bottom:16px; }
   .session-name-row{ margin-bottom:12px; }
   .session-name-row input{
-    width:100%; background:var(--chip); border:none; color:var(--fg);
+    width:100%; background:var(--chip); border:1px solid transparent; color:var(--fg);
     border-radius:12px; padding:12px 15px; font-family:inherit; font-size:15px; font-weight:600;
+    text-align:center;
+    transition:background .18s ease, border-color .18s ease;
   }
   .session-name-row input::placeholder{ color:var(--muted); opacity:.6; font-weight:400; }
   /* committed state — reads as locked in, still editable on tap */
@@ -1324,7 +1326,13 @@
     font-family:'Anton', sans-serif; letter-spacing:.02em; font-size:16px;
     cursor:pointer;
   }
-  .session-name-row input{ border:1px solid transparent; transition:background .18s ease, border-color .18s ease; }  .together-name-block input{
+  /* guests can't rename — show it as a plain centred title, not a field */
+  .session-name-row input.readonly{
+    background:transparent; border-color:transparent; cursor:default;
+    font-family:'Anton', sans-serif; letter-spacing:.02em; font-size:17px;
+  }
+  .session-name-row input.readonly:focus{ outline:none; }
+  .together-name-block input{
     width:100%; background:var(--chip); border:1px solid transparent; border-radius:12px;
     color:var(--fg); font-family:inherit; font-size:15px; font-weight:500;
     padding:12px 14px; outline:none; transition:border-color .15s ease;
@@ -2865,8 +2873,15 @@ function showJoinRequestToast(fromUid, req){
   const clear=()=>{ try{ fb.db.ref('joinRequests/'+cloudUser.uid+'/'+fromUid).remove(); }catch(e){} };
   yes.onclick=async ()=>{
     clear(); toast.remove();
-    // approving simply sends them an invite to the room
-    try{ await sendSessionInvite(fromUid, null); }catch(e){}
+    // approving sends them an invite flagged as approved, which joins them
+    // straight away instead of prompting them a second time
+    try{
+      await sendSessionInvite(fromUid, null, {approved:true});
+      showToast('✅ Letting '+(req.name||'them')+' in…');
+    }catch(e){
+      console.error('approve join failed', e);
+      showToast("Couldn't let them in — try again.");
+    }
   };
   no.onclick=()=>{ clear(); toast.remove(); };
   toast.appendChild(txt);
@@ -3196,7 +3211,7 @@ async function removeFriend(fUid){
    node at invites/{targetUid}/{fromUid} = {name, code, at}; the target has a
    live listener and gets a toast with Join / Dismiss. Invites are deleted once
    handled, and stale ones (>2h) are ignored and cleaned up. */
-async function sendSessionInvite(fUid, btn){
+async function sendSessionInvite(fUid, btn, opts){
   if(!cloudUser || !mySession) return;
   try{
     await ensureFirebase();
@@ -3209,6 +3224,9 @@ async function sendSessionInvite(fUid, btn){
     await ref.set({
       name: myShareName(),
       code: mySession,
+      // set when this invite answers their own "ask to join" — they already
+      // asked, so they're taken straight in rather than asked a second time
+      approved: !!(opts && opts.approved),
       at: firebase.database.ServerValue.TIMESTAMP
     });
     if(btn){ const t=btn.textContent; btn.textContent='Invited!'; btn.disabled=true;
@@ -3287,6 +3305,8 @@ async function attachInviteListener(){
       try{ inviteListenerRef.child(fromUid).remove(); }catch(e){}
       return;
     }
+    // an invite that answers our own "ask to join" — go straight in
+    if(inv.approved){ acceptApprovedInvite(fromUid, inv); return; }
     showInviteToast(fromUid, inv);
   }, err=>{ console.error('invite listener error', err); });
 }
@@ -3295,6 +3315,28 @@ function detachInviteListener(){
     try{ inviteListenerRef.off('child_added', inviteListenerHandler); }catch(e){}
   }
   inviteListenerRef=null; inviteListenerHandler=null;
+}
+
+/* The host approved our "ask to join": we already opted in by asking, so there's
+   no second prompt — tell them they're in and take them straight through. */
+async function acceptApprovedInvite(fromUid, inv){
+  try{ fb.db.ref('invites/'+cloudUser.uid+'/'+fromUid).remove(); }catch(e){}
+  if(mySession && inv.code===mySession) return; // already there
+  pingIncoming();
+  showToast('✅ '+(inv.name||'They')+' let you in — joining…');
+  try{
+    await ensureFirebase();
+    const snap=await fb.db.ref('sessions/'+inv.code+'/createdAt').get();
+    if(!snap.exists()){ showToast('That session has already ended.'); return; }
+    myCapturedName = (DATA.displayName||'').trim() || 'Someone';
+    try{ localStorage.setItem('pomofit:coworkName', myCapturedName); }catch(e){}
+    closeSheets();
+    openSheet('togetherSheet');
+    await joinOrCreateSession(inv.code, false);
+  }catch(e){
+    console.error('auto-join failed', e);
+    showToast("Couldn't join that session — try again.");
+  }
 }
 
 let activeInviteToast=null;
@@ -5234,45 +5276,58 @@ function setupSessionName(code){
   teardownSessionName();
   if(!fb || !fb.db) return;
   const input=$('sessionNameInput');
+  if(!input) return;
+  const row=input.closest('.session-name-row');
   sessionNameRef = fb.db.ref('sessions/'+code+'/name');
-  // reflect the "named" state visually — set when there's a value and we're not editing
-  const syncNamedState=()=>{
-    const named = !!(input.value||'').trim() && document.activeElement!==input;
-    input.classList.toggle('named', named);
+  // only the host names the room; everyone else sees it as a live title
+  const canEdit = !!isHost;
+
+  const applyUI=()=>{
+    const v=(input.value||'').trim();
+    const editing = document.activeElement===input;
+    input.classList.toggle('named', !!v && !editing);
+    // guests with no name yet have nothing to show, so hide the row entirely
+    if(row) row.style.display = (canEdit || v) ? '' : 'none';
   };
-  // live: reflect the name others set (ignore the echo of our own recent edit)
+
+  input.readOnly = !canEdit;
+  input.classList.toggle('readonly', !canEdit);
+  input.placeholder = canEdit ? 'Name this session (optional)' : '';
+  input.title = canEdit ? '' : 'Only the host can rename this session';
+
+  // live: everyone in the room sees the name as it changes
   sessionNameHandler = sessionNameRef.on('value', snap=>{
-    if(Date.now()-sessionNameLocalEdit < 1500) return;
-    if(document.activeElement===input) return; // don't clobber while typing
+    if(canEdit){
+      if(Date.now()-sessionNameLocalEdit < 1500) return;
+      if(document.activeElement===input) return; // don't clobber while typing
+    }
     input.value = snap.val() || '';
-    syncNamedState();
+    applyUI();
   }, ()=>{});
-  const commit=()=>{
-    const v=(input.value||'').trim().slice(0,40);
-    input.value=v;
-    try{ sessionNameRef.set(v || null); }catch(e){}
-    syncNamedState();
-  };
-  // write as the user types (debounced)
-  let t=null;
-  input.oninput=()=>{
-    sessionNameLocalEdit = Date.now();
-    input.classList.remove('named');
-    clearTimeout(t);
-    t=setTimeout(()=>{
+
+  if(canEdit){
+    const commit=()=>{
       const v=(input.value||'').trim().slice(0,40);
+      input.value=v;
       try{ sessionNameRef.set(v || null); }catch(e){}
-    }, 350);
-  };
-  // clicking away locks the name in immediately rather than waiting on the debounce
-  input.onblur=()=>{
-    sessionNameLocalEdit = Date.now();
-    clearTimeout(t);
-    commit();
-  };
-  input.onfocus=()=> input.classList.remove('named');
-  input.onkeydown=(e)=>{ if(e.key==='Enter'){ e.preventDefault(); input.blur(); } };
-  syncNamedState();
+      applyUI();
+    };
+    let t=null;
+    input.oninput=()=>{
+      sessionNameLocalEdit = Date.now();
+      input.classList.remove('named');
+      clearTimeout(t);
+      t=setTimeout(()=>{
+        const v=(input.value||'').trim().slice(0,40);
+        try{ sessionNameRef.set(v || null); }catch(e){}
+      }, 350);
+    };
+    // clicking away locks the name in immediately rather than waiting on the debounce
+    input.onblur=()=>{ sessionNameLocalEdit=Date.now(); clearTimeout(t); commit(); };
+    input.onfocus=()=> input.classList.remove('named');
+    input.onkeydown=(e)=>{ if(e.key==='Enter'){ e.preventDefault(); input.blur(); } };
+  }
+  applyUI();
 }
 function teardownSessionName(){
   if(sessionNameRef && sessionNameHandler){ try{ sessionNameRef.off('value', sessionNameHandler); }catch(e){} }
@@ -5280,7 +5335,11 @@ function teardownSessionName(){
   const input=$('sessionNameInput');
   if(input){
     input.oninput=null; input.onblur=null; input.onfocus=null; input.onkeydown=null;
-    input.value=''; input.classList.remove('named');
+    input.value=''; input.readOnly=false;
+    input.classList.remove('named','readonly');
+    input.placeholder='Name this session (optional)';
+    const row=input.closest('.session-name-row');
+    if(row) row.style.display='';
   }
 }
 
