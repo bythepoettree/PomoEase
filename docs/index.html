@@ -682,20 +682,6 @@
   #tourCard .tour-title{ font-size:17px; font-weight:700; margin-bottom:6px; letter-spacing:-.01em; }
   #tourCard .tour-body{ font-size:13.5px; line-height:1.55; color:var(--muted); }
   #tourCard .tour-body b{ color:var(--fg); font-weight:600; }
-  /* in-card example row (sample dots for the round-tracker step) */
-  .tour-example{
-    display:flex; align-items:center; gap:11px;
-    margin:13px 0 2px; padding:11px 13px;
-    background:color-mix(in srgb, var(--fg) 6%, transparent);
-    border-radius:12px;
-  }
-  .tour-ex-dots{ display:flex; gap:7px; flex:none; }
-  .tour-ex-dots .ex-dot{
-    width:11px; height:11px; border-radius:50%;
-    border:2px solid var(--accent); box-sizing:border-box;
-  }
-  .tour-ex-dots .ex-dot.done{ background:var(--accent); }
-  .tour-ex-cap{ font-size:11.5px; color:var(--muted); letter-spacing:.02em; }
   .tour-progress{ display:flex; gap:6px; margin:15px 0 14px; }
   .tour-progress i{
     height:4px; flex:1; border-radius:2px;
@@ -953,6 +939,50 @@
   .friend-row .fr-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .fr-sub{ font-size:10.5px; color:var(--muted); opacity:.85; }
   .fr-sub.online{ color:#4CAF7A; opacity:1; }
+  /* ---------- leaderboard ---------- */
+  .lb-tabs{ display:flex; gap:6px; margin-bottom:12px; }
+  .lb-tab{
+    flex:1; padding:10px; border:none; border-radius:11px; cursor:pointer;
+    background:var(--chip); color:var(--muted); font-family:inherit; font-size:13px; font-weight:600;
+    transition:background .15s ease, color .15s ease;
+  }
+  .lb-tab.active{ background:var(--accent); color:var(--accent-ink); }
+  .lb-list{ max-height:320px; overflow-y:auto; }
+  .lb-list::-webkit-scrollbar{ width:5px; }
+  .lb-list::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+  .lb-row{
+    display:flex; align-items:center; gap:11px;
+    padding:9px 10px; border-radius:12px; font-size:13.5px;
+  }
+  .lb-row + .lb-row{ margin-top:3px; }
+  .lb-row.me{ background:color-mix(in srgb, var(--accent) 16%, transparent); }
+  .lb-rank{
+    flex:none; width:26px; text-align:center; font-weight:700; font-size:14px;
+    color:var(--muted); font-variant-numeric:tabular-nums;
+  }
+  .lb-row.top1 .lb-rank{ color:#E8B84B; }
+  .lb-row.top2 .lb-rank{ color:#B9C2CC; }
+  .lb-row.top3 .lb-rank{ color:#CD8B5B; }
+  .lb-avatar{
+    width:30px; height:30px; border-radius:50%; overflow:hidden; flex:none;
+    background:var(--bg2); display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .lb-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .lb-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; }
+  .lb-name .you-tag{ color:var(--muted); font-weight:400; font-size:11.5px; margin-left:5px; }
+  .lb-val{ flex:none; font-weight:700; font-variant-numeric:tabular-nums; }
+  .lb-val small{ font-weight:500; color:var(--muted); font-size:11px; margin-left:2px; }
+  .lb-empty{ text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; }
+  .lb-you{
+    margin-top:10px; padding-top:12px; border-top:1px solid var(--line);
+  }
+  .lb-you .lb-row{ background:color-mix(in srgb, var(--accent) 16%, transparent); }
+  .lb-note{ font-size:11.5px; color:var(--muted); text-align:center; margin:14px 0 0; }
+  .lb-leave{
+    background:none; border:none; color:var(--accent); cursor:pointer;
+    font-family:inherit; font-size:11.5px; text-decoration:underline; padding:0;
+  }
+  .lb-loading{ text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; }
   /* incoming session invite toast */
   .invite-toast{
     position:fixed; top:16px; left:50%; transform:translate(-50%,-8px);
@@ -1621,6 +1651,9 @@
       <button class="menu-item" id="friendsMenuBtn" role="menuitem" aria-label="Friends">
         <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/><path d="M16.5 5.4a3.2 3.2 0 0 1 0 6"/><path d="M18 14.9c2.1.5 3.5 2 3.5 4.1"/></svg></span><span>Friends</span><span class="friend-badge" id="menuFriendBadge" style="display:none;">0</span>
       </button>
+      <button class="menu-item" id="leaderboardMenuBtn" role="menuitem" aria-label="Leaderboard">
+        <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg></span><span>Leaderboard</span>
+      </button>
       <a class="menu-item" id="supportLink" href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer" role="menuitem">
         <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span><span>Support</span>
       </a>
@@ -1802,6 +1835,15 @@
       <span class="toggle-compact-desc">Starts break timer automatically</span>
     </button>
   </div>
+
+  <div style="height:1px;background:var(--line);margin:18px 0;"></div>
+
+  <div class="toggle-row-compact">
+    <button class="toggle-compact-btn" id="lbOptToggle" aria-pressed="true" title="Show me on the leaderboard" style="flex:1;">
+      🏆<span class="toggle-compact-label">Leaderboard</span>
+      <span class="toggle-compact-desc">Show my name &amp; totals on the global board</span>
+    </button>
+  </div>
 </div>
 
 <select id="langSelect" aria-hidden="true" style="display:none;">
@@ -1977,6 +2019,20 @@
     <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
     <div id="friendRequestsList"></div>
     <div id="friendsList" class="friends-list-scroll"></div>
+  </div>
+</div>
+
+<div class="sheet" id="leaderboardSheet">
+  <div class="sheet-head"><h2>Leaderboard</h2><button class="close-sheet" aria-label="Close">✕</button></div>
+  <div id="lbSignedOut" class="signin-note" style="display:none;">Sign in to your account to join the global leaderboard and see where you rank.</div>
+  <div id="lbBody" style="display:none;">
+    <div class="lb-tabs" role="tablist">
+      <button class="lb-tab active" id="lbTabMinutes" role="tab" type="button">Minutes focused</button>
+      <button class="lb-tab" id="lbTabReps" role="tab" type="button">Reps done</button>
+    </div>
+    <div id="lbList" class="lb-list"></div>
+    <div id="lbYou" class="lb-you" style="display:none;"></div>
+    <p class="lb-note" id="lbPrivacyNote">You're on the global board. <button type="button" class="lb-leave" id="lbLeaveBtn">Leave</button></p>
   </div>
 </div>
 
@@ -2186,7 +2242,6 @@
     <div class="tour-step-num" id="tourStepNum"></div>
     <div class="tour-title" id="tourTitle"></div>
     <div class="tour-body" id="tourBody"></div>
-    <div class="tour-example" id="tourExample" style="display:none;"></div>
     <div class="tour-progress" id="tourProgress"></div>
     <div class="tour-actions">
       <button class="tour-skip" id="tourSkip" type="button">Skip</button>
@@ -2421,7 +2476,45 @@ function saveCloudData(){
         updatedAt: firebase.database.ServerValue.TIMESTAMP
       });
     }catch(e){ console.error('cloud save failed', e); }
+    publishLeaderboard();
   }, 400);
+}
+
+/* ---- global leaderboard: a small PUBLIC node per user ----
+   Only name, avatar, minutes and reps are exposed — full profiles stay private
+   under users/{uid}. Writing is gated to the user's own uid by the rules. */
+function lbOptedOut(){
+  try{ return localStorage.getItem('pomofit:lbOptOut')==='1'; }catch(e){ return false; }
+}
+async function publishLeaderboard(){
+  if(!cloudUser || !fb || !fb.db) return;
+  const t = DATA.totals || {};
+  const minutes = Math.max(0, Math.round(t.minutes||0));
+  const reps = Math.max(0, Math.round(t.reps||0));
+  const ref = fb.db.ref('leaderboard/'+cloudUser.uid);
+  try{
+    // opted out, or nothing worth showing yet → make sure we're not listed
+    if(lbOptedOut() || (minutes<=0 && reps<=0)){
+      await ref.remove();
+      return;
+    }
+    await ref.set({
+      name: myShareName(),
+      avatar: shareableAvatar(),
+      minutes, reps,
+      at: firebase.database.ServerValue.TIMESTAMP
+    });
+  }catch(e){ console.error('leaderboard publish failed', e); }
+}
+async function leaveLeaderboard(){
+  try{ localStorage.setItem('pomofit:lbOptOut','1'); }catch(e){}
+  if(cloudUser && fb && fb.db){
+    try{ await fb.db.ref('leaderboard/'+cloudUser.uid).remove(); }catch(e){}
+  }
+}
+function rejoinLeaderboard(){
+  try{ localStorage.removeItem('pomofit:lbOptOut'); }catch(e){}
+  publishLeaderboard();
 }
 
 // ---- migration: fold guest / old-local-account data into a cloud account ----
@@ -2491,6 +2584,7 @@ function applyCloudUser(user, cloudDoc){
   attachInviteListener().catch(e=>console.error('invite listener attach failed', e));
   attachJoinRequestListener().catch(e=>console.error('join request listener attach failed', e));
   attachFriendsLive();
+  publishLeaderboard();
 }
 
 // ---- live sync: reflect changes made on other devices, without a refresh ----
@@ -6289,7 +6383,7 @@ const TOUR_STEPS = [
   { el:'startBtn',         title:'Start & pause',      body:'Tap to begin the round. Tap again to pause.', shape:'round' },
   { el:'resetBtn',         title:'Reset',              body:'Sends the current round back to the top without touching your settings.', shape:'round' },
   { el:'skipBtn',          title:'Workout break',      body:'You still get your break — but you can spend it on a quick guided workout instead of sitting still.', shape:'round' },
-  { el:'dots',             title:'Round tracker',      body:'One circle per focus round. They fill as you finish rounds — here, two done and two still to go. After the last one you earn a longer break.', shape:'rect', example:'dots' },
+  { el:'dots',             title:'Round tracker',      body:'These fill in as you finish focus rounds. After the last one you earn a longer break.', shape:'rect' },
   { el:'addTaskOpen',      title:'Add your tasks',     body:'List what you\u2019re working on. Pick a task and each finished round counts towards it.', shape:'rect' },
   { el:'helpBtn',          title:'Help, anytime',      body:'Opens the how-it-works guide — and this tour — whenever you need a refresher.', shape:'round' },
   { el:'quickSettingsBtn', title:'Settings',           body:'Round lengths, theme, language, sound and notifications all live here.', shape:'round' },
@@ -6338,7 +6432,6 @@ function endTour(){
   document.body.classList.remove('tour-active');
   // stop any dot flashing and restore the tasks panel to how we found it
   dotsEl.querySelectorAll('.dot.tour-flash').forEach(d=>d.classList.remove('tour-flash'));
-  { const ex=$('tourExample'); if(ex){ ex.style.display='none'; ex.innerHTML=''; } }
   if(tourTasksWereCollapsed){
     const tt=$('tasksToggle');
     if(tt && tt.getAttribute('aria-expanded')==='true') tt.click();
@@ -6364,21 +6457,6 @@ function showTourStep(i){
   // flash the round dots only while their step is on screen
   const flashing = step.el==='dots';
   dotsEl.querySelectorAll('.dot').forEach(d=> d.classList.toggle('tour-flash', flashing));
-  // in-card example (e.g. sample dots so the user knows what to look for)
-  const exEl=$('tourExample');
-  if(exEl){
-    if(step.example==='dots'){
-      exEl.innerHTML =
-        '<span class="tour-ex-dots">'+
-          '<i class="ex-dot done"></i><i class="ex-dot done"></i>'+
-          '<i class="ex-dot"></i><i class="ex-dot"></i>'+
-        '</span>'+
-        '<span class="tour-ex-cap">done · done · to go · to go</span>';
-      exEl.style.display='';
-    } else {
-      exEl.style.display='none'; exEl.innerHTML='';
-    }
-  }
   // scroll target into view if needed, then position
   const el=$(step.el);
   if(el && typeof el.scrollIntoView==='function'){
@@ -6439,6 +6517,107 @@ document.addEventListener('keydown', e=>{
   }
 }
 $('friendsMenuBtn').onclick=()=>{ closeMenu(); openSheet('friendsSheet'); renderFriends(); };
+
+/* ---------- leaderboard UI ---------- */
+let lbMetric='minutes', lbData=[];
+function openLeaderboard(){
+  closeMenu(); openSheet('leaderboardSheet');
+  renderLeaderboard();
+}
+$('leaderboardMenuBtn').onclick=openLeaderboard;
+$('lbTabMinutes').onclick=()=>{ lbMetric='minutes'; syncLbTabs(); paintLeaderboard(); };
+$('lbTabReps').onclick=()=>{ lbMetric='reps'; syncLbTabs(); paintLeaderboard(); };
+$('lbLeaveBtn').onclick=async ()=>{
+  const leaving = !lbOptedOut();
+  if(leaving){ await leaveLeaderboard(); } else { rejoinLeaderboard(); }
+  renderLeaderboard();
+};
+function syncLbTabs(){
+  $('lbTabMinutes').classList.toggle('active', lbMetric==='minutes');
+  $('lbTabReps').classList.toggle('active', lbMetric==='reps');
+}
+function lbAvatarHtml(a){
+  if(a && a.startsWith('emoji:')) return a.slice(6);
+  if(a && a.startsWith('http')) return '<img src="'+a.replace(/"/g,'&quot;')+'" alt="">';
+  return '🙂';
+}
+async function renderLeaderboard(){
+  const signedIn = !!cloudUser;
+  $('lbSignedOut').style.display = signedIn ? 'none' : '';
+  $('lbBody').style.display = signedIn ? '' : 'none';
+  if(!signedIn) return;
+  syncLbTabs();
+  $('lbList').innerHTML = '<div class="lb-loading">Loading…</div>';
+  $('lbYou').style.display='none';
+  // privacy note reflects opt-in/out state
+  const note=$('lbPrivacyNote');
+  if(lbOptedOut()){
+    note.innerHTML = 'You\'re not on the board. <button type="button" class="lb-leave" id="lbLeaveBtn">Join</button>';
+  } else {
+    note.innerHTML = 'You\'re on the global board. <button type="button" class="lb-leave" id="lbLeaveBtn">Leave</button>';
+  }
+  $('lbLeaveBtn').onclick=async ()=>{
+    if(!lbOptedOut()){ await leaveLeaderboard(); } else { rejoinLeaderboard(); }
+    renderLeaderboard();
+  };
+  try{
+    await ensureFirebase();
+    // pull the whole (small) public board once; ranking is done client-side
+    const snap = await fb.db.ref('leaderboard').get();
+    lbData = [];
+    if(snap.exists()){
+      snap.forEach(c=>{
+        const v=c.val()||{};
+        lbData.push({ uid:c.key, name:v.name||'Someone', avatar:v.avatar||null,
+                      minutes:Math.max(0,v.minutes||0), reps:Math.max(0,v.reps||0) });
+      });
+    }
+    paintLeaderboard();
+  }catch(e){
+    console.error('leaderboard load failed', e);
+    $('lbList').innerHTML = '<div class="lb-empty">Couldn\'t load the leaderboard right now.</div>';
+  }
+}
+function paintLeaderboard(){
+  const metric=lbMetric;
+  const ranked = lbData.slice()
+    .filter(r=> (r[metric]||0) > 0)
+    .sort((a,b)=> b[metric]-a[metric] || (a.name||'').localeCompare(b.name||''));
+  const listEl=$('lbList');
+  if(!ranked.length){
+    listEl.innerHTML = '<div class="lb-empty">No one\'s on the board yet — finish a focus round to be the first.</div>';
+    $('lbYou').style.display='none';
+    return;
+  }
+  const myUid = cloudUser && cloudUser.uid;
+  const unit = metric==='minutes' ? 'min' : 'reps';
+  const rowHtml = (r, rank)=>{
+    const me = r.uid===myUid;
+    const top = rank<=3 ? ' top'+rank : '';
+    return '<div class="lb-row'+(me?' me':'')+top+'">'+
+      '<span class="lb-rank">'+rank+'</span>'+
+      '<span class="lb-avatar">'+lbAvatarHtml(r.avatar)+'</span>'+
+      '<span class="lb-name">'+escapeHtml(r.name)+(me?'<span class="you-tag">you</span>':'')+'</span>'+
+      '<span class="lb-val">'+ (r[metric]||0).toLocaleString() +' <small>'+unit+'</small></span>'+
+    '</div>';
+  };
+  const TOP_N=50;
+  listEl.innerHTML = ranked.slice(0,TOP_N).map((r,i)=>rowHtml(r,i+1)).join('');
+  // if the user is signed-in but ranked outside the visible top, pin their row below
+  const youEl=$('lbYou');
+  if(myUid){
+    const myIdx = ranked.findIndex(r=>r.uid===myUid);
+    if(myIdx>=TOP_N){
+      youEl.innerHTML = rowHtml(ranked[myIdx], myIdx+1);
+      youEl.style.display='';
+    } else {
+      youEl.style.display='none';
+    }
+  } else {
+    youEl.style.display='none';
+  }
+}
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 $('profileBtn').onclick=()=>{ closeMenu(); openSheet('profileSheet'); };
 $('supportLink').addEventListener('click', ()=> closeMenu());
 sheetBg.onclick=closeSheets;
@@ -6576,6 +6755,19 @@ $('settingsSfxBtn').onclick=()=>{
 };
 wireToggle('autoBreak',()=>S.autoBreak,v=>S.autoBreak=v);
 wireToggle('autoFocus',()=>S.autoFocus,v=>S.autoFocus=v);
+// leaderboard participation — its own key + Firebase side effect, so wired directly
+{
+  const lbBtn=$('lbOptToggle');
+  if(lbBtn){
+    const on = !lbOptedOut();
+    lbBtn.setAttribute('aria-pressed', on);
+    lbBtn.onclick=()=>{
+      const nowOn = lbOptedOut(); // toggling ON if currently opted out
+      if(nowOn){ rejoinLeaderboard(); } else { leaveLeaderboard(); }
+      lbBtn.setAttribute('aria-pressed', nowOn);
+    };
+  }
+}
 
 /* ---------- diagnostics ----------
    Everything below runs in one top-level script, so a single uncaught error
