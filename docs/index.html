@@ -177,7 +177,7 @@
   @media (prefers-reduced-motion: reduce){ body{transition:none;} }
   /* during boot nothing may animate its colour — prevents the theme fading in
      from the markup default (ocean blue) on refresh */
-  html.boot body, html.boot #entryPage{ transition:none !important; }
+  html.boot body{ transition:none !important; }
 
   /* ---------- focus mode (timer centred, everything else hidden) ---------- */
   body.focus-mode .timer{
@@ -194,8 +194,7 @@
   body.focus-mode .phase-strip,
   body.focus-mode header,
   body.focus-mode footer,
-  body.focus-mode .float-chat,
-  body.focus-mode .intro-bubble{
+  body.focus-mode .float-chat{
     opacity:0 !important;
     visibility:hidden !important;
     pointer-events:none !important;
@@ -235,285 +234,6 @@
   body.timer-running #startBtn .ic-play{display:none;}
   body.timer-running #startBtn .ic-pause{display:block;}
 
-  /* ---------- entry page ---------- */
-  #entryPage{
-    position:fixed; inset:0; z-index:10000;
-    background:var(--bg);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    transition:opacity .8s cubic-bezier(.4,0,.2,1);
-    user-select:none; -webkit-user-select:none;
-    overflow-y:auto;
-    padding:32px 16px;
-  }
-  #entryPage.fade-out{ opacity:0; pointer-events:none; }
-  /* both first-time and repeat visitors center the whole content group
-     vertically — so the intention box and cards always stay together with
-     no gap, and repeat visitors (no cards) still look properly centered */
-  .entry-core{
-    width:100%;
-    display:flex; flex-direction:column; align-items:center;
-  }
-  .entry-wordmark{
-    font-family:'Anton', sans-serif;
-    font-size:clamp(36px, 9vw, 72px);
-    letter-spacing:.12em;
-    color:var(--fg);
-    line-height:1;
-    margin-bottom:2px;
-    user-select:none;
-    opacity:0;
-    transition:opacity .35s ease;
-  }
-  /* reveal the wordmark once the display font is ready (avoids a fallback-font flash) */
-  body.fonts-ready .entry-wordmark{ opacity:1; }
-  /* safety net: if the font never loads, still show it after a moment */
-  body.fonts-timeout .entry-wordmark{ opacity:1; }
-  .entry-wordmark em{ font-style:normal; color:var(--accent); }
-  .entry-tagline{
-    font-size:clamp(9px, 2.3vw, 13px);
-    letter-spacing:.13em;
-    color:var(--muted);
-    text-transform:uppercase;
-    font-weight:500;
-    margin-bottom:44px;
-    user-select:none;
-    opacity:0;
-    animation: taglineUnfoldFade 4s cubic-bezier(.22,.9,.3,1) .2s forwards;
-    will-change:opacity, transform;
-    white-space:nowrap;
-  }
-  /* on narrow mobile screens, tighten spacing so tagline stays narrower than wordmark */
-  @media (max-width:480px){
-    .entry-tagline{ letter-spacing:.04em; }
-  }
-  @keyframes taglineUnfoldFade{
-    0%   { opacity:0; transform:translateY(-4px); }
-    20%  { opacity:.85; transform:translateY(0); }
-    75%  { opacity:.85; }
-    100% { opacity:0; }
-  }
-  .entry-tagline b{ font-weight:800; color:var(--fg); }
-  /* after the intro animation ends, hover to reveal briefly */
-  .entry-tagline.done{
-    animation:none; opacity:0;
-    transition:opacity .3s ease;
-  }
-  .entry-tagline.done.show{ opacity:.85; }
-  @media (prefers-reduced-motion:reduce){
-    .entry-tagline{ animation:none; opacity:.85; }
-  }
-  .entry-btn{
-    font-family:'Anton', sans-serif;
-    font-size:clamp(12px, 2.5vw, 16px);
-    letter-spacing:.2em;
-    color:var(--accent-ink);
-    background:var(--accent);
-    border:none; border-radius:999px;
-    padding:16px 52px;
-    cursor:pointer;
-    transition:transform .15s ease, opacity .15s ease;
-    user-select:none;
-  }
-  .entry-btn:hover{ transform:scale(1.05); }
-  .entry-btn:active{ transform:scale(.97); opacity:.85; }
-  /* intention input */
-  .intention-wrap{
-    display:flex; flex-direction:column; align-items:center; gap:14px;
-    max-width:min(460px, 90vw);
-    transition: opacity .5s ease, transform .5s ease;
-  }
-  .intention-wrap.fizzle{ opacity:0; transform:scale(.95); pointer-events:none; }
-  .intention-label{
-    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
-    color:var(--muted); font-weight:600;
-  }
-  .intention-row{
-    display:flex; align-items:center; gap:8px;
-    background:rgba(255,255,255,.08); backdrop-filter:blur(8px);
-    border:1px solid rgba(255,255,255,.15); border-radius:14px;
-    padding:6px 6px 6px 18px; width:min(460px, 90vw);
-    transition:border-color .2s ease, background .2s ease;
-  }
-  /* stronger border on light theme so the box is clearly visible */
-  body[data-theme="light"] .intention-row{
-    background:rgba(58,58,58,.04);
-    border:1.5px solid rgba(58,58,58,.28);
-  }
-  .intention-row:focus-within{ border-color:var(--accent); }
-  .intention-input{
-    flex:1; background:none; border:none; outline:none;
-    color:var(--fg); font-family:inherit; font-size:15px; font-weight:400;
-    padding:12px 4px;
-  }
-  .intention-input::placeholder{ color:var(--muted); opacity:.7; }
-  .intention-submit{
-    flex:none; width:40px; height:40px; border-radius:10px;
-    background:var(--accent); color:var(--accent-ink);
-    border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    transition:transform .12s ease, opacity .12s ease;
-  }
-  .intention-submit:hover{ transform:scale(1.05); }
-  .intention-submit:active{ transform:scale(.94); }
-  .intention-submit:disabled{ opacity:.4; cursor:not-allowed; }
-  /* fizzle particles */
-  .fizzle-particle{
-    position:fixed; pointer-events:none; z-index:10001;
-    color:var(--fg); font-family:inherit; font-size:15px;
-    will-change:transform, opacity;
-    animation: fizzleFly 1.4s cubic-bezier(.22,.9,.3,1) forwards;
-  }
-  @keyframes fizzleFly{
-    0%   { opacity:1; transform:translate(0,0) scale(1); filter:blur(0); }
-    30%  { opacity:.9; }
-    100% { opacity:0; transform:translate(var(--dx), var(--dy)) scale(1.6); filter:blur(4px); }
-  }
-  /* entry-btn appearance */
-  .entry-btn.reveal-in{
-    animation: entryBtnAppear .8s cubic-bezier(.22,.9,.3,1) forwards;
-  }
-  @keyframes entryBtnAppear{
-    0%   { opacity:0; transform:scale(.6); filter:blur(6px); }
-    100% { opacity:1; transform:scale(1); filter:blur(0); }
-  }
-  /* ---------- entry page explainer cards ---------- */
-  .entry-explainers{
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:10px;
-    width:min(500px, 92vw);
-    margin-top:20px;
-    opacity:0;
-    animation: explainersFadeIn 1s cubic-bezier(.22,.9,.3,1) .5s forwards;
-  }
-  @keyframes explainersFadeIn{
-    0%   { opacity:0; transform:translateY(6px); }
-    100% { opacity:1; transform:translateY(0); }
-  }
-  .explainer-card{
-    position:relative;
-    background:none; border:none; padding:0;
-    min-height:112px;
-    cursor:pointer;
-    font-family:inherit; text-align:center;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .explainer-inner{
-    position:relative; width:100%; height:100%; min-height:inherit;
-  }
-  .explainer-face{
-    position:absolute; inset:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:10px;
-    background:rgba(255,255,255,.06);
-    border:1px solid rgba(255,255,255,.1);
-    border-radius:14px;
-    padding:18px 12px;
-    transition:opacity .28s ease, transform .28s ease;
-  }
-  /* front visible by default, back hidden; flipping swaps them with a soft scale */
-  .explainer-front{ opacity:1; transform:scale(1); }
-  .explainer-back{
-    opacity:0; transform:scale(.94); pointer-events:none;
-    justify-content:center;
-    background:rgba(255,255,255,.09);
-  }
-  .explainer-card.flipped .explainer-front{ opacity:0; transform:scale(.94); pointer-events:none; }
-  .explainer-card.flipped .explainer-back{ opacity:1; transform:scale(1); pointer-events:auto; }
-  body[data-theme="light"] .explainer-face{
-    background:rgba(58,58,58,.03);
-    border-color:rgba(58,58,58,.14);
-  }
-  body[data-theme="light"] .explainer-back{ background:rgba(58,58,58,.06); }
-  .explainer-icon{ width:24px; height:24px; color:var(--accent); flex:none; }
-  .explainer-body{ display:flex; flex-direction:column; gap:3px; align-items:center; }
-  .explainer-title{
-    font-size:12.5px; font-weight:700; color:var(--fg); letter-spacing:.01em;
-  }
-  .explainer-desc{
-    font-size:10.5px; line-height:1.45; color:var(--muted);
-  }
-  .explainer-back-text{
-    font-size:10.5px; line-height:1.5; color:var(--fg);
-  }
-  @media (max-width:520px){
-    .entry-explainers{ grid-template-columns:1fr; gap:8px; margin-top:18px; }
-    .explainer-card{ min-height:88px; }
-    .explainer-front{ flex-direction:row; align-items:center; justify-content:flex-start; text-align:left; padding:14px 16px; gap:14px; }
-    .explainer-back{ padding:12px 16px; overflow:auto; }
-    .explainer-body{ align-items:flex-start; }
-  }
-  @media (prefers-reduced-motion:reduce){
-    .entry-explainers{ animation:none; opacity:1; }
-    .explainer-face{ transition:opacity .28s ease; transform:none !important; }
-  }
-  /* ---------- intention reminder bubble ---------- */
-  .intention-bubble{
-    position:fixed; z-index:900;
-    max-width:min(360px, 80vw);
-    padding:8px 16px;
-    background:rgba(255,255,255,.03); backdrop-filter:blur(8px);
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:8px;
-    font-size:12.5px; line-height:1.3; color:var(--muted);
-    font-style:normal !important;
-    text-align:center;
-    cursor:pointer;
-    opacity:0;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    animation: intentionDrift 7s ease-in-out forwards;
-  }
-  .intention-bubble:hover{ background:rgba(255,255,255,.06); }
-  .intention-bubble.popped{
-    animation: intentionPop .5s cubic-bezier(.34,1.56,.64,1) forwards;
-  }
-  @keyframes intentionPop{
-    0%   { opacity:.7; transform:scale(1); filter:blur(0); }
-    30%  { opacity:1; transform:scale(1.12); filter:blur(0); }
-    100% { opacity:0; transform:scale(.4); filter:blur(6px); }
-  }
-  .intention-bubble *{ font-style:normal !important; }
-  .intention-bubble .intention-eyebrow{
-    font-size:10px; letter-spacing:.18em; text-transform:uppercase;
-    color:var(--muted); font-weight:500;
-    margin-right:8px; opacity:.5;
-  }
-  @keyframes intentionDrift{
-    0%   { opacity:0; transform:translate(var(--drift-from-x,0px), var(--drift-from-y,15px)) scale(.94); filter:blur(3px); }
-    22%  { opacity:.7; transform:translate(0,0) scale(1); filter:blur(0); }
-    78%  { opacity:.7; transform:translate(var(--drift-to-x,0px), var(--drift-to-y,-10px)) scale(1); filter:blur(0); }
-    100% { opacity:0; transform:translate(var(--drift-to-x,0px), var(--drift-to-y,-10px)) scale(.96); filter:blur(3px); }
-  }
-  @media (prefers-reduced-motion:reduce){
-    .intention-bubble{ animation-duration:5s; }
-  }
-  .entry-glow{
-    position:fixed; pointer-events:none;
-    width:160px; height:160px; border-radius:50%;
-    background:radial-gradient(circle, var(--entry-glow-col, rgba(168,204,170,.08)) 0%, transparent 65%);
-    transform:translate(-50%,-50%);
-    filter:blur(28px);
-    will-change:left,top;
-    animation:entryPulse 4s ease-in-out infinite;
-  }
-  @keyframes entryPulse{
-    0%,100%{ opacity:.3; transform:translate(-50%,-50%) scale(1); }
-    50%{ opacity:.5; transform:translate(-50%,-50%) scale(1.1); }
-  }
-  .entry-ripple{
-    position:fixed; pointer-events:none; z-index:10001;
-    border-radius:50%;
-    background:radial-gradient(circle, var(--entry-glow-col, rgba(168,204,170,.1)) 0%, transparent 65%);
-    border:1px solid var(--accent);
-    transform:translate(-50%,-50%);
-    animation:entryRipple .7s ease-out forwards;
-  }
-  @keyframes entryRipple{
-    0%{ width:20px; height:20px; opacity:.4; }
-    100%{ width:150px; height:150px; opacity:0; }
-  }
-  @media (prefers-reduced-motion:reduce){ .entry-glow{display:none;} }
-  @media (hover:none){ .entry-glow{display:none;} }
 
   header{
     width:100%; max-width:560px;
@@ -522,26 +242,6 @@
   }
   .wordmark{ font-family:'Anton', sans-serif; font-size:20px; letter-spacing:.06em; }
   .wordmark em{font-style:normal; color:var(--accent);}
-  .intro-bubble{
-    position:relative; width:100%; max-width:560px; margin:18px 0 0;
-    background:var(--chip); color:var(--muted); border-radius:16px;
-    padding:12px 40px 12px 18px; font-size:12.5px; line-height:1.5; text-align:center;
-    transition:opacity .25s var(--ease), transform .25s var(--ease);
-  }
-  .intro-bubble::before{
-    content:''; position:absolute; left:50%; top:-6px; transform:translateX(-50%);
-    width:12px; height:12px; background:var(--chip);
-    clip-path:polygon(0 100%, 100% 100%, 50% 0);
-  }
-  .intro-bubble.hide{display:none;}
-  .intro-close{
-    position:absolute; top:8px; right:8px; width:24px; height:24px;
-    background:transparent; border:none; color:var(--muted); font-size:13px;
-    border-radius:50%; cursor:pointer; line-height:1;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .intro-close:hover{background:rgba(128,128,128,.18); color:var(--fg);}
-  .intro-close:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
   .icon-btn{
     background:var(--chip); color:var(--fg); border:none;
     border-radius:12px; padding:9px 13px; font-family:inherit; font-size:13px;
@@ -643,6 +343,17 @@
   .dot{width:9px; height:9px; border-radius:50%; border:1.5px solid var(--muted); transition:all .3s;}
   .dot.done{background:var(--accent); border-color:var(--accent);}
   .dot.now{border-color:var(--accent); transform:scale(1.25);}
+  /* during the tour the empty dots are otherwise near-invisible; show them as
+     clearly-outlined empty rings the whole step, with a gentle pulse */
+  .dot.tour-flash{
+    border-color:var(--accent);
+    border-width:2px;
+    animation:dotFlash 1.4s ease-in-out infinite;
+  }
+  @keyframes dotFlash{
+    0%,100%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
+    50%{ transform:scale(1.18); box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent); }
+  }
 
   main{
     width:100%; max-width:560px;
@@ -939,6 +650,137 @@
     display:none; max-height:86dvh; overflow-y:auto;
   }
   .sheet.show{display:block;}
+  /* ---- help / how-it-works sheet ---- */
+  /* ---- spotlight tour (first-run walkthrough) ---- */
+  .tour-active{ overflow:hidden; }
+  #tourLayer{
+    position:fixed; inset:0; z-index:12000; display:none;
+    animation:tourFade .25s ease;
+  }
+  #tourLayer.show{ display:block; }
+  @keyframes tourFade{ from{opacity:0} to{opacity:1} }
+  /* the cutout: a transparent rect with a massive shadow that dims everything else */
+  #tourSpot{
+    position:absolute; border-radius:14px;
+    box-shadow:0 0 0 9999px rgba(8,10,14,.72);
+    transition:all .34s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;
+    outline:2px solid rgba(255,255,255,.9); outline-offset:3px;
+  }
+  #tourSpot.round{ border-radius:50%; }
+  #tourCard{
+    position:absolute; width:min(300px, calc(100vw - 32px));
+    background:var(--bg2); color:var(--fg);
+    border-radius:18px; padding:18px 18px 16px;
+    box-shadow:0 18px 44px rgba(0,0,0,.4);
+    transition:top .34s cubic-bezier(.4,0,.2,1), left .34s cubic-bezier(.4,0,.2,1);
+  }
+  #tourCard .tour-step-num{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:7px;
+  }
+  #tourCard .tour-title{ font-size:17px; font-weight:700; margin-bottom:6px; letter-spacing:-.01em; }
+  #tourCard .tour-body{ font-size:13.5px; line-height:1.55; color:var(--muted); }
+  #tourCard .tour-body b{ color:var(--fg); font-weight:600; }
+  /* in-card example row (sample dots for the round-tracker step) */
+  .tour-example{
+    display:flex; align-items:center; gap:11px;
+    margin:13px 0 2px; padding:11px 13px;
+    background:color-mix(in srgb, var(--fg) 6%, transparent);
+    border-radius:12px;
+  }
+  .tour-ex-dots{ display:flex; gap:7px; flex:none; }
+  .tour-ex-dots .ex-dot{
+    width:11px; height:11px; border-radius:50%;
+    border:2px solid var(--accent); box-sizing:border-box;
+  }
+  .tour-ex-dots .ex-dot.done{ background:var(--accent); }
+  .tour-ex-cap{ font-size:11.5px; color:var(--muted); letter-spacing:.02em; }
+  .tour-progress{ display:flex; gap:6px; margin:15px 0 14px; }
+  .tour-progress i{
+    height:4px; flex:1; border-radius:2px;
+    background:color-mix(in srgb, var(--fg) 18%, transparent);
+    transition:background .25s ease;
+  }
+  .tour-progress i.done{ background:var(--accent); }
+  .tour-actions{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .tour-skip{
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    font-family:inherit; font-size:13px; padding:6px 2px;
+  }
+  .tour-skip:hover{ color:var(--fg); }
+  .tour-nav{ display:flex; gap:8px; }
+  .tour-btn{
+    background:var(--chip); color:var(--fg); border:none; border-radius:11px;
+    padding:9px 16px; font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  .tour-btn.primary{ background:var(--accent); color:var(--accent-ink); }
+  .tour-btn:hover{ opacity:.9; }
+  .tour-btn:active{ transform:scale(.97); }
+  .tour-btn:disabled{ opacity:.4; cursor:default; }
+  /* first-run offer: a clean, compact pill */
+  .tour-offer{
+    display:inline-flex; align-items:center; gap:9px;
+    margin:14px auto 0;
+    background:var(--chip); border:none; color:var(--fg);
+    border-radius:999px; padding:9px 10px 9px 15px;
+    font-family:inherit; font-size:13px; font-weight:500; cursor:pointer;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  .tour-offer:hover{ opacity:.88; }
+  .tour-offer:active{ transform:scale(.98); }
+  .tour-offer-ic{ display:flex; color:var(--accent); }
+  .tour-offer-text{ line-height:1; }
+  .tour-offer-dismiss{
+    display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:50%;
+    color:var(--muted); font-size:12px; line-height:1;
+    background:color-mix(in srgb, var(--fg) 8%, transparent);
+    transition:color .15s ease, background .15s ease;
+  }
+  .tour-offer-dismiss:hover{ color:var(--fg); background:color-mix(in srgb, var(--fg) 16%, transparent); }
+  /* re-open button in the help sheet */
+  .help-tour-btn{
+    width:100%; display:flex; align-items:center; gap:12px; text-align:left;
+    background:var(--chip); border:none; border-radius:14px; padding:14px;
+    cursor:pointer; color:var(--fg); font-family:inherit; margin-bottom:18px;
+    transition:opacity .15s ease;
+  }
+  .help-tour-btn:hover{ opacity:.9; }
+  .help-tour-btn .htb-ic{ flex:none; color:var(--accent); display:flex; }
+  .help-tour-btn .htb-text{ display:flex; flex-direction:column; gap:2px; }
+  .help-tour-btn .htb-text b{ font-size:14.5px; font-weight:600; }
+  .help-tour-btn .htb-text span{ font-size:12.5px; color:var(--muted); }
+  .help-lead{ font-size:14.5px; line-height:1.5; color:var(--muted); margin:-4px 0 18px; }
+  .help-section{ margin-bottom:22px; }
+  .help-section-title{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:10px; padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .help-item{ display:flex; gap:14px; align-items:flex-start; padding:9px 0; }
+  .help-ic{
+    flex:0 0 46px; width:46px; height:46px; border-radius:13px;
+    background:var(--chip); color:var(--fg);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .help-ic-dots{ gap:3px; flex-wrap:wrap; padding:11px; box-sizing:border-box; }
+  .help-ic-glyph{ font-size:23px; line-height:1; }
+  .help-ic-dots i{ width:7px; height:7px; border-radius:50%; background:var(--accent); opacity:.85; }
+  .help-ic-dots i:nth-child(4){ background:var(--muted); opacity:.5; }
+  .help-text{ display:flex; flex-direction:column; gap:3px; padding-top:2px; }
+  .help-text b{ font-size:15px; font-weight:600; }
+  .help-text span{ font-size:13.5px; line-height:1.5; color:var(--muted); }
+  .help-text span b{ color:var(--fg); font-weight:600; font-size:inherit; }
+  .help-done{
+    width:100%; background:var(--accent); color:var(--accent-ink);
+    border:none; border-radius:14px; padding:15px; font-family:inherit;
+    font-size:15px; font-weight:600; cursor:pointer; margin-top:4px;
+    transition:opacity .15s ease;
+  }
+  .help-done:hover{ opacity:.9; }
+  .help-done:active{ transform:scale(.99); }
   .sheet h2{
     font-family:'Space Grotesk', system-ui, sans-serif;
     font-weight:700;
@@ -1679,96 +1521,6 @@
 </svg>
 
 
-<div id="entryPage" aria-label="Enter PomoEase">
-  <div class="entry-glow" id="entryGlow"></div>
-  <div class="entry-core">
-    <div class="entry-wordmark">POMO<em>EASE</em></div>
-    <div class="entry-tagline" id="entryTagline"><b>E</b>xercise <b>A</b>nd <b>S</b>tudy <b>E</b>nvironment</div>
-    <div class="intention-wrap" id="intentionWrap">
-      <div class="intention-label">Set your intention</div>
-      <div class="intention-row">
-        <input class="intention-input" id="intentionInput" type="text" maxlength="80" placeholder="What are you here to do?" autocomplete="off">
-        <button class="intention-submit" id="intentionSubmit" aria-label="Confirm intention" title="Confirm">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
-  <div class="entry-explainers" id="entryExplainers">
-    <button type="button" class="explainer-card" aria-label="Set your intention — tap for more">
-      <div class="explainer-inner">
-        <div class="explainer-face explainer-front">
-          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="11" rx="4"/>
-            <path d="M8.5 16l-1 4 4.5-4"/>
-          </svg>
-          <div class="explainer-body">
-            <div class="explainer-title">Set your intention</div>
-            <div class="explainer-desc">Name today's goal — it floats back as a gentle reminder.</div>
-          </div>
-        </div>
-        <div class="explainer-face explainer-back">
-          <div class="explainer-back-text">Before you start, jot down what you're here to do. As you work, that intention gently drifts back onto the screen every so often — a quiet nudge to keep you pointed at what matters.</div>
-        </div>
-      </div>
-    </button>
-    <button type="button" class="explainer-card" aria-label="Focus timer — tap for more">
-      <div class="explainer-inner">
-        <div class="explainer-face explainer-front">
-          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-            <circle cx="12" cy="12" r="8.5"/>
-            <path d="M12 7.5v5l3.2 1.8"/>
-          </svg>
-          <div class="explainer-body">
-            <div class="explainer-title">Focus timer</div>
-            <div class="explainer-desc">Work in rounds, breaks built in — link a task to track it.</div>
-          </div>
-        </div>
-        <div class="explainer-face explainer-back">
-          <div class="explainer-back-text">Study in focused rounds with short breaks built in between. Add a task and link it to the timer, and every completed round counts towards it — so you can see real progress stack up over the day.</div>
-        </div>
-      </div>
-    </button>
-    <button type="button" class="explainer-card" aria-label="Workout breaks — tap for more">
-      <div class="explainer-inner">
-        <div class="explainer-face explainer-front">
-          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-            <circle cx="12" cy="4.5" r="2"/>
-            <path d="M5 8.5l7 2 7-2"/>
-            <path d="M12 10.5V15"/>
-            <path d="M8.5 21l3.5-6 3.5 6"/>
-          </svg>
-          <div class="explainer-body">
-            <div class="explainer-title">Workout breaks</div>
-            <div class="explainer-desc">Turn rest time into a quick set.</div>
-          </div>
-        </div>
-        <div class="explainer-face explainer-back">
-          <div class="explainer-back-text">When a break lands, swap sitting still for a quick burst of movement. Pick a short programme — jumping jacks, high knees, squats — sized to fit your break, so you come back sharper.</div>
-        </div>
-      </div>
-    </button>
-    <button type="button" class="explainer-card" aria-label="Study together — tap for more">
-      <div class="explainer-inner">
-        <div class="explainer-face explainer-front">
-          <svg class="explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true">
-            <circle cx="9" cy="12" r="6.5"/>
-            <circle cx="15" cy="12" r="6.5"/>
-          </svg>
-          <div class="explainer-body">
-            <div class="explainer-title">Study together</div>
-            <div class="explainer-desc">Sync timers with a friend, live.</div>
-          </div>
-        </div>
-        <div class="explainer-face explainer-back">
-          <div class="explainer-back-text">Share a link and study in sync with friends. Your timers run together, and a live chat keeps you connected through each round — the gentle accountability of working alongside someone.</div>
-        </div>
-      </div>
-    </button>
-  </div>
-  <button class="entry-btn" id="entryBtn" style="display:none;">ENTER</button>
-</div>
-
 <div class="focus-hint" id="focusHint">TAP ANYWHERE TO EXIT FOCUS</div>
 <div class="toast" id="toast" role="status">💧 Hydration check</div>
 <div class="mascot" id="mascot" aria-hidden="true">
@@ -1838,6 +1590,13 @@
 <header>
   <div></div>
   <div style="display:flex;align-items:center;gap:4px;">
+    <button class="quick-settings" id="helpBtn" aria-label="How it works" title="How it works">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="11"/>
+        <path d="M9.05 9a3.05 3.05 0 0 1 5.9 1.05c0 2-2.95 2.65-2.95 4.5"/>
+        <line x1="12" y1="18" x2="12" y2="18.1"/>
+      </svg>
+    </button>
     <button class="quick-settings" id="quickSettingsBtn" aria-label="Settings" title="Settings">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
@@ -1898,10 +1657,13 @@
   </div>
 </div>
 
-<div class="intro-bubble" id="introBubble">
-  <span>Pomodoro focus timer with workout breaks — stay on task, then get moving when it's time to rest.</span>
-  <button class="intro-close" id="introCloseBtn" aria-label="Dismiss this note" title="Dismiss">✕</button>
-</div>
+<button class="tour-offer" id="tourOffer" type="button" style="display:none;">
+  <span class="tour-offer-ic">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+  </span>
+  <span class="tour-offer-text">Take a quick tour</span>
+  <span class="tour-offer-dismiss" id="tourOfferDismiss" role="button" aria-label="No thanks" tabindex="0">✕</span>
+</button>
 
 <main>
   
@@ -2218,6 +1980,149 @@
   </div>
 </div>
 
+<div class="sheet" id="helpSheet">
+  <div class="sheet-head">
+    <h2>How PomoEase works</h2>
+    <button class="close-sheet" aria-label="Close">✕</button>
+  </div>
+
+  <p class="help-lead">A focus timer that works in rounds: study for a stretch, then take a short break — with optional workouts and friends to keep you going.</p>
+
+  <button class="help-tour-btn" id="helpTourBtn" type="button">
+    <span class="htb-ic">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01"/><path d="M11 12h1v4h1"/></svg>
+    </span>
+    <span class="htb-text">
+      <b>Take a quick tour</b>
+      <span>A guided walkthrough of the buttons, right on the page</span>
+    </span>
+  </button>
+
+  <div class="help-section">
+    <div class="help-section-title">The timer</div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Start / pause</b>
+        <span>Begins your focus round and counts down. Tap again to pause; the button turns into two bars while running.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Reset</b>
+        <span>Sends the current round back to the start without changing your settings.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 2 7-2"/><path d="M12 10.5V15"/><path d="M8.5 21l3.5-6 3.5 6"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Workout</b>
+        <span>Swaps your break for a quick guided movement round — a set of exercises instead of sitting still.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic help-ic-dots"><i></i><i></i><i></i><i></i></span>
+      <div class="help-text">
+        <b>Round dots</b>
+        <span>Show how many focus rounds you've finished in this set. After the last one you get a longer break.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-section-title">Tasks &amp; focus</div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Add a task</b>
+        <span>List what you're working on and give it an estimate. Each finished round counts towards the task you've picked.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic help-ic-glyph">⛶</span>
+      <div class="help-text">
+        <b>Focus mode</b>
+        <span>Tapping the timer hides everything but the countdown. Tap anywhere to come back out.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-section-title">Studying with friends</div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/><path d="M16.5 5.4a3.2 3.2 0 0 1 0 6"/><path d="M18 14.9c2.1.5 3.5 2 3.5 4.1"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Friends</b>
+        <span>Share your code to add friends. You'll see who's online, and a dot shows when a friend is studying right now.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17l2 2a1 1 0 1 0 3-3"/><path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Co-work</b>
+        <span>Start a shared room and the timer stays in sync for everyone. Send an <b>Invite</b>, or use <b>Ask to join</b> to knock on a friend's room — they tap once to let you in.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Session chat</b>
+        <span>Inside a room you can send quick messages so a study group can stay in touch without leaving the page.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-section-title">Top of the screen</div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Settings</b>
+        <span>Round lengths, theme, language, sound and notifications all live behind the gear.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Menu</b>
+        <span>Opens Account, Co-work, Friends and Support. Sign in from Account to sync your progress across devices.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="help-done" id="helpDoneBtn" type="button">Got it</button>
+</div>
+
 <div class="sheet" id="togetherSheet">
   <div class="sheet-head">
     <h2>Co-work</h2>
@@ -2272,6 +2177,24 @@
     <div class="together-members" id="togetherMembers"></div>
 
     <button class="together-leave" id="leaveSessionBtn">Leave session</button>
+  </div>
+</div>
+
+<div id="tourLayer" aria-hidden="true">
+  <div id="tourSpot"></div>
+  <div id="tourCard" role="dialog" aria-label="Guided tour">
+    <div class="tour-step-num" id="tourStepNum"></div>
+    <div class="tour-title" id="tourTitle"></div>
+    <div class="tour-body" id="tourBody"></div>
+    <div class="tour-example" id="tourExample" style="display:none;"></div>
+    <div class="tour-progress" id="tourProgress"></div>
+    <div class="tour-actions">
+      <button class="tour-skip" id="tourSkip" type="button">Skip</button>
+      <div class="tour-nav">
+        <button class="tour-btn" id="tourBack" type="button">Back</button>
+        <button class="tour-btn primary" id="tourNext" type="button">Next</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2408,15 +2331,6 @@ async function loadSettings(){
 }
 
 /* ---------- intro note dismissal ---------- */
-const introBubble=$('introBubble');
-$('introCloseBtn').onclick=()=>{
-  introBubble.classList.add('hide');
-  store.set('pomofit:introDismissed', '1');
-};
-async function loadIntroState(){
-  const dismissed = await store.get('pomofit:introDismissed');
-  if(dismissed==='1') introBubble.classList.add('hide');
-}
 function syncSettingsUI(){
   $('rndVal').textContent = S.longBreakEvery;
   { const _le=$('longEveryLabel'); if(_le) _le.textContent = S.longBreakEvery; }
@@ -6099,9 +6013,6 @@ function applyLang(lang){
   // header buttons
   const kofiText=document.querySelector('.kofi-text');
   if(kofiText) kofiText.textContent=' '+t.support;
-  // intro bubble
-  const bubble=document.querySelector('.intro-bubble span');
-  if(bubble) bubble.textContent=t.introBubble;
   // phase label (only if not running, so we don't override during workout)
   if(!S.running && phaseLabel){
     if(S.phase==='focus') phaseLabel.textContent=t.focusLabel;
@@ -6367,6 +6278,166 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); })
 
 { const sb=$('settingsBtn'); if(sb) sb.onclick=()=>{ closeMenu(); openSheet('settingsSheet'); }; }
 $('quickSettingsBtn').onclick=()=>openSheet('settingsSheet');
+{ const hb=$('helpBtn'); if(hb) hb.onclick=()=>openSheet('helpSheet'); }
+{ const hd=$('helpDoneBtn'); if(hd) hd.onclick=closeSheets; }
+
+/* ================= spotlight tour ================= */
+/* Steps point at real elements by id. Any step whose target is missing or
+   hidden is skipped automatically, so the tour never spotlights empty space. */
+const TOUR_STEPS = [
+  { el:'timer',            title:'Your focus timer',   body:'A minutes : seconds countdown for one focus round. When it reaches zero you get a break — then the next round begins.', shape:'rect' },
+  { el:'startBtn',         title:'Start & pause',      body:'Tap to begin the round. Tap again to pause.', shape:'round' },
+  { el:'resetBtn',         title:'Reset',              body:'Sends the current round back to the top without touching your settings.', shape:'round' },
+  { el:'skipBtn',          title:'Workout break',      body:'You still get your break — but you can spend it on a quick guided workout instead of sitting still.', shape:'round' },
+  { el:'dots',             title:'Round tracker',      body:'One circle per focus round. They fill as you finish rounds — here, two done and two still to go. After the last one you earn a longer break.', shape:'rect', example:'dots' },
+  { el:'addTaskOpen',      title:'Add your tasks',     body:'List what you\u2019re working on. Pick a task and each finished round counts towards it.', shape:'rect' },
+  { el:'helpBtn',          title:'Help, anytime',      body:'Opens the how-it-works guide — and this tour — whenever you need a refresher.', shape:'round' },
+  { el:'quickSettingsBtn', title:'Settings',           body:'Round lengths, theme, language, sound and notifications all live here.', shape:'round' },
+  { el:'menuBtn',          title:'The Portal',         body:'Account, <b>Co-work</b> and <b>Friends</b> live in here. Sign in from Account to sync across devices, or study live with a friend.', shape:'round' }
+];
+
+const tourLayer=$('tourLayer'), tourSpot=$('tourSpot'), tourCard=$('tourCard');
+const tourTitleEl=$('tourTitle'), tourBodyEl=$('tourBody'), tourStepNumEl=$('tourStepNum'), tourProgressEl=$('tourProgress');
+const tourBackBtn=$('tourBack'), tourNextBtn=$('tourNext'), tourSkipBtn=$('tourSkip');
+let tourIdx=0, tourOrder=[], tourOnResize=null, tourTasksWereCollapsed=false;
+
+function tourVisible(id){
+  const el=$(id); if(!el) return false;
+  const r=el.getBoundingClientRect();
+  if(r.width===0 && r.height===0) return false;
+  return getComputedStyle(el).display!=='none' && getComputedStyle(el).visibility!=='hidden';
+}
+
+function startTour(){
+  // make sure nothing is covering the page, then compute which steps are live
+  closeMenu(); closeSheets();
+  if(document.body.classList.contains('focus-mode') && typeof exitFocusMode==='function'){
+    try{ exitFocusMode(); }catch(e){ document.body.classList.remove('focus-mode'); }
+  }
+  // the task step points inside the tasks panel — expand it so the spotlight
+  // lands on Add Task rather than whatever sits below a collapsed panel
+  const tt=$('tasksToggle');
+  tourTasksWereCollapsed = tt && tt.getAttribute('aria-expanded')!=='true';
+  if(tourTasksWereCollapsed) tt.click();
+  tourOrder = TOUR_STEPS.filter(s=>tourVisible(s.el));
+  if(!tourOrder.length) return;
+  tourIdx=0;
+  tourProgressEl.innerHTML = tourOrder.map(()=> '<i></i>').join('');
+  document.body.classList.add('tour-active');
+  tourLayer.classList.add('show');
+  tourLayer.setAttribute('aria-hidden','false');
+  tourOnResize = ()=> positionTour();
+  window.addEventListener('resize', tourOnResize);
+  window.addEventListener('scroll', tourOnResize, {passive:true});
+  showTourStep(0);
+}
+
+function endTour(){
+  tourLayer.classList.remove('show');
+  tourLayer.setAttribute('aria-hidden','true');
+  document.body.classList.remove('tour-active');
+  // stop any dot flashing and restore the tasks panel to how we found it
+  dotsEl.querySelectorAll('.dot.tour-flash').forEach(d=>d.classList.remove('tour-flash'));
+  { const ex=$('tourExample'); if(ex){ ex.style.display='none'; ex.innerHTML=''; } }
+  if(tourTasksWereCollapsed){
+    const tt=$('tasksToggle');
+    if(tt && tt.getAttribute('aria-expanded')==='true') tt.click();
+    tourTasksWereCollapsed=false;
+  }
+  if(tourOnResize){
+    window.removeEventListener('resize', tourOnResize);
+    window.removeEventListener('scroll', tourOnResize);
+    tourOnResize=null;
+  }
+  try{ localStorage.setItem('pomofit:tourDone','1'); }catch(e){}
+}
+
+function showTourStep(i){
+  tourIdx = Math.max(0, Math.min(i, tourOrder.length-1));
+  const step = tourOrder[tourIdx];
+  tourTitleEl.textContent = step.title;
+  tourBodyEl.innerHTML = step.body;
+  tourStepNumEl.textContent = 'Step '+(tourIdx+1)+' of '+tourOrder.length;
+  [...tourProgressEl.children].forEach((d,idx)=> d.classList.toggle('done', idx<=tourIdx));
+  tourBackBtn.disabled = tourIdx===0;
+  tourNextBtn.textContent = tourIdx===tourOrder.length-1 ? 'Done' : 'Next';
+  // flash the round dots only while their step is on screen
+  const flashing = step.el==='dots';
+  dotsEl.querySelectorAll('.dot').forEach(d=> d.classList.toggle('tour-flash', flashing));
+  // in-card example (e.g. sample dots so the user knows what to look for)
+  const exEl=$('tourExample');
+  if(exEl){
+    if(step.example==='dots'){
+      exEl.innerHTML =
+        '<span class="tour-ex-dots">'+
+          '<i class="ex-dot done"></i><i class="ex-dot done"></i>'+
+          '<i class="ex-dot"></i><i class="ex-dot"></i>'+
+        '</span>'+
+        '<span class="tour-ex-cap">done · done · to go · to go</span>';
+      exEl.style.display='';
+    } else {
+      exEl.style.display='none'; exEl.innerHTML='';
+    }
+  }
+  // scroll target into view if needed, then position
+  const el=$(step.el);
+  if(el && typeof el.scrollIntoView==='function'){
+    const r=el.getBoundingClientRect();
+    if(r.top<70 || r.bottom>window.innerHeight-70){
+      el.scrollIntoView({block:'center', behavior:'smooth'});
+      setTimeout(positionTour, 320);
+    }
+  }
+  positionTour();
+}
+
+function positionTour(){
+  const step = tourOrder[tourIdx]; if(!step) return;
+  const el=$(step.el); if(!el) return;
+  const r = el.getBoundingClientRect();
+  const pad = step.shape==='round' ? 8 : 10;
+  tourSpot.classList.toggle('round', step.shape==='round');
+  tourSpot.style.top = (r.top-pad)+'px';
+  tourSpot.style.left = (r.left-pad)+'px';
+  tourSpot.style.width = (r.width+pad*2)+'px';
+  tourSpot.style.height = (r.height+pad*2)+'px';
+  // place the card either below or above the target, whichever has room
+  const cardW = Math.min(300, window.innerWidth-32);
+  const cardH = tourCard.offsetHeight || 220;
+  let top = r.bottom + 16;
+  if(top + cardH > window.innerHeight - 12) top = Math.max(12, r.top - cardH - 16);
+  let left = r.left + r.width/2 - cardW/2;
+  left = Math.max(16, Math.min(left, window.innerWidth - cardW - 16));
+  tourCard.style.top = top+'px';
+  tourCard.style.left = left+'px';
+}
+
+tourNextBtn.onclick = ()=>{ tourIdx>=tourOrder.length-1 ? endTour() : showTourStep(tourIdx+1); };
+tourBackBtn.onclick = ()=> showTourStep(tourIdx-1);
+tourSkipBtn.onclick = endTour;
+document.addEventListener('keydown', e=>{
+  if(!tourLayer.classList.contains('show')) return;
+  if(e.key==='Escape') endTour();
+  else if(e.key==='ArrowRight') tourNextBtn.click();
+  else if(e.key==='ArrowLeft' && tourIdx>0) showTourStep(tourIdx-1);
+});
+
+// entry points
+{ const htb=$('helpTourBtn'); if(htb) htb.onclick=()=>{ closeSheets(); setTimeout(startTour, 260); }; }
+{
+  const offer=$('tourOffer'), dismiss=$('tourOfferDismiss');
+  function hideOffer(){ if(offer) offer.style.display='none'; try{ localStorage.setItem('pomofit:tourOffered','1'); }catch(e){} }
+  try{
+    const seen = localStorage.getItem('pomofit:tourOffered') || localStorage.getItem('pomofit:tourDone');
+    if(!seen && offer) offer.style.display='';
+  }catch(e){}
+  if(offer) offer.onclick=()=>{ hideOffer(); startTour(); };
+  if(dismiss){
+    const stop=(e)=>{ e.stopPropagation(); hideOffer(); };
+    dismiss.addEventListener('click', stop);
+    dismiss.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ stop(e); } });
+  }
+}
 $('friendsMenuBtn').onclick=()=>{ closeMenu(); openSheet('friendsSheet'); renderFriends(); };
 $('profileBtn').onclick=()=>{ closeMenu(); openSheet('profileSheet'); };
 $('supportLink').addEventListener('click', ()=> closeMenu());
@@ -6525,7 +6596,6 @@ renderTasks();
 animate();
 loadData();
 loadSettings();
-loadIntroState();
 initLocalFacts();
 checkJoinLink();
 restoreSessionIfAny();
@@ -6538,139 +6608,6 @@ try{
 }catch(e){}
 // complete a Google sign-in if we just returned from the redirect flow
 checkGoogleRedirect();
-
-/* ---------- intention reminder — magical bubble that floats in every ~60min when idle ---------- */
-(function(){
-  const MIN_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
-  const MAX_INTERVAL_MS = 60 * 60 * 1000; // 60 minutes
-  let lastShownAt = 0;
-  let scheduleTimer = null;
-
-  function getIntention(){
-    try{
-      const raw = sessionStorage.getItem('pomofit:intention');
-      if(!raw) return '';
-      const parsed = JSON.parse(raw);
-      // expire after 24 hours so users start fresh each day
-      if(!parsed.savedAt || (Date.now() - parsed.savedAt) > 24*60*60*1000){
-        sessionStorage.removeItem('pomofit:intention');
-        return '';
-      }
-      return parsed.text || '';
-    }catch(e){ return ''; }
-  }
-
-  function canShowNow(){
-    // don't show during focus mode or if timer is actively running in focus
-    if(document.body.classList.contains('focus-mode')) return false;
-    if(S.running && S.phase === 'focus') return false;
-    // don't show on the entry page
-    const ep = document.getElementById('entryPage');
-    if(ep && ep.style.display !== 'none' && !ep.classList.contains('fade-out')) return false;
-    // don't show if a sheet is open
-    if(document.querySelector('.sheet.show')) return false;
-    return true;
-  }
-
-  function pickPosition(){
-    // avoid the timer area (roughly centered)
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const zones = [
-      { x: 20 + Math.random()*(w*0.3), y: 60 + Math.random()*80 },              // top-left
-      { x: w*0.5 + Math.random()*(w*0.35), y: 60 + Math.random()*80 },          // top-right
-      { x: 20 + Math.random()*(w*0.3), y: h*0.75 + Math.random()*60 },           // bottom-left
-      { x: w*0.55 + Math.random()*(w*0.35), y: h*0.75 + Math.random()*60 },     // bottom-right
-    ];
-    return zones[Math.floor(Math.random()*zones.length)];
-  }
-
-  function spawnParticles(bubble){
-    // scatter a few soft particles from the bubble as it appears — magical arrival
-    const rect = bubble.getBoundingClientRect();
-    const cx = rect.left + rect.width/2;
-    const cy = rect.top + rect.height/2;
-    const dots = ['·','·','·','·','·','·','·','·'];
-    dots.forEach((ch, i)=>{
-      const p = document.createElement('span');
-      p.className = 'fizzle-particle';
-      p.textContent = ch;
-      // start from a random point near the bubble
-      const angle = Math.random() * Math.PI * 2;
-      const startDist = 60 + Math.random() * 60;
-      p.style.left = (cx + Math.cos(angle)*startDist) + 'px';
-      p.style.top  = (cy + Math.sin(angle)*startDist) + 'px';
-      // fly outward and fade
-      const outAngle = angle + (Math.random()-0.5)*0.6;
-      const dist = 80 + Math.random() * 100;
-      p.style.setProperty('--dx', Math.cos(outAngle) * dist + 'px');
-      p.style.setProperty('--dy', Math.sin(outAngle) * dist + 'px');
-      p.style.animationDelay = (i * 40) + 'ms';
-      p.style.color = 'var(--muted)';
-      document.body.appendChild(p);
-      setTimeout(()=> p.remove(), 1800 + i * 40);
-    });
-  }
-
-  function showIntention(){
-    const intention = getIntention();
-    if(!intention) return;
-    if(!canShowNow()) return;
-
-    const pos = pickPosition();
-    const bubble = document.createElement('div');
-    bubble.className = 'intention-bubble';
-    bubble.innerHTML = `<span class="intention-eyebrow">Your intention</span>${intention.replace(/</g,'&lt;')}`;
-    bubble.style.left = pos.x + 'px';
-    bubble.style.top  = pos.y + 'px';
-    // subtle drift direction
-    const driftX = (Math.random()-0.5) * 40;
-    const driftY = -20 - Math.random() * 30;
-    bubble.style.setProperty('--drift-from-x', (driftX*-0.5) + 'px');
-    bubble.style.setProperty('--drift-from-y', '30px');
-    bubble.style.setProperty('--drift-to-x', driftX + 'px');
-    bubble.style.setProperty('--drift-to-y', driftY + 'px');
-    document.body.appendChild(bubble);
-    // spawn magical particles slightly after arrival, then again on departure
-    const arrivalTimer = setTimeout(()=> spawnParticles(bubble), 200);
-    const exitTimer    = setTimeout(()=> spawnParticles(bubble), 5000);
-    const removeTimer  = setTimeout(()=> bubble.remove(), 7300);
-    // click to pop the bubble early - spawns extra particles and removes it
-    bubble.addEventListener('click', ()=>{
-      if(bubble.classList.contains('popped')) return;
-      clearTimeout(exitTimer);
-      clearTimeout(removeTimer);
-      spawnParticles(bubble);
-      // extra burst of particles on pop
-      setTimeout(()=> spawnParticles(bubble), 80);
-      bubble.classList.add('popped');
-      setTimeout(()=> bubble.remove(), 550);
-    });
-    lastShownAt = Date.now();
-  }
-
-  function scheduleNext(){
-    clearTimeout(scheduleTimer);
-    const delay = MIN_INTERVAL_MS + Math.random() * (MAX_INTERVAL_MS - MIN_INTERVAL_MS);
-    scheduleTimer = setTimeout(tryShow, delay);
-  }
-
-  function tryShow(){
-    if(canShowNow()){
-      showIntention();
-      scheduleNext();
-    } else {
-      // retry in 2 minutes if conditions aren't right yet
-      scheduleTimer = setTimeout(tryShow, 2 * 60 * 1000);
-    }
-  }
-
-  // dev helper: run window.showIntentionNow() in the console to preview
-  window.showIntentionNow = showIntention;
-
-  // first appearance ~55-70 minutes after page load
-  scheduleNext();
-})();
 
 /* ---------- focus mode: centre timer, hide everything, tap to exit ---------- */
 let focusHintTimer=null;
@@ -6714,133 +6651,7 @@ $('focusModeBtn').addEventListener('click', e=>{
   }
 });
 
-/* ---------- entry page ---------- */
-(function(){
-  const page=$('entryPage'), glow=$('entryGlow'), btn=$('entryBtn');
-  if(!page) return;
-
-  // if intention is already set (localStorage, expires 24h), skip the entry page entirely
-  try{
-    const raw = sessionStorage.getItem('pomofit:intention');
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(parsed.savedAt && (Date.now() - parsed.savedAt) < 24*60*60*1000){
-        page.style.display='none';
-        return;
-      } else {
-        sessionStorage.removeItem('pomofit:intention');
-      }
-    }
-  }catch(e){}
-
-  document.addEventListener('mousemove', e=>{
-    glow.style.left=e.clientX+'px';
-    glow.style.top=e.clientY+'px';
-  }, {passive:true});
-
-  // only show the explainer cards to first-time visitors — repeat visitors already know what the app does
-  try{
-    const hasVisited = localStorage.getItem('pomofit:hasVisited');
-    const explainers = $('entryExplainers');
-    if(hasVisited){
-      if(explainers) explainers.style.display='none';
-    } else {
-      localStorage.setItem('pomofit:hasVisited', '1');
-    }
-    // tap a card to flip it over for a fuller explanation
-    if(explainers){
-      explainers.querySelectorAll('.explainer-card').forEach(card=>{
-        card.addEventListener('click', ()=> card.classList.toggle('flipped'));
-      });
-    }
-  }catch(e){}
-
-  // after the tagline intro animation ends, allow hover on the wordmark to reveal it briefly
-  const tagline = $('entryTagline');
-  const wordmark = document.querySelector('.entry-wordmark');
-  if(tagline && wordmark){
-    // switch tagline into hover-controlled mode once the intro animation finishes
-    setTimeout(()=>{
-      tagline.classList.add('done');
-      let hideTimer = null;
-      wordmark.addEventListener('mouseenter', ()=>{
-        clearTimeout(hideTimer);
-        tagline.classList.add('show');
-      });
-      wordmark.addEventListener('mouseleave', ()=>{
-        hideTimer = setTimeout(()=> tagline.classList.remove('show'), 500);
-      });
-    }, 4400); // matches CSS animation duration + delay + small buffer
-  }
-
-  // ripple on click anywhere on the entry page
-  page.addEventListener('pointerdown', e=>{
-    const r=document.createElement('div');
-    r.className='entry-ripple';
-    r.style.left=e.clientX+'px';
-    r.style.top=e.clientY+'px';
-    page.appendChild(r);
-    r.addEventListener('animationend', ()=> r.remove());
-  });
-
-  // intention submit — fizzles the input into character particles then reveals ENTER
-  const intWrap = document.getElementById('intentionWrap');
-  const intInput = document.getElementById('intentionInput');
-  const intSubmit = document.getElementById('intentionSubmit');
-
-  function fizzleIntention(){
-    const text = (intInput.value || '').trim();
-    // save intention so it can float back in later as a reminder
-    // localStorage (not sessionStorage) so it survives navigating to privacy.html and back
-    if(text){
-      try{ sessionStorage.setItem('pomofit:intention', JSON.stringify({text, savedAt: Date.now()})); }catch(e){}
-    }
-    // spawn particle for each character in the input value (or a set of dots if empty)
-    const chars = text ? text.split('') : ['·','·','·','·','·','·'];
-    const rect = intInput.getBoundingClientRect();
-    const startX = rect.left + 24;
-    const startY = rect.top + rect.height/2;
-    chars.forEach((ch, i)=>{
-      const p = document.createElement('span');
-      p.className = 'fizzle-particle';
-      p.textContent = ch;
-      const cx = startX + i * 9;
-      p.style.left = cx + 'px';
-      p.style.top = startY + 'px';
-      // random outward direction
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 120 + Math.random() * 180;
-      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
-      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
-      p.style.animationDelay = (i * 15) + 'ms';
-      page.appendChild(p);
-      setTimeout(()=> p.remove(), 1600 + i * 15);
-    });
-    // collapse the input container, then transition straight into the app
-    intWrap.classList.add('fizzle');
-    // fade the wordmark out quickly so it doesn't linger over the timer
-    const wordmark = document.querySelector('.entry-wordmark');
-    if(wordmark){ wordmark.style.transition = 'opacity .3s ease'; wordmark.style.opacity = '0'; }
-    const explainers = $('entryExplainers');
-    if(explainers){ explainers.style.transition = 'opacity .15s ease'; explainers.style.opacity = '0'; }
-    setTimeout(()=>{
-      intWrap.style.display = 'none';
-      enter();
-    }, 550);
-  }
-
-  intSubmit.addEventListener('click', fizzleIntention);
-  intInput.addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); fizzleIntention(); }
-  });
-
-  function enter(){
-    page.classList.add('fade-out');
-    setTimeout(()=>{ page.style.display='none'; }, 850);
-  }
-
-  btn.addEventListener('click', enter);
-})();
+/* ---------- entry page removed: app loads straight to the timer ---------- */
 </script>
 </body>
 </html>
