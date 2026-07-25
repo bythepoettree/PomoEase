@@ -1174,6 +1174,37 @@
   }
   .sheet-head .close-sheet:hover{ color:var(--fg); }
 
+  /* ---------- merged co-working sheet: collapsible sections ---------- */
+  .cw-section{ border-top:1px solid var(--line); }
+  .cw-section:first-of-type{ border-top:none; }
+  .cw-head{
+    width:100%; display:flex; align-items:center; gap:10px;
+    background:none; border:none; cursor:pointer; color:var(--fg);
+    font-family:inherit; padding:15px 2px; text-align:left;
+  }
+  .cw-head-ic{ flex:none; display:flex; color:var(--muted); }
+  .cw-head-title{ flex:1; font-size:15px; font-weight:700; letter-spacing:-0.01em; }
+  .cw-head .cw-badge{
+    flex:none; min-width:18px; height:18px; padding:0 5px; border-radius:9px;
+    background:var(--accent); color:var(--accent-ink);
+    font-size:11px; font-weight:700; display:none; align-items:center; justify-content:center;
+  }
+  .cw-head .cw-badge.show{ display:flex; }
+  .cw-chev{
+    flex:none; color:var(--muted); transition:transform .2s ease;
+    display:flex;
+  }
+  .cw-head[aria-expanded="true"] .cw-chev{ transform:rotate(180deg); }
+  .cw-body{ display:none; padding:0 2px 16px; }
+  .cw-head[aria-expanded="true"] + .cw-body{ display:block; }
+  /* a live co-work session gives its section header the accent ring treatment */
+  .cw-head.in-session .cw-head-ic{
+    color:var(--accent);
+    animation:cwPulse 2s ease-in-out infinite;
+  }
+  @keyframes cwPulse{ 0%,100%{opacity:1} 50%{opacity:.45} }
+  @media (prefers-reduced-motion: reduce){ .cw-head.in-session .cw-head-ic{ animation:none; } }
+
   /* Together intro */
   .together-tagline{
     font-size:13.5px; line-height:1.5; color:var(--muted);
@@ -1645,14 +1676,8 @@
       <button class="menu-item" id="profileBtn" role="menuitem">
         <span class="menu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg></span><span id="menuAccountLabel">Account</span>
       </button>
-      <button class="menu-item" id="togetherBtn" role="menuitem" aria-label="Co-work">
-        <span class="menu-ic cowork-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17l2 2a1 1 0 1 0 3-3"/><path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/></svg></span><span>Co-work</span>
-      </button>
-      <button class="menu-item" id="friendsMenuBtn" role="menuitem" aria-label="Friends">
-        <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/><path d="M16.5 5.4a3.2 3.2 0 0 1 0 6"/><path d="M18 14.9c2.1.5 3.5 2 3.5 4.1"/></svg></span><span>Friends</span><span class="friend-badge" id="menuFriendBadge" style="display:none;">0</span>
-      </button>
-      <button class="menu-item" id="leaderboardMenuBtn" role="menuitem" aria-label="Leaderboard">
-        <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg></span><span>Leaderboard</span>
+      <button class="menu-item" id="coworkingBtn" role="menuitem" aria-label="Co-working">
+        <span class="menu-ic cowork-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17l2 2a1 1 0 1 0 3-3"/><path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/></svg></span><span>Co-working</span><span class="friend-badge" id="menuFriendBadge" style="display:none;">0</span>
       </button>
       <a class="menu-item" id="supportLink" href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer" role="menuitem">
         <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span><span>Support</span>
@@ -1999,40 +2024,118 @@
   </div>
 </div>
 
-<div class="sheet" id="friendsSheet">
-  <div class="sheet-head"><h2>Friends</h2><button class="close-sheet" aria-label="Close">✕</button></div>
-  <div id="friendsSignedOut" class="signin-note" style="display:none;">Sign in to your account to add friends, see who's online and study together.</div>
-  <div id="friendsBody" style="display:none;">
-    <div class="friend-top-row">
-      <button class="friend-code-btn" id="copyFriendCodeBtn" type="button" title="Tap to copy your code">
-        <span class="friend-code-label">Your code — tap to copy</span>
-        <span class="friend-code" id="myFriendCode">······</span>
-      </button>
-      <div class="friend-add-box">
-        <span class="friend-code-label">Add a friend</span>
-        <div class="friend-add-inline">
-          <input id="friendCodeInput" type="text" maxlength="6" placeholder="Their code" autocomplete="off" autocapitalize="characters" spellcheck="false">
-          <button class="friend-add-btn" id="addFriendBtn" type="button">Add</button>
+<div class="sheet" id="coworkingSheet">
+  <div class="sheet-head"><h2>Co-working</h2><button class="close-sheet" aria-label="Close">✕</button></div>
+
+  <!-- ===== Co-work section ===== -->
+  <div class="cw-section">
+    <button class="cw-head" id="cwHeadCowork" aria-expanded="true" type="button">
+      <span class="cw-head-ic" id="cwCoworkIc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17l2 2a1 1 0 1 0 3-3"/><path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/></svg></span>
+      <span class="cw-head-title">Co-work</span>
+      <span class="cw-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+    </button>
+    <div class="cw-body">
+      <div id="togetherIntro">
+        <div id="togetherStart">
+          <p class="together-tagline">Share a focus session with a friend — timers stay in sync. No account needed.</p>
+
+          <div class="together-name-block" id="nameBlock">
+            <label for="nicknameInput" class="together-label">Your name</label>
+            <input id="nicknameInput" type="text" maxlength="25" placeholder="e.g. Alex" autocomplete="off">
+          </div>
+
+          <button class="together-cta" id="createSessionBtn">
+            <span class="together-cta-title">Start a new session</span>
+            <span class="together-cta-sub">Create a room and invite a friend</span>
+          </button>
+
+          <div id="joinFromLinkRow" style="display:none;">
+            <button class="together-cta together-cta-join" id="joinFromLinkBtn">
+              <span class="together-cta-title">Join this session</span>
+              <span class="together-cta-sub">You've been invited by a friend</span>
+            </button>
+          </div>
+
+          <div id="rejoinRow" style="display:none;">
+            <button class="together-cta together-cta-rejoin" id="rejoinBtn">
+              <span class="together-cta-title">Rejoin last session</span>
+              <span class="together-cta-sub" id="rejoinSub">Pick up where you left off</span>
+            </button>
+          </div>
+
+          <p class="signin-note" id="togetherMsg" style="min-height:16px;"></p>
         </div>
       </div>
-    </div>
-    <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
-    <div id="friendRequestsList"></div>
-    <div id="friendsList" class="friends-list-scroll"></div>
-  </div>
-</div>
 
-<div class="sheet" id="leaderboardSheet">
-  <div class="sheet-head"><h2>Leaderboard</h2><button class="close-sheet" aria-label="Close">✕</button></div>
-  <div id="lbSignedOut" class="signin-note" style="display:none;">Sign in to your account to join the global leaderboard and see where you rank.</div>
-  <div id="lbBody" style="display:none;">
-    <div class="lb-tabs" role="tablist">
-      <button class="lb-tab active" id="lbTabMinutes" role="tab" type="button">Minutes focused</button>
-      <button class="lb-tab" id="lbTabReps" role="tab" type="button">Reps done</button>
+      <div id="togetherActive" style="display:none;">
+        <div class="session-name-row">
+          <input id="sessionNameInput" type="text" maxlength="40" placeholder="Name this session (optional)" autocomplete="off">
+        </div>
+        <div class="together-invite-card">
+          <div class="together-invite-info">
+            <div class="together-invite-label">Invite code</div>
+            <div class="together-invite-code" id="sessionCodeDisplay">——————</div>
+          </div>
+          <button class="btn together-copy-btn" id="copyCodeBtn">Copy link</button>
+        </div>
+
+        <div class="together-members" id="togetherMembers"></div>
+
+        <button class="together-leave" id="leaveSessionBtn">Leave session</button>
+      </div>
     </div>
-    <div id="lbList" class="lb-list"></div>
-    <div id="lbYou" class="lb-you" style="display:none;"></div>
-    <p class="lb-note" id="lbPrivacyNote">You're on the global board. <button type="button" class="lb-leave" id="lbLeaveBtn">Leave</button></p>
+  </div>
+
+  <!-- ===== Friends section ===== -->
+  <div class="cw-section">
+    <button class="cw-head" id="cwHeadFriends" aria-expanded="true" type="button">
+      <span class="cw-head-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/><path d="M16.5 5.4a3.2 3.2 0 0 1 0 6"/><path d="M18 14.9c2.1.5 3.5 2 3.5 4.1"/></svg></span>
+      <span class="cw-head-title">Friends</span>
+      <span class="cw-badge" id="cwFriendsBadge">0</span>
+      <span class="cw-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+    </button>
+    <div class="cw-body">
+      <div id="friendsSignedOut" class="signin-note" style="display:none;">Sign in to your account to add friends, see who's online and study together.</div>
+      <div id="friendsBody" style="display:none;">
+        <div class="friend-top-row">
+          <button class="friend-code-btn" id="copyFriendCodeBtn" type="button" title="Tap to copy your code">
+            <span class="friend-code-label">Your code — tap to copy</span>
+            <span class="friend-code" id="myFriendCode">······</span>
+          </button>
+          <div class="friend-add-box">
+            <span class="friend-code-label">Add a friend</span>
+            <div class="friend-add-inline">
+              <input id="friendCodeInput" type="text" maxlength="6" placeholder="Their code" autocomplete="off" autocapitalize="characters" spellcheck="false">
+              <button class="friend-add-btn" id="addFriendBtn" type="button">Add</button>
+            </div>
+          </div>
+        </div>
+        <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
+        <div id="friendRequestsList"></div>
+        <div id="friendsList" class="friends-list-scroll"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Leaderboard section ===== -->
+  <div class="cw-section">
+    <button class="cw-head" id="cwHeadLeaderboard" aria-expanded="false" type="button">
+      <span class="cw-head-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>
+      <span class="cw-head-title">Leaderboard</span>
+      <span class="cw-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+    </button>
+    <div class="cw-body">
+      <div id="lbSignedOut" class="signin-note" style="display:none;">Sign in to your account to join the global leaderboard and see where you rank.</div>
+      <div id="lbBody" style="display:none;">
+        <div class="lb-tabs" role="tablist">
+          <button class="lb-tab active" id="lbTabMinutes" role="tab" type="button">Minutes focused</button>
+          <button class="lb-tab" id="lbTabReps" role="tab" type="button">Reps done</button>
+        </div>
+        <div id="lbList" class="lb-list"></div>
+        <div id="lbYou" class="lb-you" style="display:none;"></div>
+        <p class="lb-note" id="lbPrivacyNote">You're on the global board. <button type="button" class="lb-leave" id="lbLeaveBtn">Leave</button></p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2177,63 +2280,6 @@
   </div>
 
   <button class="help-done" id="helpDoneBtn" type="button">Got it</button>
-</div>
-
-<div class="sheet" id="togetherSheet">
-  <div class="sheet-head">
-    <h2>Co-work</h2>
-    <button class="close-sheet" aria-label="Close">✕</button>
-  </div>
-
-  <div id="togetherIntro">
-    <div id="togetherStart">
-      <p class="together-tagline">Share a focus session with a friend — timers stay in sync. No account needed.</p>
-
-      <div class="together-name-block" id="nameBlock">
-        <label for="nicknameInput" class="together-label">Your name</label>
-        <input id="nicknameInput" type="text" maxlength="25" placeholder="e.g. Alex" autocomplete="off">
-      </div>
-
-      <button class="together-cta" id="createSessionBtn">
-        <span class="together-cta-title">Start a new session</span>
-        <span class="together-cta-sub">Create a room and invite a friend</span>
-      </button>
-
-      <div id="joinFromLinkRow" style="display:none;">
-        <button class="together-cta together-cta-join" id="joinFromLinkBtn">
-          <span class="together-cta-title">Join this session</span>
-          <span class="together-cta-sub">You've been invited by a friend</span>
-        </button>
-      </div>
-
-      <div id="rejoinRow" style="display:none;">
-        <button class="together-cta together-cta-rejoin" id="rejoinBtn">
-          <span class="together-cta-title">Rejoin last session</span>
-          <span class="together-cta-sub" id="rejoinSub">Pick up where you left off</span>
-        </button>
-      </div>
-
-      <p class="signin-note" id="togetherMsg" style="min-height:16px;"></p>
-
-    </div>
-  </div>
-
-  <div id="togetherActive" style="display:none;">
-    <div class="session-name-row">
-      <input id="sessionNameInput" type="text" maxlength="40" placeholder="Name this session (optional)" autocomplete="off">
-    </div>
-    <div class="together-invite-card">
-      <div class="together-invite-info">
-        <div class="together-invite-label">Invite code</div>
-        <div class="together-invite-code" id="sessionCodeDisplay">——————</div>
-      </div>
-      <button class="btn together-copy-btn" id="copyCodeBtn">Copy link</button>
-    </div>
-
-    <div class="together-members" id="togetherMembers"></div>
-
-    <button class="together-leave" id="leaveSessionBtn">Leave session</button>
-  </div>
 </div>
 
 <div id="tourLayer" aria-hidden="true">
@@ -2993,8 +3039,16 @@ async function renderFriends(){
   const reqWrap=$('friendRequestsList'); reqWrap.innerHTML='';
   const reqEntries=Object.entries(requests);
   const badge=$('menuFriendBadge');
+  const cwBadge=$('cwFriendsBadge');
+  const setBadges=(n)=>{
+    [badge, cwBadge].forEach(b=>{
+      if(!b) return;
+      if(n>0){ b.textContent=n; b.style.display=''; b.classList.add('show'); }
+      else { b.style.display='none'; b.classList.remove('show'); }
+    });
+  };
   if(reqEntries.length){
-    if(badge){ badge.style.display=''; badge.textContent=reqEntries.length; }
+    setBadges(reqEntries.length);
     const head=document.createElement('div'); head.className='friends-subhead'; head.textContent='Requests';
     reqWrap.appendChild(head);
     reqEntries.forEach(([fromUid, r])=>{
@@ -3004,7 +3058,7 @@ async function renderFriends(){
       ]));
     });
   } else {
-    if(badge) badge.style.display='none';
+    setBadges(0);
   }
 
   // 3) friends list
@@ -3339,7 +3393,7 @@ async function acceptApprovedInvite(fromUid, inv){
     myCapturedName = (DATA.displayName||'').trim() || 'Someone';
     try{ localStorage.setItem('pomofit:coworkName', myCapturedName); }catch(e){}
     closeSheets();
-    openSheet('togetherSheet');
+    cwExpand('cwHeadCowork'); openSheet('coworkingSheet');
     await joinOrCreateSession(inv.code, false);
   }catch(e){
     console.error('auto-join failed', e);
@@ -3373,7 +3427,7 @@ function showInviteToast(fromUid, inv){
       myCapturedName = (DATA.displayName||'').trim() || 'Someone';
       try{ localStorage.setItem('pomofit:coworkName', myCapturedName); }catch(e){}
       closeSheets();
-      openSheet('togetherSheet');
+      cwExpand('cwHeadCowork'); openSheet('coworkingSheet');
       await joinOrCreateSession(inv.code, false);
     }catch(e){ console.error('invite join failed', e); }
   };
@@ -5082,7 +5136,8 @@ function showTogetherActive(){
   $('togetherActive').style.display='block';
   $('floatChat').classList.add('show');
   $('floatMembers').classList.add('show');
-  $('togetherBtn').classList.add('active');
+  $('coworkingBtn').classList.add('active');
+  const h=$('cwHeadCowork'); if(h) h.classList.add('in-session');
 }
 function showTogetherIntro(){
   $('togetherIntro').style.display='block';
@@ -5090,7 +5145,8 @@ function showTogetherIntro(){
   togetherMsg('');
   $('floatChat').classList.remove('show');
   $('floatMembers').classList.remove('show');
-  $('togetherBtn').classList.remove('active');
+  $('coworkingBtn').classList.remove('active');
+  { const h=$('cwHeadCowork'); if(h) h.classList.remove('in-session'); }
   setChatExpanded(false);
   // reset intro UI: show create by default, only show join-from-link if there is a pending code
   if(pendingJoinCode){
@@ -5136,16 +5192,39 @@ async function refreshRejoinButton(){
   }
 }
 
-$('togetherBtn').onclick=()=>{
+/* ---------- merged co-working sheet: section toggles + unified opener ---------- */
+function cwToggleSection(headId){
+  const h=$(headId); if(!h) return;
+  h.setAttribute('aria-expanded', h.getAttribute('aria-expanded')==='true' ? 'false' : 'true');
+}
+function cwExpand(headId){ const h=$(headId); if(h) h.setAttribute('aria-expanded','true'); }
+[['cwHeadCowork'],['cwHeadFriends'],['cwHeadLeaderboard']].forEach(([id])=>{
+  const h=$(id); if(h) h.onclick=()=>{
+    cwToggleSection(id);
+    // render on demand when a section opens
+    if(id==='cwHeadFriends' && h.getAttribute('aria-expanded')==='true') renderFriends();
+    if(id==='cwHeadLeaderboard' && h.getAttribute('aria-expanded')==='true') renderLeaderboard();
+  };
+});
+
+// open the merged sheet, optionally forcing a given section open, and prep co-work
+function openCoworking(expandSection){
   if(typeof closeMenu==='function') closeMenu();
-  openSheet('togetherSheet');
+  if(expandSection) cwExpand(expandSection);
+  openSheet('coworkingSheet');
+  // co-work prep (was in the old togetherBtn handler)
   if(!FIREBASE_READY){
     togetherMsg('Shared sessions aren\'t set up on this site yet — check back soon!');
     $('createSessionBtn').disabled=true;
   } else if(displayName()){
     $('nicknameInput').value = DATA.displayName || '';
   }
-};
+  // populate the social sections
+  renderFriends();
+  renderLeaderboard();
+}
+$('coworkingBtn').onclick=()=>openCoworking();
+
 
 $('createSessionBtn').onclick=async ()=>{
   if(!FIREBASE_READY) return;
@@ -5772,7 +5851,7 @@ function checkJoinLink(){
     const code=params.get('join');
     if(code){
       pendingJoinCode = code.toUpperCase();
-      openSheet('togetherSheet');
+      cwExpand('cwHeadCowork'); openSheet('coworkingSheet');
       if(DATA.displayName) $('nicknameInput').value = DATA.displayName;
       $('createSessionBtn').style.display='none';
       $('joinFromLinkRow').style.display='flex';
@@ -6147,7 +6226,7 @@ function applyLang(lang){
   // co-work button and sheet
   const coworkLabel=document.querySelector('.cowork-fab-label');
   if(coworkLabel) coworkLabel.textContent=t.cowork;
-  const togetherH2=document.querySelector('#togetherSheet h2');
+  const togetherH2=document.querySelector('#cwHeadCowork .cw-head-title');
   if(togetherH2) togetherH2.textContent=t.studyTogether;
   const shareNoteEl=document.querySelector('#togetherStart .signin-note');
   if(shareNoteEl) shareNoteEl.textContent=t.shareNote;
@@ -6516,15 +6595,13 @@ document.addEventListener('keydown', e=>{
     dismiss.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ stop(e); } });
   }
 }
-$('friendsMenuBtn').onclick=()=>{ closeMenu(); openSheet('friendsSheet'); renderFriends(); };
 
 /* ---------- leaderboard UI ---------- */
 let lbMetric='minutes', lbData=[];
 function openLeaderboard(){
-  closeMenu(); openSheet('leaderboardSheet');
-  renderLeaderboard();
+  // now a section of the merged co-working sheet
+  openCoworking('cwHeadLeaderboard');
 }
-$('leaderboardMenuBtn').onclick=openLeaderboard;
 $('lbTabMinutes').onclick=()=>{ lbMetric='minutes'; syncLbTabs(); paintLeaderboard(); };
 $('lbTabReps').onclick=()=>{ lbMetric='reps'; syncLbTabs(); paintLeaderboard(); };
 $('lbLeaveBtn').onclick=async ()=>{
