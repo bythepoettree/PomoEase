@@ -496,7 +496,18 @@
   /* ---------- workout ---------- */
   .workout{display:none; flex-direction:column; align-items:center; width:100%;}
   .workout.show{display:flex;}
-  .back-row{width:100%; display:flex; justify-content:flex-start; margin-bottom:2px;}
+  .back-row{width:100%; display:flex; justify-content:flex-start; align-items:center; margin-bottom:2px;}
+  .back-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    background:none; border:none; cursor:pointer;
+    color:var(--muted); padding:8px; margin-left:-2px;
+    transition:color .15s var(--ease), transform .12s var(--ease);
+  }
+  .back-btn:hover{ color:var(--fg); }
+  .back-btn:hover svg{ transform:translateX(-2px); }
+  .back-btn svg{ transition:transform .15s var(--ease); }
+  .back-btn:active{ transform:scale(.92); }
+  .back-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:8px; }
   .ex-name{
     font-family:'Anton', sans-serif; font-size:clamp(28px, 8vw, 44px);
     letter-spacing:.02em; text-transform:uppercase; text-align:center;
@@ -1749,7 +1760,9 @@
 
   <div class="workout" id="workoutBlock">
     <div class="back-row">
-      <button class="btn ghost" id="backBtn">← Back to study</button>
+      <button class="back-btn" id="backBtn" aria-label="Back to study" title="Back to study">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
     </div>
     <div class="ex-name" id="exName">Pick a programme</div>
     <div class="ex-note" id="exNote">Each programme is sized to fill your whole break.</div>
@@ -1761,7 +1774,7 @@
     <div class="traj" id="traj"></div>
     <button class="btn" id="progStartBtn" style="display:none;margin-top:12px;">START PROGRAMME</button>
     <div class="prog-list" id="progList"></div>
-    <div class="split-btn-row">
+    <div class="split-btn-row" id="workoutSplitRow">
       <button id="shuffleBtn" class="split-btn">🎲 Surprise mix</button>
       <button id="restBtn" class="split-btn">Just rest</button>
     </div>
@@ -2140,7 +2153,7 @@
       </span>
       <div class="help-text">
         <b>Workout</b>
-        <span>Swaps your break for a quick guided movement round — a set of exercises instead of sitting still.</span>
+        <span>Turn a break into a quick guided workout — a few exercises instead of sitting still. You still get your break.</span>
       </div>
     </div>
 
@@ -2234,6 +2247,59 @@
   </div>
 
   <button class="help-done" id="helpDoneBtn" type="button">Got it</button>
+</div>
+
+<div class="sheet" id="workoutHelpSheet">
+  <div class="sheet-head">
+    <h2>On your break</h2>
+    <button class="close-sheet" aria-label="Close">✕</button>
+  </div>
+
+  <p class="help-lead">Breaks don't have to mean sitting still — pick a short workout sized to your break, or simply rest.</p>
+
+  <button class="help-tour-btn" id="workoutHelpTourBtn" type="button">
+    <span class="htb-ic">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01"/><path d="M11 12h1v4h1"/></svg>
+    </span>
+    <span class="htb-text">
+      <b>Take a quick tour</b>
+      <span>A guided walkthrough of the break screen</span>
+    </span>
+  </button>
+
+  <div class="help-section">
+    <div class="help-section-title">The break screen</div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 2 7-2"/><path d="M12 10.5V15"/><path d="M8.5 21l3.5-6 3.5 6"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Pick a programme</b>
+        <span>Choose a short workout from the list. Each one is sized to fill the time you have on this break.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic help-ic-glyph">🎲</span>
+      <div class="help-text">
+        <b>Surprise mix &amp; Just rest</b>
+        <span>Let it pick a random set for you, or skip the movement and simply rest the break out.</span>
+      </div>
+    </div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Back to study</b>
+        <span>The arrow at the top ends the break early and jumps straight back to a focus round.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="help-done" id="workoutHelpDoneBtn" type="button">Got it</button>
 </div>
 
 <div id="tourLayer" aria-hidden="true">
@@ -5845,7 +5911,7 @@ const LANGS = {
     passwordUpdated:'Password updated — sign in with your new password.',
     creatingSession:'Creating session…', joiningSession:'Joining…', expiredLink:'That invite link looks like it has expired or is invalid.', cantJoin:"Couldn't join — check the code and your connection.",
     workoutBtn:'Workout →', cropCancel:'Cancel', cropUse:'USE PHOTO',
-    timeToFocus:'Time to focus!', backToStudy:'← Back to study',
+    timeToFocus:'Time to focus!', backToStudy:'Back to study',
     pickProgramme:'Pick a programme', programmeNote:'Each programme is sized to fill your whole break.',
     startProgramme:'START PROGRAMME', surpriseMix:'🎲 Surprise mix', justRest:'Just rest',
     restingEasy:'Resting easy', programmeDone:'Programme complete! 💪',
@@ -5890,7 +5956,7 @@ const LANGS = {
     passwordUpdated:'Şifre güncellendi — yeni şifrenle giriş yap.',
     creatingSession:'Seans oluşturuluyor…', joiningSession:'Katılınıyor…', expiredLink:'Davet bağlantısının süresi dolmuş veya geçersiz görünüyor.', cantJoin:'Katılınamadı — kodu ve bağlantını kontrol et.',
     workoutBtn:'Egzersiz →', cropCancel:'İptal', cropUse:'FOTOĞRAFI KULLAN',
-    timeToFocus:'Odaklanma zamanı!', backToStudy:'← Çalışmaya dön',
+    timeToFocus:'Odaklanma zamanı!', backToStudy:'Çalışmaya dön',
     pickProgramme:'Bir program seç', programmeNote:'Her program molana göre ayarlanmıştır.',
     startProgramme:'PROGRAMI BAŞLAT', surpriseMix:'🎲 Sürpriz karışım', justRest:'Sadece dinlen',
     restingEasy:'Dinleniyorsun', programmeDone:'Program tamamlandı! 💪',
@@ -5935,7 +6001,7 @@ const LANGS = {
     passwordUpdated:'Passwort aktualisiert — melde dich mit deinem neuen Passwort an.',
     creatingSession:'Sitzung wird erstellt…', joiningSession:'Beitreten…', expiredLink:'Dieser Einladungslink ist abgelaufen oder ungültig.', cantJoin:'Beitreten nicht möglich — überprüfe den Code und deine Verbindung.',
     workoutBtn:'Training →', cropCancel:'Abbrechen', cropUse:'FOTO VERWENDEN',
-    timeToFocus:'Zeit zum Fokussieren!', backToStudy:'← Zurück zum Lernen',
+    timeToFocus:'Zeit zum Fokussieren!', backToStudy:'Zurück zum Lernen',
     pickProgramme:'Wähle ein Programm', programmeNote:'Jedes Programm ist auf deine Pause abgestimmt.',
     startProgramme:'PROGRAMM STARTEN', surpriseMix:'🎲 Überraschungs-Mix', justRest:'Einfach ausruhen',
     restingEasy:'Du ruhst dich aus', programmeDone:'Programm abgeschlossen! 💪',
@@ -5980,7 +6046,7 @@ const LANGS = {
     passwordUpdated:'تم تحديث كلمة المرور — سجّل دخولك بكلمة مرورك الجديدة.',
     creatingSession:'جارٍ إنشاء الجلسة…', joiningSession:'جارٍ الانضمام…', expiredLink:'يبدو أن رابط الدعوة منتهي أو غير صالح.', cantJoin:'تعذّر الانضمام — تحقق من الرمز والاتصال.',
     workoutBtn:'تمرين →', cropCancel:'إلغاء', cropUse:'استخدم الصورة',
-    timeToFocus:'وقت التركيز!', backToStudy:'← العودة للدراسة',
+    timeToFocus:'وقت التركيز!', backToStudy:'العودة للدراسة',
     pickProgramme:'اختر برنامجاً', programmeNote:'كل برنامج مُصمَّم ليناسب فترة استراحتك.',
     startProgramme:'ابدأ البرنامج', surpriseMix:'🎲 مزيج مفاجئ', justRest:'فقط استرح',
     restingEasy:'أنت مسترخٍ', programmeDone:'اكتمل البرنامج! 💪',
@@ -6003,7 +6069,7 @@ const LANGS = {
     cowork:'协作', signIn:'登录', done:'完成',
     studyTogether:'一起学习', focusLabel:'', sweatLabel:'运动休息', restLabel:'长休息',
     introBubble:'带运动休息的番茄钟 — 专注学习，休息时动起来。',
-    timeToFocus:'专注时间到！', backToStudy:'← 返回学习',
+    timeToFocus:'专注时间到！', backToStudy:'返回学习',
     pickProgramme:'选择训练方案', programmeNote:'每个方案都适配你的休息时长。',
     startProgramme:'开始训练', surpriseMix:'🎲 随机组合', justRest:'只是休息',
     restingEasy:'休息中', programmeDone:'训练完成！💪',
@@ -6125,7 +6191,7 @@ function applyLang(lang){
   if(cancelTaskEl) cancelTaskEl.textContent = t.cancelTask;
   // workout / exercise page
   const backBtnEl=$('backBtn');
-  if(backBtnEl) backBtnEl.textContent = t.backToStudy;
+  if(backBtnEl){ const lbl=backBtnEl.querySelector('span'); if(lbl) lbl.textContent = t.backToStudy; }
   const progStartBtnEl=$('progStartBtn');
   if(progStartBtnEl && progStartBtnEl.style.display!=='none') progStartBtnEl.textContent = t.startProgramme;
   const shuffleBtnEl=$('shuffleBtn');
@@ -6373,13 +6439,17 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); })
 
 { const sb=$('settingsBtn'); if(sb) sb.onclick=()=>{ closeMenu(); openSheet('settingsSheet'); }; }
 $('quickSettingsBtn').onclick=()=>openSheet('settingsSheet');
-{ const hb=$('helpBtn'); if(hb) hb.onclick=()=>openSheet('helpSheet'); }
+// the break screen is up when the workout block is showing
+function onBreakScreen(){ const wb=$('workoutBlock'); return !!wb && wb.classList.contains('show'); }
+{ const hb=$('helpBtn'); if(hb) hb.onclick=()=> openSheet(onBreakScreen() ? 'workoutHelpSheet' : 'helpSheet'); }
 { const hd=$('helpDoneBtn'); if(hd) hd.onclick=closeSheets; }
+{ const whd=$('workoutHelpDoneBtn'); if(whd) whd.onclick=closeSheets; }
+{ const wht=$('workoutHelpTourBtn'); if(wht) wht.onclick=()=>{ closeSheets(); setTimeout(()=>startTour('workout'), 260); }; }
 
 /* ================= spotlight tour ================= */
 /* Steps point at real elements by id. Any step whose target is missing or
    hidden is skipped automatically, so the tour never spotlights empty space. */
-const TOUR_STEPS = [
+const TIMER_TOUR_STEPS = [
   { el:'timer',            title:'Your focus timer',   body:'A minutes : seconds countdown for one focus round. When it reaches zero you get a break — then the next round begins.', shape:'rect' },
   { el:'startBtn',         title:'Start & pause',      body:'Tap to begin the round. Tap again to pause.', shape:'round' },
   { el:'resetBtn',         title:'Reset',              body:'Sends the current round back to the top without touching your settings.', shape:'round' },
@@ -6390,11 +6460,16 @@ const TOUR_STEPS = [
   { el:'quickSettingsBtn', title:'Settings',           body:'Round lengths, theme, language, sound and notifications all live here.', shape:'round' },
   { el:'menuBtn',          title:'The Portal',         body:'Account, <b>Co-work</b> and <b>Friends</b> live in here. Sign in from Account to sync across devices, or study live with a friend.', shape:'round' }
 ];
+const WORKOUT_TOUR_STEPS = [
+  { el:'progList',         title:'Pick a programme',   body:'Choose a short workout. Each one is sized to fill the time you have on this break.', shape:'rect' },
+  { el:'workoutSplitRow',  title:'Mix it up, or rest', body:'Let it pick a <b>Surprise mix</b> for you — or tap <b>Just rest</b> to skip the movement and rest the break out.', shape:'rect' },
+  { el:'backBtn',          title:'Back to study',      body:'This arrow ends the break early and takes you straight back to a focus round.', shape:'round' }
+];
 
 const tourLayer=$('tourLayer'), tourSpot=$('tourSpot'), tourCard=$('tourCard');
 const tourTitleEl=$('tourTitle'), tourBodyEl=$('tourBody'), tourStepNumEl=$('tourStepNum'), tourProgressEl=$('tourProgress');
 const tourBackBtn=$('tourBack'), tourNextBtn=$('tourNext'), tourSkipBtn=$('tourSkip');
-let tourIdx=0, tourOrder=[], tourOnResize=null, tourTasksWereCollapsed=false;
+let tourIdx=0, tourOrder=[], tourOnResize=null, tourTasksWereCollapsed=false, tourKind='timer';
 
 function tourVisible(id){
   const el=$(id); if(!el) return false;
@@ -6403,7 +6478,8 @@ function tourVisible(id){
   return getComputedStyle(el).display!=='none' && getComputedStyle(el).visibility!=='hidden';
 }
 
-function startTour(){
+function startTour(kind){
+  tourKind = kind==='workout' ? 'workout' : 'timer';
   // make sure nothing is covering the page, then compute which steps are live
   closeMenu(); closeSheets();
   if(document.body.classList.contains('focus-mode') && typeof exitFocusMode==='function'){
@@ -6411,10 +6487,14 @@ function startTour(){
   }
   // the task step points inside the tasks panel — expand it so the spotlight
   // lands on Add Task rather than whatever sits below a collapsed panel
-  const tt=$('tasksToggle');
-  tourTasksWereCollapsed = tt && tt.getAttribute('aria-expanded')!=='true';
-  if(tourTasksWereCollapsed) tt.click();
-  tourOrder = TOUR_STEPS.filter(s=>tourVisible(s.el));
+  tourTasksWereCollapsed=false;
+  if(tourKind==='timer'){
+    const tt=$('tasksToggle');
+    tourTasksWereCollapsed = tt && tt.getAttribute('aria-expanded')!=='true';
+    if(tourTasksWereCollapsed) tt.click();
+  }
+  const steps = tourKind==='workout' ? WORKOUT_TOUR_STEPS : TIMER_TOUR_STEPS;
+  tourOrder = steps.filter(s=>tourVisible(s.el));
   if(!tourOrder.length) return;
   tourIdx=0;
   tourProgressEl.innerHTML = tourOrder.map(()=> '<i></i>').join('');
@@ -6502,7 +6582,7 @@ document.addEventListener('keydown', e=>{
 });
 
 // entry points
-{ const htb=$('helpTourBtn'); if(htb) htb.onclick=()=>{ closeSheets(); setTimeout(startTour, 260); }; }
+{ const htb=$('helpTourBtn'); if(htb) htb.onclick=()=>{ closeSheets(); setTimeout(()=>startTour('timer'), 260); }; }
 {
   const offer=$('tourOffer'), dismiss=$('tourOfferDismiss');
   function hideOffer(){ if(offer) offer.style.display='none'; try{ localStorage.setItem('pomofit:tourOffered','1'); }catch(e){} }
@@ -6510,7 +6590,7 @@ document.addEventListener('keydown', e=>{
     const seen = localStorage.getItem('pomofit:tourOffered') || localStorage.getItem('pomofit:tourDone');
     if(!seen && offer) offer.style.display='';
   }catch(e){}
-  if(offer) offer.onclick=()=>{ hideOffer(); startTour(); };
+  if(offer) offer.onclick=()=>{ hideOffer(); startTour('timer'); };
   if(dismiss){
     const stop=(e)=>{ e.stopPropagation(); hideOffer(); };
     dismiss.addEventListener('click', stop);
