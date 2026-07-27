@@ -211,6 +211,58 @@
   body.focus-mode .float-members{
     opacity:1; /* keep co-work bubbles visible */
   }
+  /* ---------- workout: get-ready countdown ---------- */
+  .tap-focus-hint{
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+    opacity:0; transition:opacity .3s ease; margin-top:4px; min-height:14px; pointer-events:none;
+  }
+  .tap-focus-hint.show{ opacity:.5; }
+  body.workout-focus .tap-focus-hint{ display:none; }
+  .get-ready-overlay{
+    position:fixed; inset:0; z-index:1200;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  }
+  .get-ready-overlay.show{ display:flex; animation:grFade .2s ease; }
+  @keyframes grFade{ from{opacity:0} to{opacity:1} }
+  .get-ready-num{
+    font-family:'Anton', sans-serif; font-size:clamp(90px, 30vw, 180px); line-height:1;
+    color:var(--fg); animation:grPop .5s var(--ease);
+  }
+  .get-ready-cap{ font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-top:10px; }
+  @keyframes grPop{ 0%{transform:scale(.6);opacity:0} 45%{transform:scale(1.08);opacity:1} 100%{transform:scale(1)} }
+  @media (prefers-reduced-motion: reduce){ .get-ready-num{ animation:none; } .get-ready-overlay.show{ animation:none; } }
+
+  /* ---------- workout focus mode: just the enlarged animation ---------- */
+  body.workout-focus{ overflow:hidden; }
+  body.workout-focus #workoutBlock{
+    position:fixed; inset:0; z-index:1000; margin:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--bg);
+  }
+  /* hide everything in the workout block except the animation, name and rep count */
+  body.workout-focus #workoutBlock .back-row,
+  body.workout-focus #workoutBlock .traj,
+  body.workout-focus #workoutBlock #progStartBtn,
+  body.workout-focus #workoutBlock .prog-list,
+  body.workout-focus #workoutBlock .split-btn-row,
+  body.workout-focus #workoutBlock #breakClock,
+  body.workout-focus header,
+  body.workout-focus footer,
+  body.workout-focus .fact,
+  body.workout-focus .ad-slot,
+  body.workout-focus .float-chat{
+    opacity:0 !important; visibility:hidden !important; pointer-events:none !important;
+  }
+  body.workout-focus #cv{
+    width:min(88vw, 560px) !important; height:auto !important; margin:8px 0;
+  }
+  body.workout-focus #exName{ font-size:clamp(30px, 9vw, 52px); }
+  body.workout-focus #exNote{ font-size:15px; }
+  body.workout-focus .counter .big{ font-size:72px; }
+  body.workout-focus .counter .of{ font-size:18px; }
+
   .focus-hint{
     position:fixed; bottom:40px; left:50%; transform:translateX(-50%);
     font-size:11px; letter-spacing:.12em; color:var(--muted);
@@ -1759,6 +1811,7 @@
   </div>
 
   <div class="workout" id="workoutBlock">
+    <div class="get-ready-overlay" id="getReadyOverlay"><div class="get-ready-num" id="getReadyNum">3</div><div class="get-ready-cap">Get ready…</div></div>
     <div class="back-row">
       <button class="back-btn" id="backBtn" aria-label="Back to study" title="Back to study">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
@@ -1772,6 +1825,7 @@
       <div class="of" id="repOf">/ 20 reps</div>
     </div>
     <div class="traj" id="traj"></div>
+    <div class="tap-focus-hint" id="tapFocusHint">Tap the figure to focus</div>
     <button class="btn" id="progStartBtn" style="display:none;margin-top:12px;">START PROGRAMME</button>
     <div class="prog-list" id="progList"></div>
     <div class="split-btn-row" id="workoutSplitRow">
@@ -1781,6 +1835,8 @@
     <div class="sub" id="breakClock" style="margin-top:12px;"></div>
   </div>
 </main>
+
+<div class="focus-hint" id="workoutFocusHint">TAP ANYWHERE TO EXIT</div>
 
 <div class="fact" id="factCard">
   <div class="eyebrow">Brain fuel</div>
@@ -3737,11 +3793,88 @@ function selectProgramme(pkey, keys){
 $('progStartBtn').onclick=()=>{
   if(!PROG) return;
   $('progStartBtn').style.display='none';
-  beep(1100,.1,.05);
-  beginStep();
-  if(typeof broadcastWorkout==='function')
-    broadcastWorkout({action:'start', key:PROG._pkey, keys:PROG._keys});
+  enterWorkoutFocus();
+  startGetReady(()=>{
+    beep(1100,.1,.05);
+    beginStep();
+    if(typeof broadcastWorkout==='function')
+      broadcastWorkout({action:'start', key:PROG._pkey, keys:PROG._keys});
+  });
 };
+
+/* 3-2-1 get-ready countdown before the first exercise, so there's time to
+   stand up and get into position. Shown big and centred over the animation. */
+let getReadyTimer=null;
+function startGetReady(then){
+  clearInterval(getReadyTimer);
+  const ov=$('getReadyOverlay'), num=$('getReadyNum');
+  if(!ov || !num){ then(); return; }
+  let n=3;
+  ov.classList.add('show');
+  num.textContent=n;
+  beep(660,.09,.05);
+  getReadyTimer=setInterval(()=>{
+    n--;
+    if(n<=0){
+      clearInterval(getReadyTimer);
+      num.textContent='GO';
+      beep(1100,.12,.06);
+      setTimeout(()=>{ ov.classList.remove('show'); then(); }, 450);
+    } else {
+      num.textContent=n;
+      beep(660,.09,.05);
+    }
+  }, 1000);
+}
+function cancelGetReady(){
+  clearInterval(getReadyTimer);
+  const ov=$('getReadyOverlay'); if(ov) ov.classList.remove('show');
+}
+
+/* workout focus mode — mirrors the timer's: hide everything but the enlarged,
+   centred animation with its name and rep count. Tap anywhere to exit. */
+let workoutFocusHintTimer=null, workoutFocusEnteredAt=0;
+function enterWorkoutFocus(){
+  if(document.body.classList.contains('workout-focus')) return;
+  document.body.classList.add('workout-focus');
+  workoutFocusEnteredAt=Date.now();
+  updateTapFocusHint();
+  const hint=$('workoutFocusHint');
+  if(hint){
+    hint.classList.add('show');
+    clearTimeout(workoutFocusHintTimer);
+    workoutFocusHintTimer=setTimeout(()=>hint.classList.remove('show'), 2600);
+  }
+}
+function exitWorkoutFocus(){
+  if(!document.body.classList.contains('workout-focus')) return;
+  document.body.classList.remove('workout-focus');
+  const hint=$('workoutFocusHint'); if(hint) hint.classList.remove('show');
+  clearTimeout(workoutFocusHintTimer);
+  updateTapFocusHint();
+}
+// show the "tap the figure to focus" cue only when a workout runs outside focus
+function updateTapFocusHint(){
+  const h=$('tapFocusHint'); if(!h) return;
+  const show = workoutRunning() && !document.body.classList.contains('workout-focus');
+  h.classList.toggle('show', show);
+}
+// tap anywhere (after a short grace period) exits workout focus
+document.addEventListener('click', (e)=>{
+  if(!document.body.classList.contains('workout-focus')) return;
+  if(Date.now()-workoutFocusEnteredAt < 400) return; // ignore the starting tap
+  exitWorkoutFocus();
+}, true);
+// a workout is actively animating (so tapping the figure can re-enter focus)
+function workoutRunning(){ return !!(PROG && (PROG.mode==='ex' || PROG.mode==='rest')); }
+// tap the animation to go (back) into focus, mirroring "tap the timer"
+cv.style.cursor='pointer';
+cv.addEventListener('click', (e)=>{
+  if(document.body.classList.contains('workout-focus')) return; // exit handler owns this
+  if(!workoutRunning()) return; // nothing to focus on when idle/done
+  e.stopPropagation();
+  enterWorkoutFocus();
+});
 function beginStep(){
   const st=PROG.steps[PROG.idx], ex=EX[st.key];
   PROG.mode='ex'; PROG.tStart=performance.now(); S.reps=0;
@@ -3750,6 +3883,7 @@ function beginStep(){
   counterRow.style.visibility='visible';
   repNum.textContent='0'; repOf.textContent='/ '+st.target+' '+(T()[st.unit]||st.unit);
   renderTraj();
+  if(typeof updateTapFocusHint==='function') updateTapFocusHint();
 }
 function stepDone(){
   const st=PROG.steps[PROG.idx];
@@ -3764,6 +3898,7 @@ function stepDone(){
     exNote.textContent=T().programmeDoneNote;
     counterRow.style.visibility='hidden';
     renderTraj(true);
+    if(typeof updateTapFocusHint==='function') updateTapFocusHint();
   } else {
     PROG.mode='rest'; PROG.tStart=performance.now();
     beep(660,.1,.05);
@@ -4860,6 +4995,13 @@ function tick(){
       // guest's local timer reached zero — mark completion for their active task
       guestFocusCompletedForPhase = true;
       logFocus(S.focusMin, true);
+      // auto-break off (no break coming): return the display to the chosen
+      // focus time so they can simply start another round if they skip the break
+      if(!S.autoBreak && !S.running){
+        S.remaining = phaseDuration();
+        S.endAt = Date.now() + S.remaining;
+        render(S.remaining);
+      }
     }
   }
 }
@@ -4926,6 +5068,7 @@ function setPhase(p){
   if(typeof syncChromeColour==='function') syncChromeColour();
   const isBreak = p!=='focus';
   workoutBlock.classList.toggle('show', isBreak);
+  if(!isBreak){ if(typeof exitWorkoutFocus==='function') exitWorkoutFocus(); if(typeof cancelGetReady==='function') cancelGetReady(); }
   timerBlock.style.display = isBreak ? 'none':'flex';
   phaseLabel.textContent = p==='focus' ? '' : p==='sweat' ? T().sweatLabel : T().restLabel;
   if(isBreak){
@@ -5522,6 +5665,8 @@ function applyRemoteTimer(v){
       logFocus(S.focusMin, true);
     }
     $('skipBtn').dataset.workout='1';
+    // make sure the display returns to the chosen focus time, not 00:00
+    if(!S.running){ S.remaining = phaseDuration(); S.endAt = Date.now()+S.remaining; }
   }
 
   // reset guest completion flag AFTER handling any completion, so a new focus phase can complete again
@@ -5596,6 +5741,7 @@ function setPhaseUIOnly(p){
   if(typeof syncChromeColour==='function') syncChromeColour();
   const isBreak = p!=='focus';
   workoutBlock.classList.toggle('show', isBreak);
+  if(!isBreak){ if(typeof exitWorkoutFocus==='function') exitWorkoutFocus(); if(typeof cancelGetReady==='function') cancelGetReady(); }
   timerBlock.style.display = isBreak ? 'none':'flex';
   phaseLabel.textContent = p==='focus' ? '' : p==='sweat' ? 'Sweat Break' : 'Long Break';
   renderDots();
