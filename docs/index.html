@@ -311,6 +311,12 @@
     padding:8px; border-radius:10px; display:inline-flex;
     transition:opacity .2s ease;
   }
+  /* leaderboard trophy — same size as the help/settings icons; uses the theme's
+     foreground so it's white on dark themes and dark on the light theme */
+  .leaderboard-btn{
+    color:var(--fg); opacity:.9;
+  }
+  .leaderboard-btn:hover{ opacity:1; }
   .quick-settings svg{ width:15px; height:15px; }
   .quick-settings:hover{ opacity:.6; }
   .quick-settings:active{ opacity:.8; }
@@ -1422,12 +1428,19 @@
     100%{ box-shadow: 0 0 0 3px #FF6B6B; }
   }
   @media (prefers-reduced-motion: reduce){ .cowork-fab.active{ animation:none; box-shadow:0 0 0 3px var(--accent); } }
-  /* colourful ring around the Co-work menu icon while a session is active */
-  .menu-item.active .cowork-ic{
-    border-radius:50%; width:22px; height:22px;
-    animation:coworkRing 2s linear infinite;
+  /* colourful ring around the whole Co-work menu item while a session is active */
+  .menu-item.active{
+    border-radius:11px;
+    animation:coworkRingInset 2s linear infinite;
   }
-  @media (prefers-reduced-motion: reduce){ .menu-item.active .cowork-ic{ animation:none; box-shadow:0 0 0 2px var(--accent); border-radius:50%; } }
+  @keyframes coworkRingInset{
+    0%  { box-shadow: inset 0 0 0 2px #FF6B6B; }
+    25% { box-shadow: inset 0 0 0 2px #FFD93D; }
+    50% { box-shadow: inset 0 0 0 2px #6BCB77; }
+    75% { box-shadow: inset 0 0 0 2px #4D96FF; }
+    100%{ box-shadow: inset 0 0 0 2px #FF6B6B; }
+  }
+  @media (prefers-reduced-motion: reduce){ .menu-item.active{ animation:none; box-shadow:inset 0 0 0 2px var(--accent); border-radius:11px; } }
 
   .float-chat{
     position:fixed; bottom:16px; z-index:999;
@@ -1681,7 +1694,13 @@
 </div>
 
 <header>
-  <div></div>
+  <div style="display:flex;align-items:center;">
+    <button class="quick-settings leaderboard-btn" id="leaderboardBtn" aria-label="Leaderboard" title="Leaderboard">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/>
+      </svg>
+    </button>
+  </div>
   <div style="display:flex;align-items:center;gap:4px;">
     <button class="quick-settings" id="helpBtn" aria-label="How it works" title="How it works">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1713,9 +1732,6 @@
       </button>
       <button class="menu-item" id="friendsMenuBtn" role="menuitem" aria-label="Friends">
         <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/><path d="M16.5 5.4a3.2 3.2 0 0 1 0 6"/><path d="M18 14.9c2.1.5 3.5 2 3.5 4.1"/></svg></span><span>Friends</span><span class="friend-badge" id="menuFriendBadge" style="display:none;">0</span>
-      </button>
-      <button class="menu-item" id="leaderboardMenuBtn" role="menuitem" aria-label="Leaderboard">
-        <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg></span><span>Leaderboard</span>
       </button>
       <a class="menu-item" id="supportLink" href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer" role="menuitem">
         <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span><span>Support</span>
@@ -2280,6 +2296,16 @@
 
   <div class="help-section">
     <div class="help-section-title">Top of the screen</div>
+
+    <div class="help-item">
+      <span class="help-ic">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Leaderboard</b>
+        <span>The trophy at the top-left opens the global leaderboard — see how your focus minutes and reps rank.</span>
+      </div>
+    </div>
 
     <div class="help-item">
       <span class="help-ic">
@@ -3649,15 +3675,11 @@ function primeNotifAudio(){
     if(!notifAudio){
       notifAudio = new Audio(buildNotifWav());
       notifAudio.preload = 'auto';
+      // load() readies the buffer without producing any sound — playing it here
+      // (even muted) can leak an audible frame on the first click, so we don't.
+      try{ notifAudio.load(); }catch(e){}
     }
-    if(!notifPrimed){
-      // a muted play/pause during a gesture satisfies autoplay policies
-      notifAudio.muted = true;
-      const p = notifAudio.play();
-      if(p && p.then) p.then(()=>{ notifAudio.pause(); notifAudio.currentTime=0; notifAudio.muted=false; notifPrimed=true; })
-                       .catch(()=>{ notifAudio.muted=false; });
-      else { notifAudio.pause(); notifAudio.currentTime=0; notifAudio.muted=false; notifPrimed=true; }
-    }
+    notifPrimed = true;
   }catch(e){}
 }
 
@@ -4131,6 +4153,9 @@ function animate(){
   _col = getComputedStyle(document.body).getPropertyValue('--fg').trim();
   ctx.clearRect(0,0,CW,CH);
   groundLine();
+  // if the break screen isn't showing, the workout isn't visible — never advance
+  // reps or play rep sounds (prevents rep beeps bleeding into the study page)
+  if(!workoutBlock.classList.contains('show')){ drawIdle(); return; }
   if(!PROG || PROG.mode==='done' || PROG.mode==='ready'){ drawIdle(); return; }
   const el=(performance.now()-PROG.tStart)/1000;
 
@@ -5720,8 +5745,14 @@ function applyRemoteWorkout(v){
     } else if(v.action==='start'){
       selectProgramme(v.key||null, v.keys||undefined);
       $('progStartBtn').style.display='none';
-      beep(1100,.1,.05);
-      beginStep();
+      // mirror the starter's experience: get-ready countdown, then focus mode
+      if(typeof enterWorkoutFocus==='function') enterWorkoutFocus();
+      if(typeof startGetReady==='function'){
+        startGetReady(()=>{ beep(1100,.1,.05); beginStep(); });
+      } else {
+        beep(1100,.1,.05);
+        beginStep();
+      }
     } else if(v.action==='rest'){
       PROG=null; S.reps=0;
       counterRow.style.visibility='hidden';
@@ -6604,6 +6635,7 @@ const TIMER_TOUR_STEPS = [
   { el:'addTaskOpen',      title:'Add your tasks',     body:'List what you\u2019re working on. Pick a task and each finished round counts towards it.', shape:'rect' },
   { el:'helpBtn',          title:'Help, anytime',      body:'Opens the how-it-works guide — and this tour — whenever you need a refresher.', shape:'round' },
   { el:'quickSettingsBtn', title:'Settings',           body:'Round lengths, theme, language, sound and notifications all live here.', shape:'round' },
+  { el:'leaderboardBtn',   title:'Leaderboard',        body:'The trophy opens the global leaderboard — see how your focus minutes and reps rank worldwide.', shape:'round' },
   { el:'menuBtn',          title:'The Portal',         body:'Account, <b>Co-work</b> and <b>Friends</b> live in here. Sign in from Account to sync across devices, or study live with a friend.', shape:'round' }
 ];
 const WORKOUT_TOUR_STEPS = [
@@ -6751,7 +6783,7 @@ function openLeaderboard(){
   closeMenu(); openSheet('leaderboardSheet');
   renderLeaderboard();
 }
-$('leaderboardMenuBtn').onclick=openLeaderboard;
+$('leaderboardBtn').onclick=openLeaderboard;
 $('lbTabMinutes').onclick=()=>{ lbMetric='minutes'; syncLbTabs(); paintLeaderboard(); };
 $('lbTabReps').onclick=()=>{ lbMetric='reps'; syncLbTabs(); paintLeaderboard(); };
 $('lbLeaveBtn').onclick=async ()=>{
