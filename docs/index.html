@@ -1782,6 +1782,7 @@
   <div id="timerBlock" style="display:flex;flex-direction:column;align-items:center;width:100%;">
     <div class="current-task" id="currentTaskLabel"></div>
     <div class="timer" id="timer">25:00</div>
+    <div id="timerDebug" style="display:none;font:11px/1.4 monospace;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:6px;white-space:pre;opacity:.8;"></div>
     <div class="controls">
       <button class="ctl-ic ctl-main" id="startBtn" title="Start / Pause" aria-label="Start or pause timer">
         <svg class="ic-play" width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
@@ -1918,15 +1919,6 @@
     <button class="toggle-compact-btn" id="autoBreak" aria-pressed="true" title="Auto-start breaks">
       ⏩<span class="toggle-compact-label">Auto breaks</span>
       <span class="toggle-compact-desc">Starts break timer automatically</span>
-    </button>
-  </div>
-
-  <div style="height:1px;background:var(--line);margin:18px 0;"></div>
-
-  <div class="toggle-row-compact">
-    <button class="toggle-compact-btn" id="lbOptToggle" aria-pressed="true" title="Show me on the leaderboard" style="flex:1;">
-      🏆<span class="toggle-compact-label">Leaderboard</span>
-      <span class="toggle-compact-desc">Show my name &amp; totals on the global board</span>
     </button>
   </div>
 </div>
@@ -2422,6 +2414,8 @@ let userExitedFocus = false;
 let focusModePending = false;
 
 const $ = id => document.getElementById(id);
+// temporary: add ?debug=1 to the URL to show live timer internals under the clock
+try{ window.__DEBUG_TIMER = new URLSearchParams(location.search).get('debug')==='1'; }catch(e){ window.__DEBUG_TIMER=false; }
 const timerEl=$('timer'), startBtn=$('startBtn');
 const phaseLabel=$('phaseLabel'), dotsEl=$('dots'), sesNum=$('sesNum');
 const workoutBlock=$('workoutBlock'), timerBlock=$('timerBlock');
@@ -3169,7 +3163,7 @@ async function renderFriends(){
     listWrap.appendChild(head);
     frEntries.forEach(([fUid, f])=>{
       const row=buildFriendRow(f, [
-        {label:'Remove', cls:'ghost', fn:(e)=>armRemoveFriend(fUid, e.currentTarget)}
+        {label:'Remove', cls:'ghost', fn:(e)=>armRemoveFriend(fUid, e.currentTarget, (f&&f.name)||'this friend')}
       ]);
       // Two possible actions, shown per the four-state matrix (see docs below):
       //   neither in a session      -> Start   (create one + invite them)
@@ -3329,26 +3323,13 @@ async function declineFriendRequest(fromUid){
 /* Removing a friend was a single tap, which was far too easy to do by accident.
    First tap arms the button, second tap within 4s commits; it disarms itself. */
 let removeArmTimer=null;
-function armRemoveFriend(fUid, btn){
-  if(!btn) return removeFriend(fUid);
-  if(btn.dataset.armed==='1'){
-    clearTimeout(removeArmTimer);
-    btn.dataset.armed='0';
-    removeFriend(fUid);
-    return;
-  }
-  // disarm any other button that's currently armed
-  document.querySelectorAll('.fr-btn[data-armed="1"]').forEach(b=>{
-    b.dataset.armed='0'; b.classList.remove('armed'); b.textContent='Remove';
-  });
-  btn.dataset.armed='1';
-  btn.classList.add('armed');
-  btn.textContent='Sure?';
-  clearTimeout(removeArmTimer);
-  removeArmTimer=setTimeout(()=>{
-    if(!btn.isConnected) return;
-    btn.dataset.armed='0'; btn.classList.remove('armed'); btn.textContent='Remove';
-  }, 4000);
+function armRemoveFriend(fUid, btn, name){
+  // require an explicit, deliberate confirmation so a friend can't be removed
+  // by an accidental double-tap
+  const who = name || 'this friend';
+  const ok = confirm('Remove '+who+' from your friends?\n\nThis also removes you from their list. You can add each other again later with your friend codes.');
+  if(!ok) return;
+  removeFriend(fUid);
 }
 
 async function removeFriend(fUid){
@@ -5021,8 +5002,17 @@ function tick(){
       guestFocusCompletedForPhase = true;
       logFocus(S.focusMin, true);
       // auto-break off (no break coming): return the display to the chosen
-      // focus time so they can simply start another round if they skip the break
-      if(!S.autoBreak && !S.running){
+      // focus time so they can simply start another round if they skip the break.
+      // NOTE: gate this on autoBreak only, not on S.running — S.running is the
+      // guest's last-synced copy of the HOST's flag and stays stale (true) until
+      // the host's own broadcast arrives, which meant this reset almost never
+      // fired at the moment it needed to (right when the guest's own clock hit
+      // zero), leaving their display frozen on a stale/wrong value until the
+      // host's broadcast eventually corrected it a beat later.
+      if(!S.autoBreak){
+        S.running = false;
+        clearInterval(tickInt);
+        syncStartBtn();
         S.remaining = phaseDuration();
         S.endAt = Date.now() + S.remaining;
         render(S.remaining);
@@ -5123,6 +5113,21 @@ function render(left){
     lastTabTitle = newTitle;
   }
   if(S.phase!=='focus' && S.running) S.remaining=Math.max(0,left);
+  if(window.__DEBUG_TIMER){
+    const d=$('timerDebug');
+    if(d){
+      d.style.display='block';
+      const liveRem = S.running ? Math.max(0, S.endAt-Date.now()) : S.remaining;
+      d.textContent =
+        'focusMin='+S.focusMin+' breakMin='+S.breakMin+' longMin='+S.longMin+
+        '\nphase='+S.phase+' running='+S.running+' autoBreak='+S.autoBreak+
+        '\nremaining='+S.remaining+' ('+(S.remaining/60000).toFixed(2)+'m)'+
+        '\nliveRemaining='+Math.round(liveRem)+' ('+(liveRem/60000).toFixed(2)+'m)'+
+        '\nphaseDuration='+phaseDuration()+' ('+(phaseDuration()/60000).toFixed(2)+'m)'+
+        '\nsession='+S.session+' completed='+S.completed+
+        '\ninSession='+(!!mySession)+' isHost='+isHost;
+    }
+  }
 }
 function renderFooter(){
   const sesEl = $('sesNum');
@@ -5446,6 +5451,11 @@ async function joinOrCreateSession(code, asHost){
   await ensureFirebase();
   mySession = code;
   isHost = asHost;
+  // a fresh session is a fresh completion-tracking context — without this, a
+  // session that ends with phase staying 'focus' (auto-break off) never resets
+  // this flag on its own, so it could stay stuck true and silently block the
+  // very first round's completion in the NEXT session too
+  guestFocusCompletedForPhase = false;
   // persist session so it can be restored after page reload (e.g. navigating to privacy and back)
   try{ localStorage.setItem("pomofit:activeSession", JSON.stringify({code, asHost})); }catch(e){}
   // remember this as the last session for the "Rejoin" option (survives leaving)
@@ -5730,7 +5740,10 @@ function applyRemoteTimer(v){
     clearInterval(tickInt);
     syncStartBtn();
   }
-  render(S.remaining);
+  // when running, the live remaining is endAt−now; the broadcast `remaining`
+  // field is only a snapshot and can be stale (this caused the timer to briefly
+  // show a wrong value like 1:00 right after joining). Render the live value.
+  render(S.running ? Math.max(0, S.endAt - Date.now()) : S.remaining);
   // sync focus mode button and immersion for guests
   if(S.running){
     document.body.classList.add('timer-running');
@@ -7030,19 +7043,6 @@ $('settingsSfxBtn').onclick=()=>{
 };
 wireToggle('autoBreak',()=>S.autoBreak,v=>S.autoBreak=v);
 wireToggle('autoFocus',()=>S.autoFocus,v=>S.autoFocus=v);
-// leaderboard participation — its own key + Firebase side effect, so wired directly
-{
-  const lbBtn=$('lbOptToggle');
-  if(lbBtn){
-    const on = !lbOptedOut();
-    lbBtn.setAttribute('aria-pressed', on);
-    lbBtn.onclick=()=>{
-      const nowOn = lbOptedOut(); // toggling ON if currently opted out
-      if(nowOn){ rejoinLeaderboard(); } else { leaveLeaderboard(); }
-      lbBtn.setAttribute('aria-pressed', nowOn);
-    };
-  }
-}
 
 /* ---------- diagnostics ----------
    Everything below runs in one top-level script, so a single uncaught error
