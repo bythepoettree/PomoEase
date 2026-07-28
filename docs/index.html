@@ -175,6 +175,17 @@
     font-family:'Noto Sans Arabic', system-ui, sans-serif;
   }
   @media (prefers-reduced-motion: reduce){ body{transition:none;} }
+  /* ocean (blue) theme: a gentle vertical gradient that lightens toward the
+     bottom. Fixed attachment so it spans the viewport rather than repeating
+     per-scroll, and derived from the theme's own --bg so it tracks the mode. */
+  body[data-theme="ocean"]{
+    background:
+      linear-gradient(to bottom,
+        var(--bg) 0%,
+        var(--bg) 42%,
+        color-mix(in srgb, var(--bg) 82%, #FFFFFF) 100%);
+    background-attachment:fixed;
+  }
   /* during boot nothing may animate its colour — prevents the theme fading in
      from the markup default (ocean blue) on refresh */
   html.boot body{ transition:none !important; }
@@ -5606,8 +5617,14 @@ function attachSessionListeners(){
   });
   sessionListeners.push({ref:timerRef, event:'value', cb:onTimer});
 
+  let workoutInitialSnapshot = true;
   const onWorkout = workoutRef.on('value', snap=>{
     const v=snap.val();
+    // the first value that arrives on join is the room's LAST-persisted workout
+    // state (which can be a stale 'start' from a previous break). Replaying it
+    // would fire a get-ready countdown the moment you join, even mid-focus — so
+    // we ignore this initial snapshot and only react to changes made after join.
+    if(workoutInitialSnapshot){ workoutInitialSnapshot=false; return; }
     if(!v) return;
     applyRemoteWorkout(v);
   });
@@ -5767,6 +5784,10 @@ function broadcastWorkout(payload){
 }
 function applyRemoteWorkout(v){
   if(!v || v.updatedBy===fb.uid) return;
+  // workout actions only make sense during a break — never act on a stale/
+  // out-of-context 'start' or 'rest' while the room is in a focus phase, which
+  // would otherwise pop a get-ready countdown over the timer
+  if((v.action==='start' || v.action==='rest') && S.phase==='focus') return;
   suppressWorkoutBroadcast=true;
   try{
     if(v.action==='select'){
