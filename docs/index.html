@@ -5606,12 +5606,23 @@ function attachSessionListeners(){
   const hostRef = sessionRefs.sessionRef.child('hostUid');
   const onHost = hostRef.on('value', snap=>{
     hostUid = snap.val();
+    // the DB's hostUid is authoritative — never let a stale local asHost flag
+    // leave a guest believing they're the host (that made askers "become host")
+    if(hostUid){ isHost = (hostUid === fb.uid); }
     const notice=$('coworkSettingsNotice');
     if(notice) notice.classList.toggle('show', !!mySession && isHost);
+    // keep persisted session state in step with the real host identity
+    try{
+      if(mySession){
+        localStorage.setItem('pomofit:activeSession', JSON.stringify({code:mySession, asHost:isHost}));
+      }
+    }catch(e){}
     // re-render members with correct HOST badge now we know hostUid
     if(sessionRefs && sessionRefs.membersRef){
       sessionRefs.membersRef.get().then(s=> renderMembers(s.val()||{}));
     }
+    if(typeof updateChatLockState==='function') updateChatLockState();
+    if(typeof syncStartBtn==='function') syncStartBtn();
   });
   sessionListeners.push({ref:hostRef, event:'value', cb:onHost});
 
@@ -5648,9 +5659,14 @@ function applyRemoteTimer(v){
 
   const prevPhase = S.phase;
   const prevRunning = S.running;
+  const prevSession = S.session;
   // compute actual current remaining time on the guest (S.remaining is stale during running)
   const prevRemaining = S.running ? Math.max(0, S.endAt - Date.now()) : S.remaining;
   S.phase=v.phase; S.running=v.running; S.endAt=v.endAt; S.remaining=v.remaining;
+  // the host bumps `session` exactly once per completed focus round, so a rise in
+  // it is the authoritative "a focus round just completed" signal for guests —
+  // far more reliable than guessing from remaining-time deltas across broadcasts
+  const roundCompleted = (typeof v.session==='number') && (v.session > prevSession);
   // guard against undefined/null values that could break rendering
   if(typeof v.completed === 'number') S.completed = v.completed;
   if(typeof v.session === 'number') S.session = v.session;
@@ -5665,12 +5681,12 @@ function applyRemoteTimer(v){
   // fire completion sounds/mascot/notify for guests only when timer was running before the phase changed
   if(prevPhase !== S.phase && prevRunning){
     if(prevPhase==='focus' && (S.phase==='sweat'||S.phase==='rest')){
-      const wasNatural = prevRemaining <= 5000;
+      const wasNatural = roundCompleted || prevRemaining <= 5000;
       bell(2); chimeFocusEnd();
       notify('🍅 Focus complete!', 'Nice work — time for your sweat break.');
       if(wasNatural){
         showMascot();
-        // guest's focus round completed — increment their active task if not already done
+        // guest's focus round completed — count it once for this phase
         if(!guestFocusCompletedForPhase){
           guestFocusCompletedForPhase = true;
           logFocus(S.focusMin, true);
@@ -5680,7 +5696,7 @@ function applyRemoteTimer(v){
       bell(1); chimeBreakEnd();
       notify('⏰ Break over', 'Back to the books — you\'ve got this.');
     }
-  } else if(prevPhase==='focus' && prevRunning && !S.running && prevRemaining <= 5000){
+  } else if(prevPhase==='focus' && prevRunning && !S.running && (roundCompleted || prevRemaining <= 5000)){
     // host has auto-break off: focus round finished naturally, phase stayed 'focus'
     bell(2); chimeFocusEnd();
     notify('🍅 Focus complete!', 'Nice work — time for your sweat break.');
