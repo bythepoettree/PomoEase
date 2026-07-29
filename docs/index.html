@@ -333,11 +333,10 @@
   .leaderboard-btn{
     color:var(--fg); opacity:.9;
   }
+  .leaderboard-btn:hover{ opacity:1; }
   /* friends/co-work header button — paired with the trophy, same prominence */
   .portal-header-btn{ color:var(--fg); opacity:.9; position:relative; }
   .portal-header-btn:hover{ opacity:1; }
-  .portal-header-btn.in-session{ opacity:1; }
-  /* a live co-work session gives the header icon the colourful ring */
   .portal-header-btn.in-session svg{ animation:coworkRingInset 2s linear infinite; border-radius:8px; }
   @media (prefers-reduced-motion: reduce){ .portal-header-btn.in-session svg{ animation:none; } }
   .header-badge{
@@ -347,7 +346,6 @@
     font-size:9px; font-weight:700; line-height:15px; text-align:center;
     box-shadow:0 0 0 2px var(--bg);
   }
-  .leaderboard-btn:hover{ opacity:1; }
   .quick-settings svg{ width:15px; height:15px; }
   .quick-settings:hover{ opacity:.6; }
   .quick-settings:active{ opacity:.8; }
@@ -1046,8 +1044,6 @@
     transition:background .15s ease, color .15s ease;
   }
   .lb-tab.active{ background:var(--accent); color:var(--accent-ink); }
-  /* ---------- The Portal: combined Co-work + Friends sheet ---------- */
-  .portal-sub{ font-size:13px; color:var(--muted); margin:-6px 0 16px; line-height:1.5; }
   /* minimal portal head — no title, just a right-aligned close button */
   .portal-head{ justify-content:flex-end; margin-bottom:10px; }
   /* iOS / Safari-style tab bar: a recessed trough holding raised pill tabs */
@@ -1062,7 +1058,6 @@
     transition:background .18s ease, color .18s ease, box-shadow .18s ease;
     position:relative;
   }
-  /* active tab lifts out of the trough like the selected Safari tab */
   .portal-tab.active{
     background:var(--bg2); color:var(--fg);
     box-shadow:0 1px 2px rgba(0,0,0,.16), 0 2px 6px rgba(0,0,0,.10);
@@ -1072,7 +1067,6 @@
   .portal-tab .friend-badge{ margin:0 0 0 1px; position:relative; top:0; }
   .portal-panel{ display:none; }
   .portal-panel.active{ display:block; }
-  /* the co-work tab gets the colourful ring while a session is live */
   .portal-tab.in-session{ animation:coworkRingInset 2s linear infinite; }
   @media (prefers-reduced-motion: reduce){ .portal-tab.in-session{ animation:none; box-shadow:inset 0 0 0 2px var(--accent); } }
   .lb-list{ max-height:320px; overflow-y:auto; }
@@ -1774,12 +1768,6 @@
         <line x1="12" y1="18" x2="12" y2="18.1"/>
       </svg>
     </button>
-    <button class="quick-settings" id="quickSettingsBtn" aria-label="Settings" title="Settings">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </button>
     <div class="menu-wrap">
     <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false" title="Menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -1791,6 +1779,9 @@
     <div class="menu-popover" id="menuPopover" role="menu" aria-hidden="true">
       <button class="menu-item" id="profileBtn" role="menuitem">
         <span class="menu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg></span><span id="menuAccountLabel">Account</span>
+      </button>
+      <button class="menu-item" id="settingsMenuBtn" role="menuitem" aria-label="Settings">
+        <span class="menu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span>Settings</span>
       </button>
       <a class="menu-item" id="supportLink" href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer" role="menuitem">
         <span class="menu-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span><span>Support</span>
@@ -2149,6 +2140,29 @@
     </button>
   </div>
 
+  <!-- Friends panel (default) -->
+  <div class="portal-panel active" id="portalPanelFriends" role="tabpanel">
+    <div id="friendsSignedOut" class="signin-note" style="display:none;">Sign in to your account to add friends, see who's online and study together.</div>
+    <div id="friendsBody" style="display:none;">
+      <div class="friend-top-row">
+        <button class="friend-code-btn" id="copyFriendCodeBtn" type="button" title="Tap to copy your code">
+          <span class="friend-code-label">Your code — tap to copy</span>
+          <span class="friend-code" id="myFriendCode">······</span>
+        </button>
+        <div class="friend-add-box">
+          <span class="friend-code-label">Add a friend</span>
+          <div class="friend-add-inline">
+            <input id="friendCodeInput" type="text" maxlength="6" placeholder="Their code" autocomplete="off" autocapitalize="characters" spellcheck="false">
+            <button class="friend-add-btn" id="addFriendBtn" type="button">Add</button>
+          </div>
+        </div>
+      </div>
+      <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
+      <div id="friendRequestsList"></div>
+      <div id="friendsList" class="friends-list-scroll"></div>
+    </div>
+  </div>
+
   <!-- Co-work panel -->
   <div class="portal-panel" id="portalPanelCowork" role="tabpanel">
     <div id="togetherIntro">
@@ -2196,29 +2210,6 @@
       <div class="together-members" id="togetherMembers"></div>
 
       <button class="together-leave" id="leaveSessionBtn">Leave session</button>
-    </div>
-  </div>
-
-  <!-- Friends panel -->
-  <div class="portal-panel active" id="portalPanelFriends" role="tabpanel">
-    <div id="friendsSignedOut" class="signin-note" style="display:none;">Sign in to your account to add friends, see who's online and study together.</div>
-    <div id="friendsBody" style="display:none;">
-      <div class="friend-top-row">
-        <button class="friend-code-btn" id="copyFriendCodeBtn" type="button" title="Tap to copy your code">
-          <span class="friend-code-label">Your code — tap to copy</span>
-          <span class="friend-code" id="myFriendCode">······</span>
-        </button>
-        <div class="friend-add-box">
-          <span class="friend-code-label">Add a friend</span>
-          <div class="friend-add-inline">
-            <input id="friendCodeInput" type="text" maxlength="6" placeholder="Their code" autocomplete="off" autocapitalize="characters" spellcheck="false">
-            <button class="friend-add-btn" id="addFriendBtn" type="button">Add</button>
-          </div>
-        </div>
-      </div>
-      <p class="signin-note" id="friendMsg" style="min-height:0;margin:6px 0 0;"></p>
-      <div id="friendRequestsList"></div>
-      <div id="friendsList" class="friends-list-scroll"></div>
     </div>
   </div>
 </div>
@@ -2378,21 +2369,11 @@
 
     <div class="help-item">
       <span class="help-ic">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </span>
-      <div class="help-text">
-        <b>Settings</b>
-        <span>Round lengths, theme, language, sound and notifications all live behind the gear.</span>
-      </div>
-    </div>
-
-    <div class="help-item">
-      <span class="help-ic">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
       </span>
       <div class="help-text">
         <b>Menu</b>
-        <span>Opens Account and Support. Sign in from Account to sync your progress across devices.</span>
+        <span>Opens Account, Settings and Support. Settings holds round lengths, theme, language, sound and notifications. Sign in from Account to sync across devices.</span>
       </div>
     </div>
   </div>
@@ -3553,7 +3534,7 @@ async function acceptApprovedInvite(fromUid, inv){
     myCapturedName = (DATA.displayName||'').trim() || 'Someone';
     try{ localStorage.setItem('pomofit:coworkName', myCapturedName); }catch(e){}
     closeSheets();
-    openPortal('cowork');
+    openCowork();
     await joinOrCreateSession(inv.code, false);
   }catch(e){
     console.error('auto-join failed', e);
@@ -3587,7 +3568,7 @@ function showInviteToast(fromUid, inv){
       myCapturedName = (DATA.displayName||'').trim() || 'Someone';
       try{ localStorage.setItem('pomofit:coworkName', myCapturedName); }catch(e){}
       closeSheets();
-      openPortal('cowork');
+      openCowork();
       await joinOrCreateSession(inv.code, false);
     }catch(e){ console.error('invite join failed', e); }
   };
@@ -5462,41 +5443,40 @@ async function refreshRejoinButton(){
   }
 }
 
-// ---- The Portal: combined Co-work + Friends sheet with tabs ----
+// ---- Combined Friends + Co-work sheet (opened from the header icon) ----
+function refreshCoworkNameField(){
+  // signed-in users use their account name; only guests get the name field
+  const nameBlock=$('nameBlock');
+  const signedIn = !!cloudUser;
+  if(nameBlock) nameBlock.style.display = signedIn ? 'none' : '';
+  if(signedIn){ const nm=displayName(); if(nm) $('nicknameInput').value = nm; }
+}
 function switchPortalTab(tab){
-  const cowork = tab!=='friends';
+  const cowork = tab==='cowork';
   $('portalTabCowork').classList.toggle('active', cowork);
   $('portalTabFriends').classList.toggle('active', !cowork);
   $('portalPanelCowork').classList.toggle('active', cowork);
   $('portalPanelFriends').classList.toggle('active', !cowork);
-  if(!cowork){ renderFriends(); }
-  else {
-    // keep the name field correct: hidden for signed-in users (we use their
-    // account name), shown only for guests — refresh in case they signed in
-    // after the page first loaded
-    const nameBlock=$('nameBlock');
-    const signedIn = !!cloudUser;
-    if(nameBlock) nameBlock.style.display = signedIn ? 'none' : '';
-    if(signedIn){ const nm=displayName(); if(nm) $('nicknameInput').value = nm; }
-  }
+  if(cowork){ refreshCoworkNameField(); }
+  else { if(typeof renderFriends==='function') renderFriends(); }
 }
 function openPortal(tab){
   if(typeof closeMenu==='function') closeMenu();
   openSheet('portalSheet');
   switchPortalTab(tab||'friends');
-  // co-work prep (unchanged from the old Co-work sheet)
   if(!FIREBASE_READY){
     togetherMsg('Shared sessions aren\'t set up on this site yet — check back soon!');
     $('createSessionBtn').disabled=true;
-  } else if(displayName()){
-    $('nicknameInput').value = DATA.displayName || '';
   }
-  // make sure the friends list is populated even if we land on it first
-  if(typeof renderFriends==='function') renderFriends();
 }
+// keep the old name for the co-work-specific entry points (invite/join flows)
+function openCowork(){ openPortal('cowork'); }
 $('portalHeaderBtn').onclick=()=>openPortal('friends');
-$('portalTabCowork').onclick=()=>switchPortalTab('cowork');
 $('portalTabFriends').onclick=()=>switchPortalTab('friends');
+$('portalTabCowork').onclick=()=>switchPortalTab('cowork');
+
+// Settings now lives in the menu
+$('settingsMenuBtn').onclick=()=>{ if(typeof closeMenu==='function') closeMenu(); openSheet('settingsSheet'); };
 
 
 $('createSessionBtn').onclick=async ()=>{
@@ -6171,7 +6151,7 @@ function checkJoinLink(){
     const code=params.get('join');
     if(code){
       pendingJoinCode = code.toUpperCase();
-      openPortal('cowork');
+      openCowork();
       if(DATA.displayName) $('nicknameInput').value = DATA.displayName;
       $('createSessionBtn').style.display='none';
       $('joinFromLinkRow').style.display='flex';
@@ -6799,7 +6779,7 @@ document.addEventListener('click', (e)=>{
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
 { const sb=$('settingsBtn'); if(sb) sb.onclick=()=>{ closeMenu(); openSheet('settingsSheet'); }; }
-$('quickSettingsBtn').onclick=()=>openSheet('settingsSheet');
+/* Settings moved to the menu — see settingsMenuBtn wiring above */
 // the break screen is up when the workout block is showing
 function onBreakScreen(){ const wb=$('workoutBlock'); return !!wb && wb.classList.contains('show'); }
 { const hb=$('helpBtn'); if(hb) hb.onclick=()=> openSheet(onBreakScreen() ? 'workoutHelpSheet' : 'helpSheet'); }
@@ -6818,10 +6798,9 @@ const TIMER_TOUR_STEPS = [
   { el:'dots',             title:'Round tracker',      body:'These fill in as you finish focus rounds. After the last one you earn a longer break.', shape:'rect' },
   { el:'addTaskOpen',      title:'Add your tasks',     body:'List what you\u2019re working on. Pick a task and each finished round counts towards it.', shape:'rect' },
   { el:'helpBtn',          title:'Help, anytime',      body:'Opens the how-it-works guide — and this tour — whenever you need a refresher.', shape:'round' },
-  { el:'quickSettingsBtn', title:'Settings',           body:'Round lengths, theme, language, sound and notifications all live here.', shape:'round' },
   { el:'leaderboardBtn',   title:'Leaderboard',        body:'The trophy opens the global leaderboard — see how your focus minutes and reps rank worldwide.', shape:'round' },
-  { el:'portalHeaderBtn',  title:'Friends & Co-work',  body:'This opens your social space — add <b>Friends</b> and start a live <b>Co-work</b> session where your timers stay in sync.', shape:'round' },
-  { el:'menuBtn',          title:'Menu',               body:'Your Account and Support live here. Sign in from Account to sync your progress across devices.', shape:'round' }
+  { el:'portalHeaderBtn',  title:'Friends & Co-work',  body:'Opens your social space — add <b>Friends</b> and start a live <b>Co-work</b> session where your timers stay in sync.', shape:'round' },
+  { el:'menuBtn',          title:'Menu',               body:'Account, Settings and Support live here. Sign in from Account to sync your progress across devices.', shape:'round' }
 ];
 const WORKOUT_TOUR_STEPS = [
   { el:'progList',         title:'Pick a programme',   body:'Choose a short workout. Each one is sized to fill the time you have on this break.', shape:'rect' },
