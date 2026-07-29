@@ -2970,6 +2970,8 @@ async function cloudSignIn(){
   if(grew) saveCloudData(); // push the merged result back up
   $('passInput').value=''; authMsg('');
   renderProfile(); renderTasks();
+  closeSheets();
+  greetSignedIn();
 }
 
 // finish a Google sign-in (shared by popup result and redirect result)
@@ -3004,6 +3006,8 @@ async function finishGoogleUser(user){
   if(grew) saveCloudData();
   authMsg('');
   renderProfile(); renderTasks();
+  closeSheets();
+  greetSignedIn();
 }
 
 async function cloudSignInGoogle(){
@@ -5391,38 +5395,30 @@ const FIREBASE_CONFIG = {
 };
 const FIREBASE_READY = !!FIREBASE_CONFIG.apiKey && !!FIREBASE_CONFIG.databaseURL;
 
-// ---- returning-account sign-in splash ----
-// Briefly shows the account's avatar + name centre-screen with "Signing you
-// in…", then "You're signed in", when a signed-in user's session is restored
-// on page load.
-function showSigninSplash(){
+// ---- personalised sign-in greeting ----
+// Shown right after an explicit sign-in: the account's avatar + name appear
+// centre-screen with a warm "Welcome back" greeting, then fade away. It's a
+// deliberate, momentary touch — not shown on ordinary reopens.
+function greetSignedIn(){
   const el=$('signinSplash'); if(!el) return;
-  const msg=$('signinSplashMsg');
-  if(msg) msg.innerHTML = '<span class="signin-splash-dot"></span> Signing you in\u2026';
-  el.classList.remove('fade');
-  el.classList.add('show');
-}
-function populateSigninSplash(){
-  // fill the avatar + name once we know who it is
-  const av=$('signinSplashAvatar'), nm=$('signinSplashName');
+  const av=$('signinSplashAvatar'), nm=$('signinSplashName'), msg=$('signinSplashMsg');
   const name = displayName();
-  if(nm) nm.textContent = name || '';
+  const first = (name || '').trim().split(/\s+/)[0] || '';
+  if(nm) nm.textContent = first ? ('Welcome back, ' + first) : 'Welcome back';
+  if(msg) msg.innerHTML = '<span class="signin-splash-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span> You\u2019re signed in';
   if(av){
     const a = DATA.avatar || null;
     if(a && a.startsWith('emoji:')) av.textContent = a.slice(6);
     else if(a) av.innerHTML = '<img src="'+a+'" alt="'+esc(name)+'">';
     else av.textContent = (name[0]||'🍅').toUpperCase();
   }
-}
-function finishSigninSplash(){
-  const el=$('signinSplash'); if(!el || !el.classList.contains('show')) return;
-  const msg=$('signinSplashMsg');
-  if(msg) msg.innerHTML = '<span class="signin-splash-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span> You\u2019re signed in';
-  // hold the success state briefly, then fade the splash away
+  el.classList.remove('fade');
+  el.classList.add('show');
+  // hold the greeting, then fade it away
   setTimeout(()=>{
     el.classList.add('fade');
-    setTimeout(()=>{ el.classList.remove('show','fade'); }, 320);
-  }, 850);
+    setTimeout(()=>{ el.classList.remove('show','fade'); }, 340);
+  }, 1600);
 }
 
 let fb = null;          // { app, auth, db, uid }
@@ -5485,16 +5481,14 @@ async function ensureFirebase(){
     });
     let user = existing;
     if(user && !user.isAnonymous){
-      // returning signed-in user — restore their cloud data
-      showSigninSplash();
+      // returning signed-in user — restore their cloud data silently (the
+      // personalised greeting only shows on an explicit sign-in, not every reopen)
       fb = { app, auth, db, uid: user.uid };
       try{
         const cloudDoc = await db.ref('users/'+user.uid).get().then(s=>s.exists()?s.val():null);
         applyCloudUser(user, cloudDoc);
         renderProfile(); renderTasks();
-        populateSigninSplash();
-        finishSigninSplash();
-      }catch(e){ console.error('cloud restore failed', e); finishSigninSplash(); }
+      }catch(e){ console.error('cloud restore failed', e); }
     } else {
       if(!user){ const cred = await auth.signInAnonymously(); user = cred.user; }
       fb = { app, auth, db, uid: user.uid };
