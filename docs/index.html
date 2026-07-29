@@ -337,8 +337,16 @@
   /* friends/co-work header button — paired with the trophy, same prominence */
   .portal-header-btn{ color:var(--fg); opacity:.9; position:relative; }
   .portal-header-btn:hover{ opacity:1; }
-  .portal-header-btn.in-session svg{ animation:coworkRingInset 2s linear infinite; border-radius:8px; }
-  @media (prefers-reduced-motion: reduce){ .portal-header-btn.in-session svg{ animation:none; } }
+  .portal-header-btn.in-session{ animation:coworkRingSquare 2s linear infinite; border-radius:9px; }
+  .portal-header-btn.in-session svg{ animation:none; }
+  @media (prefers-reduced-motion: reduce){ .portal-header-btn.in-session{ animation:none; box-shadow:0 0 0 2px var(--accent); } }
+  @keyframes coworkRingSquare{
+    0%  { box-shadow: 0 0 0 2px #FF6B6B; }
+    25% { box-shadow: 0 0 0 2px #FFD93D; }
+    50% { box-shadow: 0 0 0 2px #6BCB77; }
+    75% { box-shadow: 0 0 0 2px #4D96FF; }
+    100%{ box-shadow: 0 0 0 2px #FF6B6B; }
+  }
   .header-badge{
     position:absolute; top:1px; right:1px;
     min-width:15px; height:15px; padding:0 4px; border-radius:999px;
@@ -5159,6 +5167,20 @@ function setPhase(p){
 }
 let lastTabTitle='';
 const SEO_TITLE = 'PomoEase — Exercise and Study Environment';
+// force an immediate repaint of the timer + tab title from the live clock.
+// Browsers throttle setInterval in backgrounded tabs (so the title can jump in
+// multi-second chunks), but visibilitychange/focus fire instantly — so we snap
+// everything up to date the moment the tab is looked at again.
+function refreshTimerNow(){
+  const left = S.running ? Math.max(0, S.endAt - Date.now()) : S.remaining;
+  render(left);
+}
+if(!window.__timerVisibilityHooked){
+  window.__timerVisibilityHooked = true;
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshTimerNow(); });
+  window.addEventListener('focus', refreshTimerNow);
+  window.addEventListener('pageshow', refreshTimerNow);
+}
 function render(left){
   const txt=fmt(left);
   timerEl.textContent=txt;
