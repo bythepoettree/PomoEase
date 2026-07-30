@@ -3194,6 +3194,11 @@ function showJoinRequestToast(fromUid, req){
     // approving sends them an invite flagged as approved, which joins them
     // straight away instead of prompting them a second time
     try{
+      // first, add them to the session's allow-list so the rules will let them
+      // write their member entry + chat. Only the host can write this node.
+      if(mySession && isHost && sessionRefs && sessionRefs.sessionRef){
+        await sessionRefs.sessionRef.child('approved/'+fromUid).set(true);
+      }
       await sendSessionInvite(fromUid, null, {approved:true});
       showToast('✅ Letting '+(req.name||'them')+' in…');
     }catch(e){
@@ -3521,6 +3526,13 @@ async function sendSessionInvite(fUid, btn, opts){
   if(!cloudUser || !mySession) return;
   try{
     await ensureFirebase();
+    // a direct invite from the HOST is itself authorisation — add the invitee to
+    // the session allow-list so the rules will let them join + chat. Only the
+    // host can write this node; a non-host member's invite won't pre-approve
+    // (the host still approves via the join-request toast).
+    if(isHost && hostUid === fb.uid && sessionRefs && sessionRefs.sessionRef){
+      try{ await sessionRefs.sessionRef.child('approved/'+fUid).set(true); }catch(e){ console.error('pre-approve failed', e); }
+    }
     const ref = fb.db.ref('invites/'+fUid+'/'+cloudUser.uid);
     /* The key here is the SENDER's uid, so if an invite from us is already
        sitting at this path, set() is an update — the recipient's child_added
@@ -5715,6 +5727,9 @@ async function joinOrCreateSession(code, asHost){
     });
     await sessionRef.child('createdAt').set(firebase.database.ServerValue.TIMESTAMP);
     await sessionRef.child('hostUid').set(fb.uid);
+    // the host is implicitly approved — seed the allow-list so the rules let the
+    // host write members/chat too (everyone must be in 'approved' to participate)
+    await sessionRef.child('approved/'+fb.uid).set(true);
     hostUid = fb.uid;
   }
 
