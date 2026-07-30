@@ -822,6 +822,32 @@
   @keyframes signinPulse{ 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
   .signin-splash-check{ color:var(--accent); display:inline-flex; }
   @media (prefers-reduced-motion: reduce){ .signin-splash-avatar{ animation:none; } .signin-splash-dot{ animation:none; } }
+
+  /* co-work lobby — shown to a guest while waiting for the host to approve them */
+  .lobby-bg{
+    position:fixed; inset:0; z-index:1440;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:18px; padding:32px; text-align:center;
+    background:var(--bg);
+    opacity:0; transition:opacity .3s ease;
+  }
+  .lobby-bg.show{ display:flex; opacity:1; }
+  .lobby-bg.fade{ opacity:0; }
+  .lobby-spinner{
+    width:52px; height:52px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--accent);
+    animation:lobbySpin .9s linear infinite;
+  }
+  @keyframes lobbySpin{ to{ transform:rotate(360deg); } }
+  .lobby-title{ font-family:'Anton', sans-serif; font-size:22px; letter-spacing:.02em; color:var(--fg); margin:0; }
+  .lobby-sub{ font-size:14px; color:var(--muted); margin:0; max-width:30ch; line-height:1.55; }
+  .lobby-cancel{
+    margin-top:6px; padding:11px 22px; border:1px solid var(--line); border-radius:12px;
+    background:none; color:var(--muted); cursor:pointer;
+    font-family:inherit; font-size:14px; transition:color .14s ease, border-color .14s ease;
+  }
+  .lobby-cancel:hover{ color:var(--fg); border-color:var(--fg); }
+  @media (prefers-reduced-motion: reduce){ .lobby-spinner{ animation:none; } }
   .sheet-bg.show{display:block;}
   .sheet{
     position:fixed; left:50%; bottom:0; transform:translateX(-50%);
@@ -1900,6 +1926,13 @@
     <span class="session-tag" id="sessionTag">Session <b id="sesNum">1</b></span>
     <div class="dots" id="dots"></div>
   </div>
+</div>
+
+<div class="lobby-bg" id="coworkLobby" role="dialog" aria-modal="true" aria-live="polite">
+  <div class="lobby-spinner"></div>
+  <h2 class="lobby-title" id="lobbyTitle">Asking to join…</h2>
+  <p class="lobby-sub" id="lobbySub">Waiting for the host to let you in. Hang tight — this closes as soon as they approve.</p>
+  <button class="lobby-cancel" id="lobbyCancelBtn" type="button">Cancel</button>
 </div>
 
 <div class="signin-splash" id="signinSplash" aria-live="polite">
@@ -3649,6 +3682,7 @@ async function acceptApprovedInvite(fromUid, inv){
     myCapturedName = (DATA.displayName||'').trim() || 'Someone';
     try{ localStorage.setItem('pomofit:coworkName', myCapturedName); }catch(e){}
     closeSheets();
+    if(typeof hideLobby==='function') hideLobby();
     openCowork();
     await joinOrCreateSession(inv.code, false);
   }catch(e){
@@ -5648,6 +5682,38 @@ $('createSessionBtn').onclick=async ()=>{
     await joinOrCreateSession(code, true);
   }catch(e){ togetherMsg('Couldn\'t create a session — check your connection and try again.'); }
 };
+// ---- co-work lobby (waiting for host approval) ----
+let lobbyApprovalRef=null, lobbyApprovalCb=null, lobbyCode=null;
+function teardownLobbyWatch(){
+  if(lobbyApprovalRef && lobbyApprovalCb){ try{ lobbyApprovalRef.off('value', lobbyApprovalCb); }catch(e){} }
+  lobbyApprovalRef=null; lobbyApprovalCb=null;
+}
+function showLobby(code){
+  lobbyCode=code;
+  const el=$('coworkLobby'); if(!el) return;
+  $('lobbyTitle').textContent='Asking to join…';
+  $('lobbySub').textContent='Waiting for the host to let you in. Hang tight — this closes as soon as they approve.';
+  el.classList.remove('fade'); el.classList.add('show');
+}
+function hideLobby(){
+  const el=$('coworkLobby'); if(!el) return;
+  el.classList.add('fade');
+  setTimeout(()=>{ el.classList.remove('show','fade'); }, 300);
+  teardownLobbyWatch();
+}
+$('lobbyCancelBtn').onclick=()=>{
+  // withdraw the request and stop waiting
+  try{
+    if(lobbyCode && fb && fb.db){
+      fb.db.ref('sessions/'+lobbyCode+'/hostUid').get().then(s=>{
+        const h=s.val(); if(h) fb.db.ref('joinRequests/'+h+'/'+fb.uid).remove().catch(()=>{});
+      }).catch(()=>{});
+    }
+  }catch(e){}
+  lobbyCode=null;
+  hideLobby();
+};
+
 async function attemptJoin(code){
   if(!FIREBASE_READY || !code) return;
   // capture the typed name now — the input can be reset later
@@ -5657,9 +5723,35 @@ async function attemptJoin(code){
   togetherMsg(T().joiningSession);
   try{
     await ensureFirebase();
-    const snap = await fb.db.ref('sessions/'+code+'/createdAt').get();
-    if(!snap.exists()) return togetherMsg(T().expiredLink);
-    await joinOrCreateSession(code, false);
+    const sessSnap = await fb.db.ref('sessions/'+code).get();
+    const sess = sessSnap.exists() ? sessSnap.val() : null;
+    if(!sess || !sess.createdAt) return togetherMsg(T().expiredLink);
+    const host = sess.hostUid || null;
+    const approved = sess.approved || {};
+    // already the host or already approved → join straight away
+    if(host === fb.uid || approved[fb.uid] === true){
+      await joinOrCreateSession(code, host === fb.uid);
+      closeSheets();
+      return;
+    }
+    // otherwise: ask the host and wait in the lobby until they approve
+    if(!host){ return togetherMsg('Couldn\'t reach the host — try again.'); }
+    closeSheets();
+    showLobby(code);
+    // send the join request to the host
+    if(cloudUser){ await askToJoinFriend(host, code); }
+    // watch for approval; when it lands, auto-join and close the lobby
+    teardownLobbyWatch();
+    lobbyApprovalRef = fb.db.ref('sessions/'+code+'/approved/'+fb.uid);
+    lobbyApprovalCb = lobbyApprovalRef.on('value', async snap=>{
+      if(snap.val() === true){
+        teardownLobbyWatch();
+        try{
+          await joinOrCreateSession(code, false);
+          hideLobby();
+        }catch(e){ console.error('auto-join after approval failed', e); }
+      }
+    });
   }catch(e){ togetherMsg('Couldn\'t join — check your connection and try again.'); }
 }
 $('rejoinBtn').onclick=async ()=>{
@@ -6257,6 +6349,7 @@ $('copyCodeBtn').onclick=async ()=>{
   }catch(e){ togetherMsg('Couldn\'t copy — session code is '+mySession); }
 };
 async function leaveCoworkSession(){
+  if(typeof teardownLobbyWatch==='function') teardownLobbyWatch();
   if(sessionRefs){
     const leavingRefs = sessionRefs, leavingCode = mySession;
     try{ await leavingRefs.myMemberRef.remove(); }catch(e){}
