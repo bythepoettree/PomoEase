@@ -5810,6 +5810,13 @@ async function joinOrCreateSession(code, asHost){
   sessionRefs = { sessionRef, timerRef, membersRef, chatRef, workoutRef, myMemberRef };
 
   if(asHost){
+    // establish host identity + allow-list FIRST — the timer/members writes are
+    // gated on being host-or-approved, so those nodes must exist before we write
+    // timer/members, or the host's own create gets permission-denied
+    await sessionRef.child('createdAt').set(firebase.database.ServerValue.TIMESTAMP);
+    await sessionRef.child('hostUid').set(fb.uid);
+    await sessionRef.child('approved/'+fb.uid).set(true);
+    hostUid = fb.uid;
     await timerRef.set({
       phase:S.phase, running:S.running, endAt:S.endAt, remaining:S.remaining,
       completed:S.completed, session:S.session, longBreakEvery:S.longBreakEvery,
@@ -5817,12 +5824,6 @@ async function joinOrCreateSession(code, asHost){
 
       updatedBy: fb.uid,
     });
-    await sessionRef.child('createdAt').set(firebase.database.ServerValue.TIMESTAMP);
-    await sessionRef.child('hostUid').set(fb.uid);
-    // the host is implicitly approved — seed the allow-list so the rules let the
-    // host write members/chat too (everyone must be in 'approved' to participate)
-    await sessionRef.child('approved/'+fb.uid).set(true);
-    hostUid = fb.uid;
   }
 
   await myMemberRef.set({
