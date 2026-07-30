@@ -1542,6 +1542,14 @@
     transition:color .12s ease, border-color .12s ease;
   }
   .together-leave:hover{ color:#E8604C; border-color:rgba(232,96,76,.4); }
+  .together-end{
+    width:100%; margin-top:8px; padding:11px 14px; text-align:center;
+    background:rgba(232,96,76,.12); border:1px solid rgba(232,96,76,.4); border-radius:10px;
+    color:#E8604C; font-family:inherit; font-size:12.5px; font-weight:700;
+    letter-spacing:.02em; cursor:pointer;
+    transition:background .12s ease, border-color .12s ease;
+  }
+  .together-end:hover{ background:rgba(232,96,76,.2); border-color:#E8604C; }
 
   .together-chat{
     max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;
@@ -2342,6 +2350,7 @@
       <div class="together-members" id="togetherMembers"></div>
 
       <button class="together-leave" id="leaveSessionBtn">Leave session</button>
+      <button class="together-end" id="endSessionBtn" style="display:none;">End session for everyone</button>
     </div>
   </div>
 </div>
@@ -3372,7 +3381,7 @@ async function renderFriends(){
     listWrap.appendChild(head);
     frEntries.forEach(([fUid, f])=>{
       const row=buildFriendRow(f, [
-        {label:'Remove', cls:'ghost', fn:(e)=>armRemoveFriend(fUid, e.currentTarget, (f&&f.name)||'this friend')}
+        {label:'Unfriend', cls:'ghost', fn:(e)=>armRemoveFriend(fUid, e.currentTarget, (f&&f.name)||'this friend')}
       ]);
       // Two possible actions, shown per the four-state matrix (see docs below):
       //   neither in a session      -> Start   (create one + invite them)
@@ -3405,7 +3414,14 @@ async function renderFriends(){
           inviteB.textContent = 'Invite';
           // Ask to join: only if they have a room I'm not already in
           joinB.style.display = (online && theirSession && !sameRoom) ? '' : 'none';
-          joinB.onclick = ()=>askToJoinFriend(fUid, theirSession, joinB);
+          joinB.onclick = ()=>{
+            // capture name, then go through the same lobby flow as a join link:
+            // sends the request, shows the "waiting for host" lobby, and auto-joins
+            // once the host approves
+            const nm = (DATA.displayName||'').trim() || 'Someone';
+            myCapturedName = nm; try{ localStorage.setItem('pomofit:coworkName', nm); }catch(e){}
+            attemptJoin(theirSession);
+          };
           // Start: neither of us has a room
           if(online && !mySession && !theirSession){
             inviteB.style.display=''; inviteB.textContent='Start';
@@ -3536,7 +3552,7 @@ function armRemoveFriend(fUid, btn, name){
   // require an explicit, deliberate confirmation so a friend can't be removed
   // by an accidental double-tap
   const who = name || 'this friend';
-  const ok = confirm('Remove '+who+' from your friends?\n\nThis also removes you from their list. You can add each other again later with your friend codes.');
+  const ok = confirm('Unfriend '+who+'?\n\nThis removes them from your friends list and you from theirs. You can add each other again later with your friend codes.');
   if(!ok) return;
   removeFriend(fUid);
 }
@@ -5588,6 +5604,7 @@ function showTogetherIntro(){
   $('floatMembers').classList.remove('show');
   { const b=$('portalHeaderBtn'); if(b) b.classList.remove('in-session'); }
   { const t=$('portalTabCowork'); if(t) t.classList.remove('in-session'); }
+  { const eb=$('endSessionBtn'); if(eb) eb.style.display='none'; }
   setChatExpanded(false);
   // reset intro UI: show create by default, only show join-from-link if there is a pending code
   if(pendingJoinCode){
@@ -5725,13 +5742,19 @@ async function attemptJoin(code){
   togetherMsg(T().joiningSession);
   try{
     await ensureFirebase();
-    const sessSnap = await fb.db.ref('sessions/'+code).get();
-    const sess = sessSnap.exists() ? sessSnap.val() : null;
-    if(!sess || !sess.createdAt) return togetherMsg(T().expiredLink);
-    const host = sess.hostUid || null;
-    const approved = sess.approved || {};
+    // read only the nodes a not-yet-approved guest is allowed to see (hostUid,
+    // createdAt, and their own approval flag) — reading the whole session node
+    // would be denied by the rules until approved
+    const [createdSnap, hostSnap, apprSnap] = await Promise.all([
+      fb.db.ref('sessions/'+code+'/createdAt').get(),
+      fb.db.ref('sessions/'+code+'/hostUid').get(),
+      fb.db.ref('sessions/'+code+'/approved/'+fb.uid).get(),
+    ]);
+    if(!createdSnap.exists()) return togetherMsg(T().expiredLink);
+    const host = hostSnap.val() || null;
+    const alreadyApproved = apprSnap.val() === true;
     // already the host or already approved → join straight away
-    if(host === fb.uid || approved[fb.uid] === true){
+    if(host === fb.uid || alreadyApproved){
       await joinOrCreateSession(code, host === fb.uid);
       closeSheets();
       return;
@@ -5969,10 +5992,19 @@ function attachSessionListeners(){
 
   const hostRef = sessionRefs.sessionRef.child('hostUid');
   const onHost = hostRef.on('value', snap=>{
-    hostUid = snap.val();
+    const newHost = snap.val();
+    // if the room had a host and now doesn't, the host ended the session —
+    // eject everyone still in it (guests won't get a members update for this)
+    if(hostUid && !newHost && mySession && !isHost){
+      showToast('The host ended the session.');
+      leaveCoworkSession();
+      return;
+    }
+    hostUid = newHost;
     // the DB's hostUid is authoritative — never let a stale local asHost flag
     // leave a guest believing they're the host (that made askers "become host")
     if(hostUid){ isHost = (hostUid === fb.uid); }
+    { const eb=$('endSessionBtn'); if(eb) eb.style.display = (!!mySession && isHost) ? '' : 'none'; }
     const notice=$('coworkSettingsNotice');
     if(notice) notice.classList.toggle('show', !!mySession && isHost);
     // keep persisted session state in step with the real host identity
@@ -6392,6 +6424,21 @@ async function leaveCoworkSession(){
   showTogetherIntro();
 }
 $('leaveSessionBtn').onclick=leaveCoworkSession;
+$('endSessionBtn').onclick=async ()=>{
+  if(!isHost || !mySession || !sessionRefs){ return; }
+  const ok = confirm('End this session for everyone?\n\nAll members will be removed and the room will close. This can\'t be undone.');
+  if(!ok) return;
+  const ended = mySession;
+  try{
+    // removing the whole session node kicks every member — their listeners see
+    // the room vanish and they fall back to the intro. Only the host can do this.
+    await sessionRefs.sessionRef.remove();
+  }catch(e){ console.error('end session failed', e); showToast("Couldn't end the session — try again."); return; }
+  // clean up our own local state (also clears the persisted keys)
+  try{ const last=JSON.parse(localStorage.getItem('pomofit:lastSession')||'null'); if(last && last.code===ended) localStorage.removeItem('pomofit:lastSession'); }catch(e){}
+  await leaveCoworkSession();
+  showToast('Session ended.');
+};
 // remove member entry when closing tab / navigating away
 window.addEventListener('pagehide', ()=>{
   if(sessionRefs && sessionRefs.myMemberRef){
