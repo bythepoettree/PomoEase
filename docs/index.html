@@ -3148,11 +3148,13 @@ function setupPresence(){
   if(!cloudUser || !fb || !fb.db) return;
   teardownPresence();
   const myPresRef = fb.db.ref('presence/'+cloudUser.uid);
+  // mark online right away — don't wait for the .info/connected callback, which
+  // may be delayed (and previously left users showing offline to friends)
+  myPresRef.set({ online:true, at: firebase.database.ServerValue.TIMESTAMP, session: mySession || null }).catch(()=>{});
   presenceConnRef = fb.db.ref('.info/connected');
   presenceConnHandler = presenceConnRef.on('value', snap=>{
     if(snap.val()===true){
-      // register the server-side cleanup FIRST, then mark online
-      // on disconnect, stamp offline + last-seen time (server-side) FIRST, then mark online
+      // (re)register the server-side cleanup on disconnect, then re-assert online
       myPresRef.onDisconnect().set({ online:false, at: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
         myPresRef.set({ online:true, at: firebase.database.ServerValue.TIMESTAMP, session: mySession || null });
       }).catch(()=>{});
