@@ -34,15 +34,16 @@
     .back-link{ color:var(--muted); text-decoration:none; font-size:13px; font-weight:600; }
     .back-link:hover{ color:var(--fg); }
     main{ width:100%; max-width:640px; }
-    .kicker{ font-family:'Anton', sans-serif; font-size:12px; letter-spacing:.28em; text-transform:uppercase; color:var(--muted); margin:30px 0 10px; }
-    h1{ font-family:'Anton', sans-serif; font-weight:400; font-size:40px; line-height:1.05; letter-spacing:.01em; margin:0 0 22px; }
-    h2{ font-family:'Anton', sans-serif; font-weight:400; font-size:22px; letter-spacing:.02em; margin:34px 0 12px; }
-    p{ font-size:15.5px; line-height:1.7; color:var(--muted); margin:0 0 16px; }
+    .kicker{ font-family:'Anton', sans-serif; font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); margin:34px 0 6px; }
+    h1{ font-family:'Anton', sans-serif; font-weight:400; font-size:32px; line-height:1.08; letter-spacing:.01em; margin:34px 0 8px; }
+    .subtitle{ font-size:16px; line-height:1.5; color:var(--muted); margin:0 0 26px; font-weight:500; }
+    h2{ font-family:'Anton', sans-serif; font-weight:400; font-size:17px; letter-spacing:.03em; margin:30px 0 10px; }
+    p{ font-size:14.5px; line-height:1.7; color:var(--muted); margin:0 0 15px; }
     p strong{ color:var(--fg); font-weight:600; }
     .card{ background:var(--bg2); border:1px solid var(--line); border-radius:16px; padding:22px 24px; margin:24px 0; }
     .card p:last-child{ margin-bottom:0; }
     a.inline{ color:var(--fg); text-decoration:underline; text-decoration-color:rgba(255,255,255,.4); }
-    footer{ width:100%; max-width:640px; margin-top:40px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); }
+    footer{ width:100%; max-width:640px; margin-top:40px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); text-align:center; }
     footer a{ color:var(--muted); text-decoration:underline; text-decoration-color:rgba(255,255,255,.3); }
     .footer-sep{ opacity:.5; margin:0 7px; }
   </style>
@@ -50,12 +51,11 @@
 <body>
   <div class="page-head">
     <a class="wordmark" href="index.html"><span class="tomato">🍅</span><span class="name">PomoEase</span></a>
-    <a class="back-link" href="index.html">← Back to app</a>
   </div>
 
   <main>
-    <div class="kicker">About</div>
-    <h1>Focus that keeps you moving.</h1>
+    <h1>About</h1>
+    <p class="subtitle">Focus that keeps you moving.</p>
 
     <p>PomoEase is a focus timer built on a simple idea: the best breaks aren't spent scrolling. You work in focused rounds, and between them PomoEase turns your break into a quick burst of movement — a few reps to get you off your chair, reset, and return sharper for the next round.</p>
 
@@ -75,7 +75,7 @@
   </main>
 
   <footer>
-    <a href="about.html">About</a><span class="footer-sep">·</span><a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a>
+    <a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a><span class="footer-sep">·</span><a href="about.html">About</a>
     <div style="margin-top:10px; opacity:.7;">© <span id="yr"></span> PomoEase</div>
   </footer>
   <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
