@@ -2295,7 +2295,7 @@
     </button>
     <button class="portal-tab" id="portalTabCowork" role="tab" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17l2 2a1 1 0 1 0 3-3"/><path d="m14 14l2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/></svg>
-      Co-work
+      Co-work<span class="friend-badge" id="coworkTabBadge" style="display:none;">0</span>
     </button>
   </div>
 
@@ -3272,10 +3272,27 @@ function declineJoinRequest(fromUid){
 }
 
 // render the host's pending-requests lobby panel
+// badge counts: friend requests + lobby (join) requests both surface on the
+// header icon; join requests also badge the Co-work tab so a host is notified
+// someone is waiting even with the Portal closed
+let pendingFriendReqCount = 0;
+let pendingJoinReqCount = 0;
+function updatePortalBadges(){
+  const total = pendingFriendReqCount + pendingJoinReqCount;
+  const hb = $('portalHeaderBadge');
+  if(hb){ if(total>0){ hb.style.display=''; hb.textContent = total>9 ? '9+' : String(total); } else hb.style.display='none'; }
+  const fb2 = $('portalFriendBadge');
+  if(fb2){ if(pendingFriendReqCount>0){ fb2.style.display=''; fb2.textContent=String(pendingFriendReqCount); } else fb2.style.display='none'; }
+  const cb = $('coworkTabBadge');
+  if(cb){ if(pendingJoinReqCount>0){ cb.style.display=''; cb.textContent=String(pendingJoinReqCount); } else cb.style.display='none'; }
+}
 function renderLobbyRequests(pending){
   const panel=$('lobbyRequests'), list=$('lobbyRequestsList');
-  if(!panel || !list) return;
   const entries = Object.entries(pending||{});
+  // badge count: only meaningful while we're the host of an active session
+  pendingJoinReqCount = (isHost && mySession) ? entries.length : 0;
+  updatePortalBadges();
+  if(!panel || !list) return;
   // only the host, in an active session, sees the lobby
   if(!isHost || !mySession || entries.length===0){
     panel.style.display='none'; list.innerHTML=''; return;
@@ -3432,8 +3449,7 @@ async function renderFriends(){
   }catch(e){ console.error('requests read failed', e); }
   const reqWrap=$('friendRequestsList'); reqWrap.innerHTML='';
   const reqEntries=Object.entries(requests);
-  const badges=[$('portalHeaderBadge'), $('portalFriendBadge')];
-  const setBadges=(n)=>badges.forEach(b=>{ if(b){ if(n>0){ b.style.display=''; b.textContent=n; } else b.style.display='none'; } });
+  const setBadges=(n)=>{ pendingFriendReqCount = n; updatePortalBadges(); };
   if(reqEntries.length){
     setBadges(reqEntries.length);
     const head=document.createElement('div'); head.className='friends-subhead'; head.textContent='Requests';
@@ -3822,7 +3838,13 @@ function showInviteToast(fromUid, inv){
       await joinOrCreateSession(inv.code, false);
     }catch(e){ console.error('invite join failed', e); }
   };
-  disB.onclick=()=>{ clearInvite(); toast.remove(); activeInviteToast=null; };
+  disB.onclick=()=>{
+    clearInvite();
+    // dismissing an invite means "no" — revoke the pre-approval the host granted
+    // with the invite, so we can't later slip in via ask-to-join without approval
+    try{ if(inv.code && fb && fb.db){ fb.db.ref('sessions/'+inv.code+'/approved/'+cloudUser.uid).remove().catch(()=>{}); } }catch(e){}
+    toast.remove(); activeInviteToast=null;
+  };
   toast.appendChild(txt);
   const acts=document.createElement('div'); acts.className='invite-toast-actions';
   acts.appendChild(joinB); acts.appendChild(disB);
