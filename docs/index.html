@@ -3198,7 +3198,9 @@ function setupPresence(){
 function publishPresenceSession(){
   try{
     if(!cloudUser || !fb || !fb.db) return;
-    fb.db.ref('presence/'+cloudUser.uid).update({ session: mySession || null });
+    // always re-assert online here — if we're publishing a session we're clearly
+    // online, and a prior onDisconnect/blip could otherwise have left online:false
+    fb.db.ref('presence/'+cloudUser.uid).update({ online:true, session: mySession || null, at: firebase.database.ServerValue.TIMESTAMP });
   }catch(e){}
   if(typeof renderFriends==='function' && $('friendsBody') && $('friendsBody').style.display!=='none') renderFriends();
 }
@@ -3482,12 +3484,14 @@ async function renderFriends(){
         const ref=fb.db.ref('presence/'+fUid);
         const handler=ref.on('value', s=>{
           const v=s.val();
-          const online = !!(v && v.online);
           const theirSession = (v && v.session) || null;
+          const sameRoom = theirSession && mySession && theirSession===mySession;
+          // if they're in your session they're demonstrably online — don't let a
+          // stale presence flag show an active co-worker as offline
+          const online = !!(v && v.online) || sameRoom;
           dot.classList.toggle('online', online);
           dot.title = online ? 'Online now' : 'Offline';
 
-          const sameRoom = theirSession && mySession && theirSession===mySession;
           // Invite: only meaningful if I have a room they're not already in
           inviteB.style.display = (online && mySession && !sameRoom) ? '' : 'none';
           inviteB.textContent = 'Invite';
