@@ -1500,6 +1500,25 @@
     font-size:10.5px; letter-spacing:.18em; text-transform:uppercase;
     color:var(--muted); font-weight:600; margin-bottom:10px;
   }
+  /* host-side lobby: pending join requests */
+  .lobby-requests{
+    background:var(--chip); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; margin-bottom:12px;
+  }
+  .lobby-requests-head{
+    font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent);
+    font-weight:700; margin-bottom:10px;
+  }
+  .lobby-requests-list{ display:flex; flex-direction:column; gap:8px; }
+  .lobby-req-row{ display:flex; align-items:center; gap:10px; }
+  .lobby-req-av{
+    width:30px; height:30px; border-radius:50%; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    background:var(--bg2); border:1px solid var(--line); font-size:16px; line-height:1;
+  }
+  .lobby-req-av img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .lobby-req-name{ flex:1; min-width:0; font-size:13px; font-weight:600; color:var(--fg); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lobby-req-actions{ display:flex; gap:6px; flex:0 0 auto; }
   .together-members{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
   .member-chip{
     display:inline-flex; align-items:center; gap:8px; background:var(--chip);
@@ -2347,6 +2366,11 @@
         <button class="btn together-copy-btn" id="copyCodeBtn">Copy link</button>
       </div>
 
+      <div class="lobby-requests" id="lobbyRequests" style="display:none;">
+        <div class="lobby-requests-head">Waiting to join</div>
+        <div class="lobby-requests-list" id="lobbyRequestsList"></div>
+      </div>
+
       <div class="together-members" id="togetherMembers"></div>
 
       <button class="together-leave" id="leaveSessionBtn">Leave session</button>
@@ -3189,7 +3213,7 @@ async function askToJoinFriend(fUid, code, btn){
     // same child_added problem as sendSessionInvite — clear before writing
     await ref.remove();
     await ref.set({
-      name: myShareName(), code: code, at: firebase.database.ServerValue.TIMESTAMP
+      name: myShareName(), avatar: DATA.avatar || null, code: code, at: firebase.database.ServerValue.TIMESTAMP
     });
     if(btn){ const t=btn.textContent; btn.textContent='Asked'; btn.disabled=true;
       setTimeout(()=>{ btn.textContent=t; btn.disabled=false; }, 2500); }
@@ -3197,31 +3221,86 @@ async function askToJoinFriend(fUid, code, btn){
 }
 
 let joinReqRef=null, joinReqHandler=null;
+let knownJoinReqUids = new Set();
 async function attachJoinRequestListener(){
   detachJoinRequestListener();
   if(!cloudUser || !fb || !fb.db) return;
   const ref = fb.db.ref('joinRequests/'+cloudUser.uid);
   joinReqRef = ref;
-  // clear anything already queued — see attachInviteListener for why
-  try{
-    const snap = await ref.once('value');
-    const updates = {};
-    snap.forEach(c=>{ updates[c.key] = null; });
-    if(Object.keys(updates).length) await ref.update(updates);
-  }catch(e){}
-  if(joinReqRef !== ref) return; // detached while awaiting
-  joinReqHandler = ref.on('child_added', snap=>{
-    const req = snap.val()||{}; const fromUid = snap.key;
-    // stale, or for a room we've since left
-    if((req.at && Date.now()-req.at > 2*60*60*1000) || !mySession || req.code!==mySession){
-      try{ ref.child(fromUid).remove(); }catch(e){}
-      return;
-    }
-    showJoinRequestToast(fromUid, req);
+  knownJoinReqUids = new Set();
+  // live list of everyone waiting — powers the host lobby panel. A 'value'
+  // listener (not child_added) means requests persist in the panel until the
+  // host acts on them, and stacking requests all show together.
+  joinReqHandler = ref.on('value', snap=>{
+    const all = snap.val() || {};
+    // drop stale (>2h) or wrong-room requests
+    const pending = {};
+    Object.entries(all).forEach(([uid,req])=>{
+      req = req || {};
+      const stale = req.at && (Date.now()-req.at > 2*60*60*1000);
+      const wrongRoom = !mySession || req.code !== mySession;
+      if(stale || wrongRoom){ try{ ref.child(uid).remove(); }catch(e){} return; }
+      pending[uid] = req;
+    });
+    // ping + toast only for requests we haven't seen yet this session
+    Object.keys(pending).forEach(uid=>{
+      if(!knownJoinReqUids.has(uid)){
+        knownJoinReqUids.add(uid);
+        pingIncoming();
+      }
+    });
+    knownJoinReqUids = new Set(Object.keys(pending));
+    renderLobbyRequests(pending);
   }, err=>console.error('join request listener', err));
 }
+
+// approve / decline a pending join request (shared by panel + any toast)
+async function approveJoinRequest(fromUid, req){
+  try{
+    if(mySession && isHost && sessionRefs && sessionRefs.sessionRef){
+      await sessionRefs.sessionRef.child('approved/'+fromUid).set(true);
+    }
+    await sendSessionInvite(fromUid, null, {approved:true});
+    try{ fb.db.ref('joinRequests/'+cloudUser.uid+'/'+fromUid).remove(); }catch(e){}
+    showToast('✅ Letting '+((req&&req.name)||'them')+' in…');
+  }catch(e){ console.error('approve join failed', e); showToast("Couldn't let them in — try again."); }
+}
+function declineJoinRequest(fromUid){
+  try{ fb.db.ref('joinRequests/'+cloudUser.uid+'/'+fromUid).remove(); }catch(e){}
+}
+
+// render the host's pending-requests lobby panel
+function renderLobbyRequests(pending){
+  const panel=$('lobbyRequests'), list=$('lobbyRequestsList');
+  if(!panel || !list) return;
+  const entries = Object.entries(pending||{});
+  // only the host, in an active session, sees the lobby
+  if(!isHost || !mySession || entries.length===0){
+    panel.style.display='none'; list.innerHTML=''; return;
+  }
+  panel.style.display='';
+  list.innerHTML='';
+  entries.forEach(([uid, req])=>{
+    const row=document.createElement('div'); row.className='lobby-req-row';
+    const av=document.createElement('div'); av.className='lobby-req-av';
+    const a=req.avatar||null;
+    if(a && String(a).startsWith('emoji:')) av.textContent=a.slice(6);
+    else if(a) av.innerHTML='<img src="'+String(a).replace(/"/g,'&quot;')+'" alt="">';
+    else av.textContent=((req.name||'?')[0]||'?').toUpperCase();
+    const nm=document.createElement('div'); nm.className='lobby-req-name';
+    nm.textContent=(req.name||'Someone');
+    const acts=document.createElement('div'); acts.className='lobby-req-actions';
+    const yes=document.createElement('button'); yes.className='fr-btn'; yes.textContent='Let in';
+    yes.onclick=()=>{ yes.disabled=true; approveJoinRequest(uid, req); };
+    const no=document.createElement('button'); no.className='fr-btn ghost'; no.textContent='Decline';
+    no.onclick=()=>declineJoinRequest(uid);
+    acts.appendChild(yes); acts.appendChild(no);
+    row.appendChild(av); row.appendChild(nm); row.appendChild(acts);
+    list.appendChild(row);
+  });
+}
 function detachJoinRequestListener(){
-  if(joinReqRef && joinReqHandler){ try{ joinReqRef.off('child_added', joinReqHandler); }catch(e){} }
+  if(joinReqRef && joinReqHandler){ try{ joinReqRef.off('value', joinReqHandler); }catch(e){} }
   joinReqRef=null; joinReqHandler=null;
 }
 
@@ -5605,6 +5684,7 @@ function showTogetherIntro(){
   { const b=$('portalHeaderBtn'); if(b) b.classList.remove('in-session'); }
   { const t=$('portalTabCowork'); if(t) t.classList.remove('in-session'); }
   { const eb=$('endSessionBtn'); if(eb) eb.style.display='none'; }
+  { const lr=$('lobbyRequests'); if(lr){ lr.style.display='none'; const ll=$('lobbyRequestsList'); if(ll) ll.innerHTML=''; } }
   setChatExpanded(false);
   // reset intro UI: show create by default, only show join-from-link if there is a pending code
   if(pendingJoinCode){
@@ -6005,6 +6085,14 @@ function attachSessionListeners(){
     // leave a guest believing they're the host (that made askers "become host")
     if(hostUid){ isHost = (hostUid === fb.uid); }
     { const eb=$('endSessionBtn'); if(eb) eb.style.display = (!!mySession && isHost) ? '' : 'none'; }
+    // refresh the pending-requests panel now that we know if we're the host
+    if(isHost && cloudUser && fb && fb.db){
+      fb.db.ref('joinRequests/'+cloudUser.uid).get().then(s=>{
+        const all=s.val()||{}; const pend={};
+        Object.entries(all).forEach(([u,r])=>{ r=r||{}; if(mySession && r.code===mySession) pend[u]=r; });
+        renderLobbyRequests(pend);
+      }).catch(()=>{});
+    } else { renderLobbyRequests({}); }
     const notice=$('coworkSettingsNotice');
     if(notice) notice.classList.toggle('show', !!mySession && isHost);
     // keep persisted session state in step with the real host identity
