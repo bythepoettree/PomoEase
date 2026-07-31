@@ -175,23 +175,27 @@
     font-family:'Noto Sans Arabic', system-ui, sans-serif;
   }
   @media (prefers-reduced-motion: reduce){ body{transition:none;} }
-  /* ocean (blue) theme: a gentle vertical gradient that lightens toward the
-     bottom. Applied to <html> spanning the WHOLE document (not the viewport),
-     so there's no seam on mobile where a fixed/viewport-height gradient would
-     end and the flat page colour would show through. Body is transparent so the
-     html gradient shows; the html base colour matches the gradient's END colour
-     so any area past the gradient blends invisibly. */
-  html[data-theme-html="ocean"]{
+  /* gradient themes (ocean/pink/ember): a gentle vertical gradient that lightens
+     toward the bottom. Applied to <html> spanning the WHOLE document (not the
+     viewport), so there's no seam on mobile where a fixed/viewport-height
+     gradient would end and the flat page colour would show through. Body is
+     transparent so the html gradient shows; the html base colour matches the
+     gradient's END colour so any area past the gradient blends invisibly. */
+  html[data-theme-html="ocean"],
+  html[data-theme-html="pink"],
+  html[data-theme-html="ember"]{
     min-height:100%;
     background:
-      color-mix(in srgb, var(--ocean-bg, #2E7191) 82%, #FFFFFF)
+      color-mix(in srgb, var(--grad-bg, #2E7191) 82%, #FFFFFF)
       linear-gradient(to bottom,
-        var(--ocean-bg, #2E7191) 0%,
-        var(--ocean-bg, #2E7191) 38%,
-        color-mix(in srgb, var(--ocean-bg, #2E7191) 82%, #FFFFFF) 100%) no-repeat;
+        var(--grad-bg, #2E7191) 0%,
+        var(--grad-bg, #2E7191) 38%,
+        color-mix(in srgb, var(--grad-bg, #2E7191) 82%, #FFFFFF) 100%) no-repeat;
     background-size:100% 100%;
   }
-  body[data-theme="ocean"]{ background:transparent; }
+  body[data-theme="ocean"],
+  body[data-theme="pink"],
+  body[data-theme="ember"]{ background:transparent; }
   /* during boot nothing may animate its colour — prevents the theme fading in
      from the markup default (ocean blue) on refresh */
   html.boot body{ transition:none !important; }
@@ -1760,6 +1764,7 @@
   }
   .footer-links{margin-top:10px; font-size:11.5px;}
   .footer-links a{color:var(--muted); text-decoration:underline; text-decoration-color:rgba(128,128,128,.4);}
+  .footer-sep{ color:var(--muted); opacity:.5; margin:0 7px; }
 </style>
 </head>
 <body data-mode="focus" data-theme="ocean">
@@ -2070,7 +2075,13 @@
 </div>
 
 <footer>
-  <div class="footer-links"><a href="privacy.html" id="privacyLink" target="_blank" rel="noopener noreferrer">Privacy Policy</a></div>
+  <div class="footer-links">
+    <a href="about.html" id="aboutLink" target="_blank" rel="noopener noreferrer">About</a>
+    <span class="footer-sep">·</span>
+    <a href="contact.html" id="contactLink" target="_blank" rel="noopener noreferrer">Contact</a>
+    <span class="footer-sep">·</span>
+    <a href="privacy.html" id="privacyLink" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+  </div>
 </footer>
 
 <div class="ad-slot" id="adSlot">Ad space</div>
@@ -7125,16 +7136,18 @@ function syncChromeColour(){
     const shown = sheetOpen ? dimHex(hex, 0.55) : hex;
     const theme = document.body.dataset.theme;
     const htmlEl = document.documentElement;
-    if(theme === 'ocean'){
-      // ocean uses a full-page gradient on <html>; feed it the current mode's
-      // colour via --ocean-bg and flag it, rather than painting html a flat
-      // colour (which would clobber the gradient and cause the bottom seam)
-      htmlEl.setAttribute('data-theme-html', 'ocean');
-      htmlEl.style.setProperty('--ocean-bg', shown);
+    // themes that use the full-page lighten-toward-bottom gradient
+    const GRADIENT_THEMES = ['ocean','pink','ember'];
+    if(GRADIENT_THEMES.includes(theme)){
+      // feed the gradient the current mode's colour via --grad-bg and flag which
+      // theme it is, rather than painting html a flat colour (which would clobber
+      // the gradient and cause a bottom seam)
+      htmlEl.setAttribute('data-theme-html', theme);
+      htmlEl.style.setProperty('--grad-bg', shown);
       htmlEl.style.background = '';  // let the CSS gradient rule take over
     } else {
       htmlEl.removeAttribute('data-theme-html');
-      htmlEl.style.removeProperty('--ocean-bg');
+      htmlEl.style.removeProperty('--grad-bg');
       htmlEl.style.background = shown;
     }
     // the meta theme-color (status bar tint) should match the TOP of the page
