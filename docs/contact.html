@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#2E7191; color-scheme:dark;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact — PomoEase</title>
+  <meta name="description" content="Get in touch with the PomoEase team — questions, feedback, and support.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#2E7191; --bg2:#276484; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
+      --accent:#FFFFFF; --accent-ink:#2E7191; --line:rgba(255,255,255,.14); --chip:#276484;
+      --ease:cubic-bezier(.22,.61,.36,1);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; }
+    body{
+      background:
+        color-mix(in srgb, var(--bg) 82%, #FFFFFF)
+        linear-gradient(to bottom, var(--bg) 0%, var(--bg) 38%, color-mix(in srgb, var(--bg) 82%, #FFFFFF) 100%) no-repeat;
+      background-size:100% 100%;
+      min-height:100vh;
+      color:var(--fg);
+      font-family:'Space Grotesk', system-ui, 'Segoe UI', sans-serif;
+      display:flex; flex-direction:column; align-items:center;
+      padding:0 20px 60px;
+    }
+    .page-head{ width:100%; max-width:640px; padding:22px 0 8px; display:flex; align-items:center; justify-content:space-between; }
+    .wordmark{ display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--fg); }
+    .wordmark .tomato{ font-size:22px; }
+    .wordmark .name{ font-family:'Anton', sans-serif; font-size:19px; letter-spacing:.02em; }
+    .back-link{ color:var(--muted); text-decoration:none; font-size:13px; font-weight:600; }
+    .back-link:hover{ color:var(--fg); }
+    main{ width:100%; max-width:640px; }
+    .kicker{ font-family:'Anton', sans-serif; font-size:12px; letter-spacing:.28em; text-transform:uppercase; color:var(--muted); margin:30px 0 10px; }
+    h1{ font-family:'Anton', sans-serif; font-weight:400; font-size:40px; line-height:1.05; letter-spacing:.01em; margin:0 0 22px; }
+    p{ font-size:15.5px; line-height:1.7; color:var(--muted); margin:0 0 16px; }
+    p strong{ color:var(--fg); font-weight:600; }
+    .contact-card{
+      background:var(--bg2); border:1px solid var(--line); border-radius:16px;
+      padding:24px; margin:24px 0; display:flex; flex-direction:column; gap:18px;
+    }
+    .contact-row{ display:flex; align-items:flex-start; gap:14px; }
+    .contact-ic{
+      width:42px; height:42px; flex:0 0 auto; border-radius:11px;
+      background:var(--chip); border:1px solid var(--line);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .contact-ic svg{ width:20px; height:20px; stroke:var(--fg); }
+    .contact-label{ font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+    .contact-value{ font-size:16px; font-weight:600; color:var(--fg); }
+    .contact-value a{ color:var(--fg); text-decoration:none; }
+    .contact-value a:hover{ text-decoration:underline; }
+    .contact-sub{ font-size:13px; color:var(--muted); margin-top:2px; }
+    footer{ width:100%; max-width:640px; margin-top:40px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); }
+    footer a{ color:var(--muted); text-decoration:underline; text-decoration-color:rgba(255,255,255,.3); }
+    .footer-sep{ opacity:.5; margin:0 7px; }
+  </style>
+</head>
+<body>
+  <div class="page-head">
+    <a class="wordmark" href="index.html"><span class="tomato">🍅</span><span class="name">PomoEase</span></a>
+    <a class="back-link" href="index.html">← Back to app</a>
+  </div>
+
+  <main>
+    <div class="kicker">Contact</div>
+    <h1>Get in touch.</h1>
+
+    <p>Questions, feedback, bug reports, or ideas for what PomoEase should do next — we read everything and we'd genuinely like to hear from you.</p>
+
+    <div class="contact-card">
+      <div class="contact-row">
+        <div class="contact-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </div>
+        <div>
+          <div class="contact-label">Email</div>
+          <!-- TODO: replace with your real Namecheap email once it's set up -->
+          <div class="contact-value"><a href="mailto:hello@pomoease.com">hello@pomoease.com</a></div>
+          <div class="contact-sub">We aim to reply within a few days.</div>
+        </div>
+      </div>
+
+      <div class="contact-row">
+        <div class="contact-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.5A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6.5C19 16.65 12 21 12 21z"/></svg>
+        </div>
+        <div>
+          <div class="contact-label">Support the project</div>
+          <div class="contact-value"><a href="https://ko-fi.com/pomoease" target="_blank" rel="noopener noreferrer">ko-fi.com/pomoease</a></div>
+          <div class="contact-sub">PomoEase is free — tips help keep it that way.</div>
+        </div>
+      </div>
+    </div>
+
+    <p>Prefer to keep working? Head <a href="index.html" style="color:var(--fg); text-decoration:underline; text-decoration-color:rgba(255,255,255,.4);">back to the timer</a>.</p>
+  </main>
+
+  <footer>
+    <a href="about.html">About</a><span class="footer-sep">·</span><a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a>
+    <div style="margin-top:10px; opacity:.7;">© <span id="yr"></span> PomoEase</div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
