@@ -221,12 +221,6 @@
     opacity:1; /* keep co-work bubbles visible */
   }
   /* ---------- workout: get-ready countdown ---------- */
-  .tap-focus-hint{
-    font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
-    opacity:0; transition:opacity .3s ease; margin-top:4px; min-height:14px; pointer-events:none;
-  }
-  .tap-focus-hint.show{ opacity:.5; }
-  body.workout-focus .tap-focus-hint{ display:none; }
   .get-ready-overlay{
     position:fixed; inset:0; z-index:1200;
     display:none; flex-direction:column; align-items:center; justify-content:center;
@@ -243,35 +237,7 @@
   @keyframes grPop{ 0%{transform:scale(.6);opacity:0} 45%{transform:scale(1.08);opacity:1} 100%{transform:scale(1)} }
   @media (prefers-reduced-motion: reduce){ .get-ready-num{ animation:none; } .get-ready-overlay.show{ animation:none; } }
 
-  /* ---------- workout focus mode: just the enlarged animation ---------- */
-  body.workout-focus{ overflow:hidden; }
-  body.workout-focus #workoutBlock{
-    position:fixed; inset:0; z-index:1000; margin:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:var(--bg);
-  }
-  /* hide everything in the workout block except the animation, name and rep count */
-  body.workout-focus #workoutBlock .back-row,
-  body.workout-focus #workoutBlock .traj,
-  body.workout-focus #workoutBlock #progStartBtn,
-  body.workout-focus #workoutBlock .prog-list,
-  body.workout-focus #workoutBlock .split-btn-row,
-  body.workout-focus #workoutBlock #breakClock,
-  body.workout-focus header,
-  body.workout-focus footer,
-  body.workout-focus .fact,
-  body.workout-focus .ad-slot,
-  body.workout-focus .float-chat{
-    opacity:0 !important; visibility:hidden !important; pointer-events:none !important;
-  }
-  body.workout-focus #cv{
-    width:min(88vw, 560px) !important; height:auto !important; margin:8px 0;
-  }
-  body.workout-focus #exName{ font-size:clamp(30px, 9vw, 52px); }
-  body.workout-focus #exNote{ font-size:15px; }
-  body.workout-focus .counter .big{ font-size:72px; }
-  body.workout-focus .counter .of{ font-size:18px; }
-
+  /* timer focus mode's "tap anywhere to exit" hint */
   .focus-hint{
     position:fixed; bottom:40px; left:50%; transform:translateX(-50%);
     font-size:11px; letter-spacing:.12em; color:var(--muted);
@@ -280,6 +246,7 @@
     white-space:nowrap;
   }
   .focus-hint.show{ opacity:.6; }
+
   /* ---------- icon control row (bare symbols, no boxes) ---------- */
   .ctl-ic{
     background:none; border:none; cursor:pointer;
@@ -2037,6 +2004,7 @@
     <div class="shortcut-row"><span>Friends</span><kbd>F</kbd></div>
     <div class="shortcut-row"><span>Leaderboard</span><kbd>L</kbd></div>
     <div class="shortcut-row"><span>Close a panel</span><kbd>Esc</kbd></div>
+    <p style="font-size:11.5px; color:var(--muted); line-height:1.5; margin:12px 0 0;">Tip: in a co-work session, hold <b>Shift</b> with a shortcut (e.g. Shift + L) to use it without leaving the chat box.</p>
     <button class="welcome-tour-btn" id="shortcutsCloseBtn" type="button" style="margin-top:16px;">Got it</button>
   </div>
 </div>
@@ -2118,7 +2086,6 @@
       <div class="of" id="repOf">/ 20 reps</div>
     </div>
     <div class="traj" id="traj"></div>
-    <div class="tap-focus-hint" id="tapFocusHint">Tap the figure to focus</div>
     <button class="btn" id="progStartBtn" style="display:none;margin-top:12px;">START PROGRAMME</button>
     <div class="prog-list" id="progList"></div>
     <div class="split-btn-row" id="workoutSplitRow">
@@ -2129,7 +2096,7 @@
   </div>
 </main>
 
-<div class="focus-hint" id="workoutFocusHint">TAP ANYWHERE TO EXIT</div>
+
 
 <div class="fact" id="factCard">
   <div class="eyebrow">Brain fuel</div>
@@ -4292,24 +4259,11 @@ function cancelGetReady(){
 /* workout focus mode — mirrors the timer's: hide everything but the enlarged,
    centred animation with its name and rep count. Tap anywhere to exit. */
 let workoutFocusHintTimer=null, workoutFocusEnteredAt=0;
-function enterWorkoutFocus(){
-  if(document.body.classList.contains('workout-focus')) return;
-  document.body.classList.add('workout-focus');
-  workoutFocusEnteredAt=Date.now();
-  updateTapFocusHint();
-  const hint=$('workoutFocusHint');
-  if(hint){
-    hint.classList.add('show');
-    clearTimeout(workoutFocusHintTimer);
-    workoutFocusHintTimer=setTimeout(()=>hint.classList.remove('show'), 2600);
-  }
-}
+// workout-focus mode has been removed — these are kept as safe no-ops so the
+// many existing callers don't need touching
+function enterWorkoutFocus(){ /* removed */ }
 function exitWorkoutFocus(){
-  if(!document.body.classList.contains('workout-focus')) return;
-  document.body.classList.remove('workout-focus');
-  const hint=$('workoutFocusHint'); if(hint) hint.classList.remove('show');
-  clearTimeout(workoutFocusHintTimer);
-  updateTapFocusHint();
+  if(document.body.classList.contains('workout-focus')) document.body.classList.remove('workout-focus');
 }
 // ---- workout demo (from the welcome screen) ----
 // Lets a brand-new user try the workout view immediately, without waiting for a
@@ -4351,26 +4305,11 @@ function exitWorkoutDemo(){
 { const bb=$('backBtn'); if(bb){ const prev=bb.onclick; bb.onclick=(e)=>{ if(__workoutDemoActive){ exitWorkoutDemo(); return; } if(typeof prev==='function') prev.call(bb,e); }; } }
 // show the "tap the figure to focus" cue only when a workout runs outside focus
 function updateTapFocusHint(){
-  const h=$('tapFocusHint'); if(!h) return;
-  const show = workoutRunning() && !document.body.classList.contains('workout-focus');
-  h.classList.toggle('show', show);
+  const h=$('tapFocusHint'); if(h) h.classList.remove('show');  // workout-focus removed — hint never shows
 }
-// tap anywhere (after a short grace period) exits workout focus
-document.addEventListener('click', (e)=>{
-  if(!document.body.classList.contains('workout-focus')) return;
-  if(Date.now()-workoutFocusEnteredAt < 400) return; // ignore the starting tap
-  exitWorkoutFocus();
-}, true);
-// a workout is actively animating (so tapping the figure can re-enter focus)
+// a workout is actively animating
 function workoutRunning(){ return !!(PROG && (PROG.mode==='ex' || PROG.mode==='rest')); }
-// tap the animation to go (back) into focus, mirroring "tap the timer"
-cv.style.cursor='pointer';
-cv.addEventListener('click', (e)=>{
-  if(document.body.classList.contains('workout-focus')) return; // exit handler owns this
-  if(!workoutRunning()) return; // nothing to focus on when idle/done
-  e.stopPropagation();
-  enterWorkoutFocus();
-});
+cv.style.cursor='default';
 function beginStep(){
   const st=PROG.steps[PROG.idx], ex=EX[st.key];
   PROG.mode='ex'; PROG.tStart=performance.now(); S.reps=0;
@@ -4627,9 +4566,12 @@ function animate(){
   _col = getComputedStyle(document.body).getPropertyValue('--fg').trim();
   ctx.clearRect(0,0,CW,CH);
   groundLine();
-  // if the break screen isn't showing, the workout isn't visible — never advance
-  // reps or play rep sounds (prevents rep beeps bleeding into the study page)
-  if(!workoutBlock.classList.contains('show')){ drawIdle(); return; }
+  // if the workout screen isn't visible, the workout isn't on-screen — never
+  // advance reps or play rep sounds (prevents rep beeps bleeding into study).
+  // check real visibility (offsetParent) rather than only the .show class, so
+  // the animation runs in every state where the figure is actually shown
+  const workoutVisible = workoutBlock.classList.contains('show') || workoutBlock.offsetParent !== null;
+  if(!workoutVisible){ drawIdle(); return; }
   if(!PROG || PROG.mode==='done' || PROG.mode==='ready'){ drawIdle(); return; }
   const el=(performance.now()-PROG.tStart)/1000;
 
@@ -5695,22 +5637,51 @@ $('backBtn').onclick=()=>{ clickSkip(); nextPhase(false); };
 document.addEventListener('keydown',e=>{
   // never hijack keys while typing in a field or editing text
   const tag = (e.target && e.target.tagName) || '';
-  if(tag==='INPUT' || tag==='TEXTAREA' || (e.target && e.target.isContentEditable)) return;
-  // don't fire shortcuts with modifier combos (leave browser shortcuts alone)
+  // While typing in a field, suppress shortcuts — EXCEPT Shift+key combos, which
+  // let you trigger shortcuts (e.g. Shift+C, Shift+L) without leaving the chat box.
+  // Plain letters still type normally.
+  const typing = (tag==='INPUT' || tag==='TEXTAREA' || (e.target && e.target.isContentEditable));
+  if(typing && !e.shiftKey) return;
+  // don't fire shortcuts with browser-reserved modifier combos
   if(e.metaKey || e.ctrlKey || e.altKey) return;
   const sheetOpen = !!document.querySelector('.sheet.show');
 
   // Escape always closes an open sheet/menu (handled elsewhere too, kept safe)
   if(e.key==='Escape'){ if(typeof closeSheets==='function') closeSheets(); return; }
 
-  // the rest only apply when no sheet/overlay is covering the timer
+  // toggle keys (co-work / friends / leaderboard) work even when their own sheet
+  // is open, so the same key that opened it can close it
+  switch(e.key){
+    case 'c': case 'C': // toggle co-work
+      e.preventDefault();
+      { const open=document.querySelector('#portalSheet.show') && $('portalPanelCowork') && $('portalPanelCowork').classList.contains('active');
+        if(open){ if(typeof closeSheets==='function') closeSheets(); }
+        else if(typeof openPortal==='function') openPortal('cowork'); }
+      return;
+    case 'f': case 'F': // toggle friends
+      e.preventDefault();
+      { const open=document.querySelector('#portalSheet.show') && $('portalPanelFriends') && $('portalPanelFriends').classList.contains('active');
+        if(open){ if(typeof closeSheets==='function') closeSheets(); }
+        else if(typeof openPortal==='function') openPortal('friends'); }
+      return;
+    case 'l': case 'L': // toggle leaderboard
+      e.preventDefault();
+      { if(document.querySelector('#leaderboardSheet.show')){ if(typeof closeSheets==='function') closeSheets(); }
+        else if(typeof openLeaderboard==='function') openLeaderboard(); }
+      return;
+  }
+
+  // the remaining shortcuts only apply when no sheet/overlay is covering the timer
   if(sheetOpen) return;
   if(document.querySelector('.welcome-bg.show, .lobby-bg.show, .signin-splash.show')) return;
 
   switch(e.key){
-    case ' ': // start / pause
+    case ' ': // start / pause — only on the timer view, never on the workout screen
+      if(workoutBlock && workoutBlock.classList.contains('show')) return;
+      if(typeof __workoutDemoActive!=='undefined' && __workoutDemoActive) return;
       e.preventDefault(); S.running?pause():start(); break;
-    case 'r': case 'R': // reset the current round
+    case 'r': case 'R': // reset the current round — timer view only
+      if(workoutBlock && workoutBlock.classList.contains('show')) return;
       e.preventDefault(); { const rb=$('resetBtn'); if(rb) rb.click(); } break;
     case 's': case 'S': // toggle between the workout view and the timer
       e.preventDefault();
@@ -5722,12 +5693,6 @@ document.addEventListener('keydown',e=>{
         const sb=$('skipBtn'); if(sb) sb.click();     // on the timer → go to workout
       }
       break;
-    case 'c': case 'C': // open co-work
-      e.preventDefault(); if(typeof openPortal==='function') openPortal('cowork'); break;
-    case 'f': case 'F': // open friends
-      e.preventDefault(); if(typeof openPortal==='function') openPortal('friends'); break;
-    case 'l': case 'L': // open leaderboard
-      e.preventDefault(); if(typeof openLeaderboard==='function') openLeaderboard(); break;
     case '?': // show shortcuts help
       e.preventDefault(); if(typeof openShortcutsHelp==='function') openShortcutsHelp(); break;
   }
@@ -6670,8 +6635,8 @@ function sendReact(emoji){
 }
 
 /* floating chat widget (front page) */
-$('floatChatSendBtn').onclick=()=>{ sendChat($('floatChatInput').value); $('floatChatInput').value=''; };
-$('floatChatInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ sendChat($('floatChatInput').value); $('floatChatInput').value=''; } });
+$('floatChatSendBtn').onclick=()=>{ sendChat($('floatChatInput').value); $('floatChatInput').value=''; $('floatChatInput').blur(); };
+$('floatChatInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ sendChat($('floatChatInput').value); $('floatChatInput').value=''; $('floatChatInput').blur(); } });
 $('floatReacts').addEventListener('click', e=>{
   const b=e.target.closest('button[data-emoji]');
   if(b) sendReact(b.dataset.emoji);
