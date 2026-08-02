@@ -773,6 +773,65 @@
   }
   .welcome-tour-btn:hover{ opacity:.92; }
   .welcome-tour-btn:active{ transform:scale(.98); }
+  .welcome-demo-btn{
+    width:100%; margin-top:10px; padding:13px; border-radius:13px; cursor:pointer;
+    background:var(--chip); color:var(--fg); border:1px solid var(--line);
+    font-family:inherit; font-size:14px; font-weight:600;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .welcome-demo-btn:hover{ opacity:.85; }
+  .welcome-demo-btn:active{ transform:scale(.98); }
+  /* workout demo banner (shown when previewing workouts from the welcome screen) */
+  .demo-banner{
+    width:100%; max-width:360px; margin:0 auto 14px; box-sizing:border-box;
+    background:var(--chip); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; text-align:center;
+    font-size:12.5px; line-height:1.5; color:var(--muted);
+    display:flex; flex-direction:column; gap:10px; align-items:center;
+  }
+  .demo-exit-btn{
+    padding:9px 18px; border:none; border-radius:10px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink);
+    font-family:inherit; font-size:13px; font-weight:700;
+  }
+  .demo-exit-btn:hover{ opacity:.9; }
+  .shortcut-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; color:var(--fg);
+  }
+  .shortcut-row:last-of-type{ border-bottom:none; }
+  .shortcut-row kbd{
+    font-family:'Space Grotesk', monospace; font-size:12px; font-weight:600;
+    background:var(--chip); border:1px solid var(--line); border-radius:6px;
+    padding:3px 9px; color:var(--muted); min-width:34px; text-align:center;
+  }
+  /* guest sign-in nudge (slides up from the bottom, dismissible) */
+  .guest-nudge{
+    position:fixed; left:50%; bottom:16px; transform:translate(-50%, 140%);
+    width:calc(100% - 28px); max-width:420px; z-index:1300; box-sizing:border-box;
+    background:var(--bg2); border:1px solid var(--line); border-radius:16px;
+    padding:16px 18px; box-shadow:0 12px 40px rgba(0,0,0,.32);
+    transition:transform .35s var(--ease);
+  }
+  .guest-nudge.show{ transform:translate(-50%, 0); }
+  .guest-nudge-text{ font-size:13.5px; line-height:1.55; color:var(--muted); margin-bottom:12px; }
+  .guest-nudge-text strong{ color:var(--fg); }
+  .guest-nudge-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .guest-nudge-primary{
+    padding:10px 16px; border:none; border-radius:10px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:inherit; font-size:13px; font-weight:700;
+  }
+  .guest-nudge-primary:hover{ opacity:.9; }
+  .guest-nudge-ghost{
+    padding:10px 14px; border:1px solid var(--line); border-radius:10px; cursor:pointer;
+    background:transparent; color:var(--muted); font-family:inherit; font-size:13px; font-weight:600;
+  }
+  .guest-nudge-ghost:hover{ color:var(--fg); }
+  .guest-nudge-never{
+    margin-left:auto; padding:10px 4px; border:none; background:none; cursor:pointer;
+    color:var(--muted); font-family:inherit; font-size:11.5px; opacity:.7; text-decoration:underline;
+  }
+  .guest-nudge-never:hover{ opacity:1; }
   .welcome-skip{
     display:block; width:100%; margin-top:10px; padding:8px;
     background:none; border:none; cursor:pointer;
@@ -944,6 +1003,8 @@
     border-bottom:1px solid var(--line);
   }
   .help-item{ display:flex; gap:14px; align-items:flex-start; padding:9px 0; }
+  .help-item-btn{ width:100%; text-align:left; background:none; border:none; cursor:pointer; font-family:inherit; color:inherit; }
+  .help-item-btn:hover .help-text b{ text-decoration:underline; }
   .help-ic{
     flex:0 0 46px; width:46px; height:46px; border-radius:13px;
     background:var(--chip); color:var(--fg);
@@ -1961,7 +2022,22 @@
     <h2 id="welcomeTitle">Welcome to PomoEase</h2>
     <p>A focus timer that gets you moving — work in focused rounds, and turn your breaks into quick workouts. Study on your own, or share a live session with a friend.</p>
     <button class="welcome-tour-btn" id="welcomeTourBtn" type="button">Take a quick tour</button>
+    <button class="welcome-demo-btn" id="welcomeDemoBtn" type="button">Try a quick workout</button>
     <button class="welcome-skip" id="welcomeSkipBtn" type="button">Maybe later</button>
+  </div>
+</div>
+
+<div class="welcome-bg" id="shortcutsOverlay" role="dialog" aria-modal="true" style="z-index:1460;">
+  <div class="welcome-card" style="text-align:left;">
+    <h2 style="text-align:center;">Keyboard shortcuts</h2>
+    <div class="shortcut-row"><span>Start / pause</span><kbd>Space</kbd></div>
+    <div class="shortcut-row"><span>Reset round</span><kbd>R</kbd></div>
+    <div class="shortcut-row"><span>Workout / back to timer</span><kbd>S</kbd></div>
+    <div class="shortcut-row"><span>Co-work</span><kbd>C</kbd></div>
+    <div class="shortcut-row"><span>Friends</span><kbd>F</kbd></div>
+    <div class="shortcut-row"><span>Leaderboard</span><kbd>L</kbd></div>
+    <div class="shortcut-row"><span>Close a panel</span><kbd>Esc</kbd></div>
+    <button class="welcome-tour-btn" id="shortcutsCloseBtn" type="button" style="margin-top:16px;">Got it</button>
   </div>
 </div>
 
@@ -2024,6 +2100,10 @@
   </div>
 
   <div class="workout" id="workoutBlock">
+    <div class="demo-banner" id="workoutDemoBanner" style="display:none;">
+      <span>👋 This is a workout preview — during real breaks, this replaces your timer. Pick one and try a rep or two!</span>
+      <button class="demo-exit-btn" id="workoutDemoExit" type="button">Done — back to timer</button>
+    </div>
     <div class="get-ready-overlay" id="getReadyOverlay"><div class="get-ready-num" id="getReadyNum">3</div><div class="get-ready-cap">Get ready…</div></div>
     <div class="back-row">
       <button class="back-btn" id="backBtn" aria-label="Back to study" title="Back to study">
@@ -2087,6 +2167,17 @@
     }
   }catch(e){}
 </script>
+
+<div class="guest-nudge" id="guestNudge">
+  <div class="guest-nudge-text">
+    <strong>First round done! 🎉</strong> Your progress lives only on this device. Create a free account to back it up and sync across your devices.
+  </div>
+  <div class="guest-nudge-actions">
+    <button class="guest-nudge-primary" id="guestNudgeSignin" type="button">Create account</button>
+    <button class="guest-nudge-ghost" id="guestNudgeDismiss" type="button">Later</button>
+    <button class="guest-nudge-never" id="guestNudgeNever" type="button">Don't ask again</button>
+  </div>
+</div>
 
 <div class="sheet-bg" id="sheetBg"></div>
 
@@ -2554,6 +2645,19 @@
         <span>Opens Account, Settings and Support. Settings holds round lengths, theme, language, sound and notifications. Sign in from Account to sync across devices.</span>
       </div>
     </div>
+  </div>
+
+  <div class="help-section" id="helpShortcutsSection" style="display:none;">
+    <div class="help-section-title">Power tools</div>
+    <button class="help-item help-item-btn" id="helpShortcutsItem" type="button">
+      <span class="help-ic">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/></svg>
+      </span>
+      <div class="help-text">
+        <b>Keyboard shortcuts</b>
+        <span>On a computer, keys like <b>Space</b> to start and <b>R</b> to reset speed things up. Tap to see the full list.</span>
+      </div>
+    </button>
   </div>
 
   <button class="help-done" id="helpDoneBtn" type="button">Got it</button>
@@ -4207,6 +4311,44 @@ function exitWorkoutFocus(){
   clearTimeout(workoutFocusHintTimer);
   updateTapFocusHint();
 }
+// ---- workout demo (from the welcome screen) ----
+// Lets a brand-new user try the workout view immediately, without waiting for a
+// real break. Doesn't touch the timer state — it just shows the workout block
+// with a banner + exit, then restores the normal view.
+let __workoutDemoActive=false;
+function startWorkoutDemo(){
+  __workoutDemoActive=true;
+  const banner=$('workoutDemoBanner'); if(banner) banner.style.display='';
+  timerBlock.style.display='none';
+  // hide the tasks panel + footer so nothing from the timer view bleeds through
+  { const tp=$('tasksPanel'); if(tp) tp.style.display='none'; }
+  { const ft=document.querySelector('footer'); if(ft) ft.style.display='none'; }
+  { const ad=$('adSlot'); if(ad) ad.style.display='none'; }
+  workoutBlock.classList.add('show');
+  exName.textContent=T().pickProgramme;
+  // preload a surprise mix so the animated figure is visible right away
+  try{
+    const keys=Object.keys(EX).sort(()=>Math.random()-0.5).slice(0,3);
+    selectProgramme(null, keys);
+  }catch(e){ if(typeof renderTraj==='function') renderTraj(); }
+}
+function exitWorkoutDemo(){
+  __workoutDemoActive=false;
+  const banner=$('workoutDemoBanner'); if(banner) banner.style.display='none';
+  if(typeof exitWorkoutFocus==='function') exitWorkoutFocus();
+  // restore the tasks panel + footer + ad slot
+  { const tp=$('tasksPanel'); if(tp) tp.style.display=''; }
+  { const ft=document.querySelector('footer'); if(ft) ft.style.display=''; }
+  { const ad=$('adSlot'); if(ad) ad.style.display=''; }
+  // restore whatever view matches the real timer state
+  const isBreak = S.phase!=='focus';
+  workoutBlock.classList.toggle('show', isBreak);
+  timerBlock.style.display = isBreak ? 'none' : 'flex';
+  if(typeof drawIdle==='function' && !isBreak) drawIdle();
+}
+{ const de=$('workoutDemoExit'); if(de) de.onclick=exitWorkoutDemo; }
+// the back arrow in the workout view should also exit the demo cleanly
+{ const bb=$('backBtn'); if(bb){ const prev=bb.onclick; bb.onclick=(e)=>{ if(__workoutDemoActive){ exitWorkoutDemo(); return; } if(typeof prev==='function') prev.call(bb,e); }; } }
 // show the "tap the figure to focus" cue only when a workout runs outside focus
 function updateTapFocusHint(){
   const h=$('tapFocusHint'); if(!h) return;
@@ -4753,6 +4895,30 @@ function showToast(msg){
   toastTimer = setTimeout(()=>toast.classList.remove('show'), 4000);
 }
 toast.onclick = ()=>toast.classList.remove('show');
+// ---- gentle guest sign-in nudge ----
+// After a guest has completed a couple of rounds (so they've built up progress
+// worth keeping), offer — once per browser session, and never again if they
+// dismiss it for good — to create an account so their data is backed up and
+// synced. Guests only; signed-in users never see it.
+let __guestNudgeShownThisSession = false;
+function maybeNudgeGuestBackup(){
+  if(cloudUser) return;                       // already signed in
+  if(__guestNudgeShownThisSession) return;    // once per session
+  try{ if(localStorage.getItem('pomofit:nudgeOptOut')==='1') return; }catch(e){}
+  const done = (DATA.totals && DATA.totals.sessions) || 0;
+  if(done < 1) return;                        // after their first completed round
+  __guestNudgeShownThisSession = true;
+  const el=$('guestNudge'); if(!el) return;
+  el.classList.add('show');
+}
+{
+  const el=$('guestNudge');
+  if(el){
+    { const b=$('guestNudgeSignin'); if(b) b.onclick=()=>{ el.classList.remove('show'); closeMenu&&closeMenu(); openSheet('profileSheet'); }; }
+    { const b=$('guestNudgeDismiss'); if(b) b.onclick=()=>{ el.classList.remove('show'); }; }
+    { const b=$('guestNudgeNever'); if(b) b.onclick=()=>{ el.classList.remove('show'); try{ localStorage.setItem('pomofit:nudgeOptOut','1'); }catch(e){} }; }
+  }
+}
 function restartHydrateInterval(){
   clearInterval(hydrateInterval);
   hydrateInterval = setInterval(()=>{
@@ -4946,6 +5112,7 @@ function logFocus(minutes, completed){
       if(t.est && t.sessions>=t.est) t.done=true;   // auto cross-out at estimate
     }
     logEntry({type:'focus', min:minutes, task:t?t.title:null});
+    if(typeof maybeNudgeGuestBackup==='function') maybeNudgeGuestBackup();
   } else if(minutes>=1){
     if(t) t.minutes+=minutes;
     logEntry({type:'focus', min:minutes, task:t?t.title:null});
@@ -5526,8 +5693,43 @@ $('resetBtn').onclick=e=>{
 };
 $('backBtn').onclick=()=>{ clickSkip(); nextPhase(false); };
 document.addEventListener('keydown',e=>{
-  if(e.code==='Space' && e.target.tagName!=='INPUT' && !document.querySelector('.sheet.show')){
-    e.preventDefault(); S.running?pause():start();
+  // never hijack keys while typing in a field or editing text
+  const tag = (e.target && e.target.tagName) || '';
+  if(tag==='INPUT' || tag==='TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+  // don't fire shortcuts with modifier combos (leave browser shortcuts alone)
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  const sheetOpen = !!document.querySelector('.sheet.show');
+
+  // Escape always closes an open sheet/menu (handled elsewhere too, kept safe)
+  if(e.key==='Escape'){ if(typeof closeSheets==='function') closeSheets(); return; }
+
+  // the rest only apply when no sheet/overlay is covering the timer
+  if(sheetOpen) return;
+  if(document.querySelector('.welcome-bg.show, .lobby-bg.show, .signin-splash.show')) return;
+
+  switch(e.key){
+    case ' ': // start / pause
+      e.preventDefault(); S.running?pause():start(); break;
+    case 'r': case 'R': // reset the current round
+      e.preventDefault(); { const rb=$('resetBtn'); if(rb) rb.click(); } break;
+    case 's': case 'S': // toggle between the workout view and the timer
+      e.preventDefault();
+      if(typeof __workoutDemoActive!=='undefined' && __workoutDemoActive){
+        if(typeof exitWorkoutDemo==='function') exitWorkoutDemo();
+      } else if(workoutBlock && workoutBlock.classList.contains('show')){
+        const bb=$('backBtn'); if(bb) bb.click();     // in the workout view → back to timer
+      } else {
+        const sb=$('skipBtn'); if(sb) sb.click();     // on the timer → go to workout
+      }
+      break;
+    case 'c': case 'C': // open co-work
+      e.preventDefault(); if(typeof openPortal==='function') openPortal('cowork'); break;
+    case 'f': case 'F': // open friends
+      e.preventDefault(); if(typeof openPortal==='function') openPortal('friends'); break;
+    case 'l': case 'L': // open leaderboard
+      e.preventDefault(); if(typeof openLeaderboard==='function') openLeaderboard(); break;
+    case '?': // show shortcuts help
+      e.preventDefault(); if(typeof openShortcutsHelp==='function') openShortcutsHelp(); break;
   }
 });
 
@@ -7373,7 +7575,16 @@ document.addEventListener('keydown', e=>{
   }
   // welcome overlay actions
   if(welcomeTour) welcomeTour.onclick=()=>{ hideWelcome(); startTour('timer'); };
+  { const wd=$('welcomeDemoBtn'); if(wd) wd.onclick=()=>{ hideWelcome(); if(typeof startWorkoutDemo==='function') startWorkoutDemo(); }; }
   if(welcomeSkip) welcomeSkip.onclick=hideWelcome;
+  // keyboard shortcuts help (opened with '?')
+  window.openShortcutsHelp=function(){ const o=$('shortcutsOverlay'); if(o) o.classList.add('show'); };
+  { const sc=$('shortcutsCloseBtn'); if(sc) sc.onclick=()=>{ const o=$('shortcutsOverlay'); if(o) o.classList.remove('show'); }; }
+  { const o=$('shortcutsOverlay'); if(o) o.addEventListener('click',(e)=>{ if(e.target===o) o.classList.remove('show'); }); }
+  // surface the shortcuts entry in Help only on devices with a real keyboard
+  { const hasKeyboard = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if(hasKeyboard){ const sec=$('helpShortcutsSection'); if(sec) sec.style.display=''; }
+    const hi=$('helpShortcutsItem'); if(hi) hi.onclick=()=>{ if(typeof closeSheets==='function') closeSheets(); openShortcutsHelp(); }; }
   // the small chip remains available as a lightweight re-offer, but only if the
   // welcome overlay isn't the thing being shown this session
   if(offer) offer.onclick=()=>{ hideOffer(); startTour('timer'); };
