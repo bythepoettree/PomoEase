@@ -1,28 +1,41 @@
 <!DOCTYPE html>
-<html lang="en" class="boot" style="background:#5A6B78; color-scheme:dark;">
+<html lang="en" class="boot" style="background:#0F1E33; color-scheme:dark;">
 <head>
 <meta charset="UTF-8">
 <script>
   /* Theme restore — MUST be the first executable thing in the document.
      Anything above this (async tags, stylesheets) gives the browser a window in
-     which it can paint the canvas using the hardcoded ocean blue on <html>,
-     which is what produced the blue flash on refresh for other themes.
+     which it can paint the canvas using the hardcoded default colour on <html>,
+     which is what produced a flash of the wrong colour on refresh otherwise.
      This also injects the resolved colour into the boot stylesheet so no
-     ocean-blue value survives anywhere once a theme is saved. */
+     stale value survives anywhere once a theme is saved. */
   (function(){
     try{
       const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
-      if(!(s && s.theme)) return;
-      const bgMap = { slate:'#5A6B78', midnight:'#0F1E33', rosegold:'#C88A78', wine:'#3A1220', sage:'#5C7A5C', light:'#EAE9E5' };
+      // { midnight/wine/sage } x { dark/light }
+      const bgMap = {
+        midnight:{dark:'#0F1E33', light:'#E4EAF2'},
+        wine:{dark:'#3A1220', light:'#F1E3E8'},
+        sage:{dark:'#5C7A5C', light:'#DCE6DC'}
+      };
+      // each colour has its own default appearance — Sage defaults light,
+      // Navy/Purple default dark — UNLESS the visitor has explicitly toggled
+      // the light bulb before, in which case that sticky choice wins for
+      // whichever colour is active (matches the runtime logic in applyTheme)
+      const DEFAULT_APPEARANCE = {midnight:'dark', wine:'dark', sage:'light'};
       // anyone with a theme saved from before the palette was trimmed (ocean,
-      // ember, pink, etc. no longer exist) falls back to the new default, Slate
-      const t = bgMap[s.theme] ? s.theme : 'slate';
-      const bg = bgMap[t] || '#5A6B78';
+      // slate, ember, pink, etc. no longer exist) falls back to the new default
+      const t = (s && bgMap[s.theme]) ? s.theme : 'midnight';
+      const override = (s && (s.appearanceOverride==='light' || s.appearanceOverride==='dark')) ? s.appearanceOverride : null;
+      const a = override || DEFAULT_APPEARANCE[t] || 'dark';
+      const bg = bgMap[t][a];
       window.__bootTheme = t;
+      window.__bootAppearance = a;
       window.__bootBg = bg;
       document.documentElement.style.background = bg;
-      document.documentElement.style.colorScheme = (t === 'light') ? 'light' : 'dark';
+      document.documentElement.style.colorScheme = (a === 'light') ? 'light' : 'dark';
       document.documentElement.dataset.pendingTheme = t;
+      document.documentElement.dataset.pendingAppearance = a;
       const meta = document.getElementById('metaThemeColor');
       if(meta) meta.setAttribute('content', bg);
     }catch(e){}
@@ -91,92 +104,85 @@
     --bg:#647585; --bg2:#5A6B78; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
     --accent:#F4F7F9; --accent-ink:#37444E; --line:rgba(244,247,249,.2); --chip:#4F626F;
   }
-  /* ---------- THEME: Light (white & dark grey) ---------- */
-  body[data-theme="light"][data-mode="focus"]{
-    --bg:#EAE9E5; --bg2:#E1E0DB; --fg:#3A3A3A; --muted:rgba(58,58,58,.72);
-    --accent:#3A3A3A; --accent-ink:#EAE9E5; --line:rgba(58,58,58,.14); --chip:#D8D7D1;
-  }
-  body[data-theme="light"][data-mode="sweat"]{
-    --bg:#E1E0DB; --bg2:#D8D7D1; --fg:#3A3A3A; --muted:rgba(58,58,58,.72);
-    --accent:#3A3A3A; --accent-ink:#E1E0DB; --line:rgba(58,58,58,.14); --chip:#CFCEC8;
-  }
-  body[data-theme="light"][data-mode="rest"]{
-    --bg:#EFEEEA; --bg2:#E6E5E0; --fg:#3A3A3A; --muted:rgba(58,58,58,.72);
-    --accent:#3A3A3A; --accent-ink:#EFEEEA; --line:rgba(58,58,58,.14); --chip:#D8D7D1;
-  }
-
-
-
-  /* ---------- THEME: Midnight (deep navy, stays dark) ---------- */
-  body[data-theme="midnight"][data-mode="focus"]{
+  /* ---------- THEME: Midnight / Navy — DARK ---------- */
+  body[data-theme="midnight"][data-appearance="dark"][data-mode="focus"]{
     --bg:#0F1E33; --bg2:#17293F; --fg:#E8EEF7; --muted:#7E92AD;
     --accent:#E8EEF7; --accent-ink:#0F1E33; --line:rgba(232,238,247,.12); --chip:#1E3350;
   }
-  body[data-theme="midnight"][data-mode="sweat"]{
+  body[data-theme="midnight"][data-appearance="dark"][data-mode="sweat"]{
     --bg:#0B1728; --bg2:#132234; --fg:#E8EEF7; --muted:#71859F;
     --accent:#E8EEF7; --accent-ink:#0B1728; --line:rgba(232,238,247,.12); --chip:#1A2C45;
   }
-  body[data-theme="midnight"][data-mode="rest"]{
+  body[data-theme="midnight"][data-appearance="dark"][data-mode="rest"]{
     --bg:#14263D; --bg2:#1D3350; --fg:#E8EEF7; --muted:#8A9EBA;
     --accent:#E8EEF7; --accent-ink:#14263D; --line:rgba(232,238,247,.12); --chip:#243D5C;
   }
-
-
-
-  /* ---------- THEME: Slate (cool blue-grey, fades to soft white) ---------- */
-  body[data-theme="slate"][data-mode="focus"]{
-    --bg:#5A6B78; --bg2:#4F5F6B; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
-    --accent:#F4F7F9; --accent-ink:#37444E; --line:rgba(244,247,249,.2); --chip:#485863;
+  /* ---------- THEME: Midnight / Navy — LIGHT ---------- */
+  body[data-theme="midnight"][data-appearance="light"][data-mode="focus"]{
+    --bg:#E4EAF2; --bg2:#D9E1EC; --fg:#1C2E44; --muted:rgba(28,46,68,.72);
+    --accent:#1C2E44; --accent-ink:#E4EAF2; --line:rgba(28,46,68,.14); --chip:#CBD6E4;
   }
-  body[data-theme="slate"][data-mode="sweat"]{
-    --bg:#4F5F6B; --bg2:#465561; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
-    --accent:#F4F7F9; --accent-ink:#2E3A42; --line:rgba(244,247,249,.2); --chip:#3F4E58;
+  body[data-theme="midnight"][data-appearance="light"][data-mode="sweat"]{
+    --bg:#DCE4EF; --bg2:#CFDAE8; --fg:#1C2E44; --muted:rgba(28,46,68,.72);
+    --accent:#1C2E44; --accent-ink:#DCE4EF; --line:rgba(28,46,68,.14); --chip:#C2D0E0;
   }
-  body[data-theme="slate"][data-mode="rest"]{
-    --bg:#647585; --bg2:#5A6B78; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
-    --accent:#F4F7F9; --accent-ink:#37444E; --line:rgba(244,247,249,.2); --chip:#4F626F;
+  body[data-theme="midnight"][data-appearance="light"][data-mode="rest"]{
+    --bg:#EAF0F7; --bg2:#DFE7F1; --fg:#1C2E44; --muted:rgba(28,46,68,.72);
+    --accent:#1C2E44; --accent-ink:#EAF0F7; --line:rgba(28,46,68,.14); --chip:#D2DEEA;
   }
 
-  /* ---------- THEME: Rose Gold (warm blush-copper, fades to blush) ---------- */
-  body[data-theme="rosegold"][data-mode="focus"]{
-    --bg:#C88A78; --bg2:#BE7E6B; --fg:#FFF5F1; --muted:rgba(255,245,241,.8);
-    --accent:#FFF5F1; --accent-ink:#8E5546; --line:rgba(255,245,241,.22); --chip:#B57565;
-  }
-  body[data-theme="rosegold"][data-mode="sweat"]{
-    --bg:#BE7E6B; --bg2:#B27360; --fg:#FFF5F1; --muted:rgba(255,245,241,.8);
-    --accent:#FFF5F1; --accent-ink:#824B3D; --line:rgba(255,245,241,.22); --chip:#AA6C5A;
-  }
-  body[data-theme="rosegold"][data-mode="rest"]{
-    --bg:#D49685; --bg2:#C88A78; --fg:#FFF5F1; --muted:rgba(255,245,241,.8);
-    --accent:#FFF5F1; --accent-ink:#8E5546; --line:rgba(255,245,241,.22); --chip:#B57565;
-  }
-
-  /* ---------- THEME: Wine ---------- */
-  body[data-theme="wine"][data-mode="focus"]{
-    --bg:#3A1220; --bg2:#35101D; --fg:#F5E4EA; --muted:#B07E90;
+  /* ---------- THEME: Wine / Purple — DARK ---------- */
+  body[data-theme="wine"][data-appearance="dark"][data-mode="focus"]{
+    --bg:#3A1220; --bg2:#35101D; --fg:#FFFFFF; --muted:#B07E90;
     --accent:#F5E4EA; --accent-ink:#220A13; --line:rgba(245,228,234,.16); --chip:#330F1C;
   }
-  body[data-theme="wine"][data-mode="sweat"]{
-    --bg:#34101C; --bg2:#2F0E19; --fg:#F5E4EA; --muted:#B07E90;
+  body[data-theme="wine"][data-appearance="dark"][data-mode="sweat"]{
+    --bg:#34101C; --bg2:#2F0E19; --fg:#FFFFFF; --muted:#B07E90;
     --accent:#F5E4EA; --accent-ink:#1F0910; --line:rgba(245,228,234,.16); --chip:#2D0E18;
   }
-  body[data-theme="wine"][data-mode="rest"]{
-    --bg:#492431; --bg2:#43212D; --fg:#F5E4EA; --muted:#B07E90;
+  body[data-theme="wine"][data-appearance="dark"][data-mode="rest"]{
+    --bg:#492431; --bg2:#43212D; --fg:#FFFFFF; --muted:#B07E90;
     --accent:#F5E4EA; --accent-ink:#2B151D; --line:rgba(245,228,234,.16); --chip:#401F2B;
   }
+  /* ---------- THEME: Wine / Purple — LIGHT ---------- */
+  body[data-theme="wine"][data-appearance="light"][data-mode="focus"]{
+    --bg:#F1E3E8; --bg2:#E7D4DB; --fg:#4A1B29; --muted:rgba(74,27,41,.72);
+    --accent:#4A1B29; --accent-ink:#F1E3E8; --line:rgba(74,27,41,.14); --chip:#DFC3CD;
+  }
+  body[data-theme="wine"][data-appearance="light"][data-mode="sweat"]{
+    --bg:#ECD9DF; --bg2:#E1CAD2; --fg:#4A1B29; --muted:rgba(74,27,41,.72);
+    --accent:#4A1B29; --accent-ink:#ECD9DF; --line:rgba(74,27,41,.14); --chip:#D6B7C2;
+  }
+  body[data-theme="wine"][data-appearance="light"][data-mode="rest"]{
+    --bg:#F5E9EC; --bg2:#EBDBE1; --fg:#4A1B29; --muted:rgba(74,27,41,.72);
+    --accent:#4A1B29; --accent-ink:#F5E9EC; --line:rgba(74,27,41,.14); --chip:#E3CCD4;
+  }
 
-  /* ---------- THEME: Sage (mossy green, white text, stays dark) ---------- */
-  body[data-theme="sage"][data-mode="focus"]{
+  /* ---------- THEME: Sage — DARK ---------- */
+  body[data-theme="sage"][data-appearance="dark"][data-mode="focus"]{
     --bg:#5C7A5C; --bg2:#4F6A4F; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
     --accent:#FFFFFF; --accent-ink:#2E3D2E; --line:rgba(255,255,255,.16); --chip:#516D51;
   }
-  body[data-theme="sage"][data-mode="sweat"]{
+  body[data-theme="sage"][data-appearance="dark"][data-mode="sweat"]{
     --bg:#4E684E; --bg2:#435843; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
     --accent:#FFFFFF; --accent-ink:#273327; --line:rgba(255,255,255,.16); --chip:#435843;
   }
-  body[data-theme="sage"][data-mode="rest"]{
+  body[data-theme="sage"][data-appearance="dark"][data-mode="rest"]{
     --bg:#628162; --bg2:#567256; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
     --accent:#FFFFFF; --accent-ink:#324131; --line:rgba(255,255,255,.16); --chip:#577657;
+  }
+  /* ---------- THEME: Sage — LIGHT ---------- */
+  body[data-theme="sage"][data-appearance="light"][data-mode="focus"]{
+    --bg:#DCE6DC; --bg2:#D0DCD0; --fg:#2C3A2C; --muted:rgba(44,58,44,.72);
+    --accent:#2C3A2C; --accent-ink:#DCE6DC; --line:rgba(44,58,44,.14); --chip:#C4D2C4;
+  }
+  body[data-theme="sage"][data-appearance="light"][data-mode="sweat"]{
+    --bg:#D3E0D3; --bg2:#C6D5C6; --fg:#2C3A2C; --muted:rgba(44,58,44,.72);
+    --accent:#2C3A2C; --accent-ink:#D3E0D3; --line:rgba(44,58,44,.14); --chip:#B9CAB9;
+  }
+  body[data-theme="sage"][data-appearance="light"][data-mode="rest"]{
+    --bg:#E4EDE4; --bg2:#D9E5D9; --fg:#2C3A2C; --muted:rgba(44,58,44,.72);
+    --accent:#2C3A2C; --accent-ink:#E4EDE4; --line:rgba(44,58,44,.14); --chip:#CCDACC;
   }
 
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
@@ -199,27 +205,25 @@
     font-family:'Noto Sans Arabic', system-ui, sans-serif;
   }
   @media (prefers-reduced-motion: reduce){ body{transition:none;} }
-  /* gradient themes: a gentle vertical gradient that lightens toward the bottom.
-     Applied to <html> spanning the WHOLE document (not the viewport), so there's
-     no seam on mobile where a fixed/viewport-height gradient would end and the
-     flat page colour would show through. Body is transparent so the html
-     gradient shows; the html base colour matches the gradient's END colour so
-     any area past the gradient blends invisibly. */
-  html[data-theme-html="slate"],
-  html[data-theme-html="rosegold"]{
+  /* gradient direction now depends only on appearance (light/dark), not which of
+     the 3 colour families is active — every family supports both. Applied to
+     <html> spanning the WHOLE document (not the viewport), so there's no seam on
+     mobile where a fixed/viewport-height gradient would end and the flat page
+     colour would show through. Body is transparent so the html gradient shows;
+     the html base colour matches the gradient's END colour so any area past the
+     gradient blends invisibly. */
+  html[data-appearance-html="light"]{
     min-height:100%;
     background:
-      color-mix(in srgb, var(--grad-bg, #5A6B78) 82%, #FFFFFF)
+      color-mix(in srgb, var(--grad-bg, #E4EAF2) 82%, #FFFFFF)
       linear-gradient(to bottom,
-        var(--grad-bg, #5A6B78) 0%,
-        var(--grad-bg, #5A6B78) 38%,
-        color-mix(in srgb, var(--grad-bg, #5A6B78) 82%, #FFFFFF) 100%) no-repeat;
+        var(--grad-bg, #E4EAF2) 0%,
+        var(--grad-bg, #E4EAF2) 38%,
+        color-mix(in srgb, var(--grad-bg, #E4EAF2) 82%, #FFFFFF) 100%) no-repeat;
     background-size:100% 100%;
   }
-  /* dark themes stay dark — a subtle deepen toward the bottom (mix with black) */
-  html[data-theme-html="midnight"],
-  html[data-theme-html="wine"],
-  html[data-theme-html="sage"]{
+  /* dark appearance stays dark — a subtle deepen toward the bottom (mix with black) */
+  html[data-appearance-html="dark"]{
     min-height:100%;
     background:
       color-mix(in srgb, var(--grad-bg, #2A1E33) 78%, #000000)
@@ -229,13 +233,9 @@
         color-mix(in srgb, var(--grad-bg, #2A1E33) 78%, #000000) 100%) no-repeat;
     background-size:100% 100%;
   }
-  body[data-theme="slate"],
-  body[data-theme="rosegold"],
-  body[data-theme="midnight"],
-  body[data-theme="wine"],
-  body[data-theme="sage"]{ background:transparent; }
+  body[data-theme]{ background:transparent; }
   /* during boot nothing may animate its colour — prevents the theme fading in
-     from the markup default (ocean blue) on refresh */
+     from the markup default on refresh */
   html.boot body{ transition:none !important; }
 
   /* ---------- focus mode (timer centred, everything else hidden) ---------- */
@@ -343,6 +343,8 @@
     color:var(--fg); opacity:.9;
   }
   .leaderboard-btn:hover{ opacity:1; }
+  /* light bulb (appearance) toggle — matches the other header icons, no colour tint */
+  #appearanceToggleBtn:hover{ opacity:.5; }
   /* friends/co-work header button — paired with the trophy, same prominence */
   .portal-header-btn{ color:var(--fg); opacity:.9; position:relative; }
   .portal-header-btn:hover{ opacity:1; }
@@ -1836,13 +1838,15 @@
   .footer-sep{ color:var(--muted); opacity:.5; margin:0 7px; }
 </style>
 </head>
-<body data-mode="focus" data-theme="slate">
+<body data-mode="focus" data-theme="midnight" data-appearance="dark">
 <script>
   // apply saved theme immediately so the entry page matches the user's preference
   try{
     const t = window.__bootTheme;
     if(t) document.body.dataset.theme = t;
-    // neutralise the ocean-blue pre-paint fallback so no stale blue can surface
+    const a = window.__bootAppearance;
+    if(a) document.body.dataset.appearance = a;
+    // neutralise the pre-paint fallback so no stale colour can surface
     if(window.__bootBg){
       const st = document.getElementById('bootBg');
       if(st) st.textContent = 'html,body{background:' + window.__bootBg + ';}';
@@ -1962,6 +1966,12 @@
     </button>
   </div>
   <div style="display:flex;align-items:center;gap:4px;">
+    <button class="quick-settings" id="appearanceToggleBtn" aria-label="Light / dark mode" title="Light / dark mode">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18h6"/><path d="M10 22h4"/>
+        <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2.05V17h6v-.25c0-.85.4-1.55 1-2.05A7 7 0 0 0 12 2z"/>
+      </svg>
+    </button>
     <button class="quick-settings" id="helpBtn" aria-label="How it works" title="How it works">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="11"/>
@@ -2055,6 +2065,7 @@
     <div class="shortcut-row"><span>Leaderboard</span><kbd>L</kbd></div>
     <div class="shortcut-row"><span>Settings</span><kbd>,</kbd></div>
     <div class="shortcut-row"><span>Cycle theme</span><kbd>T</kbd></div>
+    <div class="shortcut-row"><span>Light / dark mode</span><kbd>D</kbd></div>
     <div class="shortcut-row"><span>Close a panel</span><kbd>Esc</kbd></div>
     <button class="welcome-tour-btn" id="shortcutsCloseBtn" type="button" style="margin-top:16px;">Got it</button>
   </div>
@@ -2858,6 +2869,7 @@ function saveSettings(){
     settingsSaveQueued=false;
     const snap={
       theme: document.body.dataset.theme,
+      appearanceOverride: (typeof appearanceOverride!=='undefined') ? appearanceOverride : null,
       focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
 
       longBreakEvery: S.longBreakEvery,
@@ -2870,11 +2882,16 @@ async function loadSettings(){
   let saved=null;
   try{ saved = JSON.parse((await store.get('pomofit:settings'))||'null'); }catch(e){ saved=null; }
   if(!saved) return;
+  if(saved.appearanceOverride==='light' || saved.appearanceOverride==='dark'){
+    // a sticky light/dark choice the visitor set explicitly — applies no matter
+    // which colour is active, until they toggle the bulb again
+    appearanceOverride = saved.appearanceOverride;
+  }
   if(saved.theme){
     // a theme saved before the palette was trimmed (e.g. ocean, ember, pink)
     // no longer exists — fall back to the new default rather than leaving an
     // unmatched value that CSS/JS don't recognise
-    document.body.dataset.theme = THEME_ORDER.includes(saved.theme) ? saved.theme : 'slate';
+    document.body.dataset.theme = THEME_ORDER.includes(saved.theme) ? saved.theme : 'midnight';
   }
   if(typeof saved.focusMin==='number') S.focusMin = saved.focusMin;
   if(typeof saved.breakMin==='number') S.breakMin = saved.breakMin;
@@ -2895,7 +2912,7 @@ function syncSettingsUI(){
   $('rndVal').textContent = S.longBreakEvery;
   { const _le=$('longEveryLabel'); if(_le) _le.textContent = S.longBreakEvery; }
   renderFooter();
-  // theme button
+  // theme button (re-applying also re-derives that colour's own light/dark state)
   if(typeof applyTheme==='function') applyTheme(document.body.dataset.theme);
   // duration steppers — each exposes a sync function via the seg element's dataset
   [['focusSeg',S.focusMin],['breakSeg',S.breakMin],['longSeg',S.longMin],['remSeg',S.remindersMin]].forEach(([elId,val])=>{
@@ -5671,9 +5688,16 @@ function renderDots(){
 /* ---------- UI wiring ---------- */
 startBtn.onclick=()=> S.running?pause():start();
 function goToWorkoutFromTimer(){
-  // skipping a running focus round loses that round's progress (no completion
-  // credit) — confirm first so it's never an accidental keystroke or misclick
-  const midFocus = S.phase==='focus' && S.running && S.remaining < phaseDuration();
+  // skipping a focus round loses that round's progress (no completion credit) —
+  // confirm first so it's never an accidental keystroke or misclick. This
+  // applies whether the timer is actively running OR paused mid-round; only a
+  // round that hasn't started yet (still sitting at the full preset time) is
+  // safe to skip without asking.
+  // NOTE: S.remaining is only updated on pause/start, not while ticking — while
+  // running, the live time left has to be computed from S.endAt instead, or
+  // this check silently never fires (it always saw the frozen start value).
+  const liveLeft = S.running ? Math.max(0, S.endAt-Date.now()) : S.remaining;
+  const midFocus = S.phase==='focus' && liveLeft < phaseDuration();
   if(midFocus){
     const ok = confirm("You're mid-focus round — skipping to the workout now won't count this round as complete, and you'll lose your progress on it.\n\nSkip anyway?");
     if(!ok) return;
@@ -5739,6 +5763,10 @@ document.addEventListener('keydown',e=>{
     case 't': case 'T': // cycle the theme
       e.preventDefault();
       { const tb=$('themeToggleBtn'); if(tb) tb.click(); }
+      return;
+    case 'd': case 'D': // toggle light / dark appearance (the light bulb)
+      e.preventDefault();
+      { const ab=$('appearanceToggleBtn'); if(ab) ab.click(); }
       return;
   }
 
@@ -7374,22 +7402,13 @@ function syncChromeColour(){
     if(!hex) return;
     const sheetOpen = !!document.querySelector('.sheet-bg.show');
     const shown = sheetOpen ? dimHex(hex, 0.55) : hex;
-    const theme = document.body.dataset.theme;
+    const appearance = document.body.dataset.appearance || 'dark';
     const htmlEl = document.documentElement;
-    // themes that use the full-page lighten-toward-bottom gradient
-    const GRADIENT_THEMES = ['slate','rosegold','midnight','wine','sage'];
-    if(GRADIENT_THEMES.includes(theme)){
-      // feed the gradient the current mode's colour via --grad-bg and flag which
-      // theme it is, rather than painting html a flat colour (which would clobber
-      // the gradient and cause a bottom seam)
-      htmlEl.setAttribute('data-theme-html', theme);
-      htmlEl.style.setProperty('--grad-bg', shown);
-      htmlEl.style.background = '';  // let the CSS gradient rule take over
-    } else {
-      htmlEl.removeAttribute('data-theme-html');
-      htmlEl.style.removeProperty('--grad-bg');
-      htmlEl.style.background = shown;
-    }
+    // all 3 colour families always use the full-page gradient; direction
+    // (deepen vs lighten) is driven purely by appearance, not which family
+    htmlEl.setAttribute('data-appearance-html', appearance);
+    htmlEl.style.setProperty('--grad-bg', shown);
+    htmlEl.style.background = '';  // let the CSS gradient rule take over
     // the meta theme-color (status bar tint) should match the TOP of the page
     const old = document.getElementById('metaThemeColor');
     if(old) old.remove();
@@ -7738,26 +7757,54 @@ sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
 /* themes: cycles between Ember and Mono */
-const THEME_ORDER=['slate','midnight','rosegold','wine','sage','light'];
-const THEME_ICON={slate:'◒', midnight:'●', rosegold:'◑', wine:'●', sage:'●', light:'○'};
-const THEME_NAMES={ember:'Field Grey', mono:'Black & White'};
+const THEME_ORDER=['midnight','wine','sage'];
+const THEME_ICON={midnight:'◐', wine:'◑', sage:'◒'};
+const THEME_DISPLAY_NAMES={midnight:'Navy', wine:'Purple', sage:'Sage'};
+// each colour has its own OUT-OF-THE-BOX default — Sage starts light (it always
+// read as a paler colour), Navy/Purple start dark. But the moment you touch the
+// light bulb, that becomes a sticky global choice: it applies no matter which
+// colour you switch to afterward, and only changes when you press the bulb
+// again — switching colour alone never flips it.
+const THEME_DEFAULT_APPEARANCE={midnight:'dark', wine:'dark', sage:'light'};
+let appearanceOverride = null; // null = follow each colour's own default
+
+function appearanceFor(themeKey){
+  return appearanceOverride || THEME_DEFAULT_APPEARANCE[themeKey] || 'dark';
+}
+function setAppearanceDOM(a){
+  a = (a==='light') ? 'light' : 'dark';
+  document.body.dataset.appearance=a;
+  document.documentElement.style.colorScheme = a;
+  if(typeof syncChromeColour==='function') syncChromeColour();
+  const ab=$('appearanceToggleBtn');
+  if(ab) ab.title=(a==='light'?'Light mode':'Dark mode')+' — tap to switch';
+}
 const themeToggleBtn=$('themeToggleBtn');
 function applyTheme(k){
+  if(!THEME_ORDER.includes(k)) k='midnight';
   document.body.dataset.theme=k;
-  if(typeof syncChromeColour==='function') syncChromeColour();
+  setAppearanceDOM(appearanceFor(k));
   themeToggleBtn.textContent=THEME_ICON[k]||'◐';
-  const themeNames={slate:'Slate', midnight:'Midnight', rosegold:'Rose Gold', wine:'Wine', sage:'Sage'};
-  themeToggleBtn.title='Theme: '+(themeNames[k]||k)+' (tap to switch)';
+  themeToggleBtn.title='Theme: '+(THEME_DISPLAY_NAMES[k]||k)+' (tap to switch)';
   const stb=$('settingsThemeBtn');
   if(stb) stb.firstChild.textContent=THEME_ICON[k]||'◐';
 }
 themeToggleBtn.onclick=()=>{
   const cur=document.body.dataset.theme;
-  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1) % THEME_ORDER.length] || 'slate';
+  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1) % THEME_ORDER.length] || 'midnight';
   applyTheme(next);
   saveSettings();
 };
 applyTheme(document.body.dataset.theme);
+
+// ---- appearance (light bulb, top-right of header) ----
+function toggleAppearance(){
+  const cur=document.body.dataset.theme || 'midnight';
+  appearanceOverride = (appearanceFor(cur)==='light') ? 'dark' : 'light';
+  setAppearanceDOM(appearanceOverride);
+  saveSettings();
+}
+{ const ab=$('appearanceToggleBtn'); if(ab) ab.onclick=toggleAppearance; }
 
 /* ---------- duration steppers (step by 15 min, typeable) ---------- */
 let syncFocusStepperDisplay = ()=>{}; // kept for loadSettings compatibility
@@ -7850,7 +7897,7 @@ $('sfxToggle').onclick=()=>{
 };
 $('settingsThemeBtn').onclick=()=>{
   const cur=document.body.dataset.theme;
-  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1)%THEME_ORDER.length]||'slate';
+  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1)%THEME_ORDER.length]||'midnight';
   applyTheme(next); saveSettings();
 };
 $('settingsSfxBtn').onclick=()=>{
