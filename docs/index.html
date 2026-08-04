@@ -2038,6 +2038,7 @@
     <div class="shortcut-row"><span>Friends</span><kbd>F</kbd></div>
     <div class="shortcut-row"><span>Leaderboard</span><kbd>L</kbd></div>
     <div class="shortcut-row"><span>Settings</span><kbd>,</kbd></div>
+    <div class="shortcut-row"><span>Cycle theme</span><kbd>T</kbd></div>
     <div class="shortcut-row"><span>Close a panel</span><kbd>Esc</kbd></div>
     <button class="welcome-tour-btn" id="shortcutsCloseBtn" type="button" style="margin-top:16px;">Got it</button>
   </div>
@@ -5710,6 +5711,10 @@ document.addEventListener('keydown',e=>{
       e.preventDefault();
       { if(document.querySelector('#settingsSheet.show')){ if(typeof closeSheets==='function') closeSheets(); }
         else if(typeof openSheet==='function'){ if(typeof closeMenu==='function') closeMenu(); openSheet('settingsSheet'); } }
+      return;
+    case 't': case 'T': // cycle the theme
+      e.preventDefault();
+      { const tb=$('themeToggleBtn'); if(tb) tb.click(); }
       return;
   }
 
