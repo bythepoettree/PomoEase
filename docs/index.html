@@ -13,7 +13,7 @@
     try{
       const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
       if(!(s && s.theme)) return;
-      const bgMap = { slate:'#5A6B78', midnight:'#0F1E33', rosegold:'#C88A78', wine:'#3A1220', light:'#EAE9E5' };
+      const bgMap = { slate:'#5A6B78', midnight:'#0F1E33', rosegold:'#C88A78', wine:'#3A1220', sage:'#5C7A5C', light:'#EAE9E5' };
       // anyone with a theme saved from before the palette was trimmed (ocean,
       // ember, pink, etc. no longer exist) falls back to the new default, Slate
       const t = bgMap[s.theme] ? s.theme : 'slate';
@@ -165,6 +165,20 @@
     --accent:#F5E4EA; --accent-ink:#2B151D; --line:rgba(245,228,234,.16); --chip:#401F2B;
   }
 
+  /* ---------- THEME: Sage (mossy green, white text, stays dark) ---------- */
+  body[data-theme="sage"][data-mode="focus"]{
+    --bg:#5C7A5C; --bg2:#4F6A4F; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
+    --accent:#FFFFFF; --accent-ink:#2E3D2E; --line:rgba(255,255,255,.16); --chip:#516D51;
+  }
+  body[data-theme="sage"][data-mode="sweat"]{
+    --bg:#4E684E; --bg2:#435843; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
+    --accent:#FFFFFF; --accent-ink:#273327; --line:rgba(255,255,255,.16); --chip:#435843;
+  }
+  body[data-theme="sage"][data-mode="rest"]{
+    --bg:#628162; --bg2:#567256; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
+    --accent:#FFFFFF; --accent-ink:#324131; --line:rgba(255,255,255,.16); --chip:#577657;
+  }
+
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   button{touch-action:manipulation; user-select:none;}
   /* prevent iOS Safari auto-zoom on input focus */
@@ -204,7 +218,8 @@
   }
   /* dark themes stay dark — a subtle deepen toward the bottom (mix with black) */
   html[data-theme-html="midnight"],
-  html[data-theme-html="wine"]{
+  html[data-theme-html="wine"],
+  html[data-theme-html="sage"]{
     min-height:100%;
     background:
       color-mix(in srgb, var(--grad-bg, #2A1E33) 78%, #000000)
@@ -217,7 +232,8 @@
   body[data-theme="slate"],
   body[data-theme="rosegold"],
   body[data-theme="midnight"],
-  body[data-theme="wine"]{ background:transparent; }
+  body[data-theme="wine"],
+  body[data-theme="sage"]{ background:transparent; }
   /* during boot nothing may animate its colour — prevents the theme fading in
      from the markup default (ocean blue) on refresh */
   html.boot body{ transition:none !important; }
@@ -5654,7 +5670,14 @@ function renderDots(){
 
 /* ---------- UI wiring ---------- */
 startBtn.onclick=()=> S.running?pause():start();
-$('skipBtn').onclick=()=>{
+function goToWorkoutFromTimer(){
+  // skipping a running focus round loses that round's progress (no completion
+  // credit) — confirm first so it's never an accidental keystroke or misclick
+  const midFocus = S.phase==='focus' && S.running && S.remaining < phaseDuration();
+  if(midFocus){
+    const ok = confirm("You're mid-focus round — skipping to the workout now won't count this round as complete, and you'll lose your progress on it.\n\nSkip anyway?");
+    if(!ok) return;
+  }
   clickSkip();
   const wasWorkoutReady = $('skipBtn').dataset.workout==='1';
   delete $('skipBtn').dataset.workout;
@@ -5662,7 +5685,8 @@ $('skipBtn').onclick=()=>{
   // if the user completed a focus session (wasWorkoutReady=true), start the break
   // regardless of auto-break setting — they've earned it. otherwise leave it paused.
   if(wasWorkoutReady && !S.running) start();
-};
+}
+$('skipBtn').onclick=goToWorkoutFromTimer;
 $('resetBtn').onclick=e=>{
   e.stopPropagation();
   clickSkip();
@@ -7353,7 +7377,7 @@ function syncChromeColour(){
     const theme = document.body.dataset.theme;
     const htmlEl = document.documentElement;
     // themes that use the full-page lighten-toward-bottom gradient
-    const GRADIENT_THEMES = ['slate','rosegold','midnight','wine'];
+    const GRADIENT_THEMES = ['slate','rosegold','midnight','wine','sage'];
     if(GRADIENT_THEMES.includes(theme)){
       // feed the gradient the current mode's colour via --grad-bg and flag which
       // theme it is, rather than painting html a flat colour (which would clobber
@@ -7714,15 +7738,15 @@ sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
 /* themes: cycles between Ember and Mono */
-const THEME_ORDER=['slate','midnight','rosegold','wine','light'];
-const THEME_ICON={slate:'◒', midnight:'●', rosegold:'◑', wine:'●', light:'○'};
+const THEME_ORDER=['slate','midnight','rosegold','wine','sage','light'];
+const THEME_ICON={slate:'◒', midnight:'●', rosegold:'◑', wine:'●', sage:'●', light:'○'};
 const THEME_NAMES={ember:'Field Grey', mono:'Black & White'};
 const themeToggleBtn=$('themeToggleBtn');
 function applyTheme(k){
   document.body.dataset.theme=k;
   if(typeof syncChromeColour==='function') syncChromeColour();
   themeToggleBtn.textContent=THEME_ICON[k]||'◐';
-  const themeNames={slate:'Slate', midnight:'Midnight', rosegold:'Rose Gold', wine:'Wine'};
+  const themeNames={slate:'Slate', midnight:'Midnight', rosegold:'Rose Gold', wine:'Wine', sage:'Sage'};
   themeToggleBtn.title='Theme: '+(themeNames[k]||k)+' (tap to switch)';
   const stb=$('settingsThemeBtn');
   if(stb) stb.firstChild.textContent=THEME_ICON[k]||'◐';
