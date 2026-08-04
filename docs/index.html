@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="boot" style="background:#2E7191; color-scheme:dark;">
+<html lang="en" class="boot" style="background:#5A6B78; color-scheme:dark;">
 <head>
 <meta charset="UTF-8">
 <script>
@@ -13,9 +13,11 @@
     try{
       const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
       if(!(s && s.theme)) return;
-      const t = s.theme === 'cream' ? 'ocean' : s.theme;
-      const bgMap = { ember:'#123026', mono:'#141414', pink:'#E36F97', ocean:'#2E7191', terracotta:'#C25E3E', dusk:'#2A1E33', light:'#EAE9E5' };
-      const bg = bgMap[t] || '#2E7191';
+      const bgMap = { slate:'#5A6B78', midnight:'#0F1E33', rosegold:'#C88A78', wine:'#3A1220', light:'#EAE9E5' };
+      // anyone with a theme saved from before the palette was trimmed (ocean,
+      // ember, pink, etc. no longer exist) falls back to the new default, Slate
+      const t = bgMap[s.theme] ? s.theme : 'slate';
+      const bg = bgMap[t] || '#5A6B78';
       window.__bootTheme = t;
       window.__bootBg = bg;
       document.documentElement.style.background = bg;
@@ -76,59 +78,19 @@
   :root{ --ease: cubic-bezier(.22,.9,.3,1); --entry-glow-col: rgba(255,255,255,.08); }
 
   /* ---------- Themed background illustrations ---------- */
-  /* ---------- THEME: Field Green & White (dark green grading to white) ---------- */
+  /* ---------- DEFAULT THEME: Slate ---------- */
   body[data-mode="focus"]{
-    --bg:#123026; --bg2:#183A2D; --fg:#F8FBF8; --muted:#6FA687;
-    --accent:#FFFFFF; --accent-ink:#123026; --line:rgba(255,255,255,.12); --chip:#1E4535;
+    --bg:#5A6B78; --bg2:#4F5F6B; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
+    --accent:#F4F7F9; --accent-ink:#37444E; --line:rgba(244,247,249,.2); --chip:#485863;
   }
   body[data-mode="sweat"]{
-    --bg:#0E271E; --bg2:#153224; --fg:#F8FBF8; --muted:#5F9678;
-    --accent:#FFFFFF; --accent-ink:#0E271E; --line:rgba(255,255,255,.12); --chip:#193B2C;
+    --bg:#4F5F6B; --bg2:#465561; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
+    --accent:#F4F7F9; --accent-ink:#2E3A42; --line:rgba(244,247,249,.2); --chip:#3F4E58;
   }
   body[data-mode="rest"]{
-    --bg:#16382B; --bg2:#1D4334; --fg:#F8FBF8; --muted:#77B190;
-    --accent:#FFFFFF; --accent-ink:#16382B; --line:rgba(255,255,255,.12); --chip:#254F3D;
+    --bg:#647585; --bg2:#5A6B78; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
+    --accent:#F4F7F9; --accent-ink:#37444E; --line:rgba(244,247,249,.2); --chip:#4F626F;
   }
-  /* ---------- THEME: Black & White ---------- */
-  body[data-theme="mono"][data-mode="focus"]{
-    --bg:#141414; --bg2:#1E1E1E; --fg:#FFFFFF; --muted:#828282;
-    --accent:#FFFFFF; --accent-ink:#141414; --line:rgba(255,255,255,.10); --chip:#262626;
-  }
-  body[data-theme="mono"][data-mode="sweat"]{
-    --bg:#101010; --bg2:#1A1A1A; --fg:#FFFFFF; --muted:#828282;
-    --accent:#FFFFFF; --accent-ink:#101010; --line:rgba(255,255,255,.10); --chip:#222222;
-  }
-  body[data-theme="mono"][data-mode="rest"]{
-    --bg:#181818; --bg2:#222222; --fg:#FFFFFF; --muted:#828282;
-    --accent:#FFFFFF; --accent-ink:#181818; --line:rgba(255,255,255,.10); --chip:#2A2A2A;
-  }
-  /* ---------- THEME: Pink & White ---------- */
-  body[data-theme="pink"][data-mode="focus"]{
-    --bg:#E36F97; --bg2:#DA6088; --fg:#FFFFFF; --muted:rgba(255,255,255,.72);
-    --accent:#FFFFFF; --accent-ink:#B0426A; --line:rgba(255,255,255,.2); --chip:#CE5A80;
-  }
-  body[data-theme="pink"][data-mode="sweat"]{
-    --bg:#DA6088; --bg2:#CE5079; --fg:#FFFFFF; --muted:rgba(255,255,255,.72);
-    --accent:#FFFFFF; --accent-ink:#9E385C; --line:rgba(255,255,255,.2); --chip:#C24E72;
-  }
-  body[data-theme="pink"][data-mode="rest"]{
-    --bg:#EA80A4; --bg2:#E36F97; --fg:#FFFFFF; --muted:rgba(255,255,255,.72);
-    --accent:#FFFFFF; --accent-ink:#B0426A; --line:rgba(255,255,255,.2); --chip:#CE5A80;
-  }
-  /* ---------- THEME: Ocean Blue & White ---------- */
-  body[data-theme="ocean"][data-mode="focus"]{
-    --bg:#2E7191; --bg2:#276484; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
-    --accent:#FFFFFF; --accent-ink:#1B5674; --line:rgba(255,255,255,.2); --chip:#296b8c;
-  }
-  body[data-theme="ocean"][data-mode="sweat"]{
-    --bg:#276484; --bg2:#215977; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
-    --accent:#FFFFFF; --accent-ink:#164C67; --line:rgba(255,255,255,.2); --chip:#235d7d;
-  }
-  body[data-theme="ocean"][data-mode="rest"]{
-    --bg:#357E9F; --bg2:#2E7191; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
-    --accent:#FFFFFF; --accent-ink:#1B5674; --line:rgba(255,255,255,.2); --chip:#296b8c;
-  }
-
   /* ---------- THEME: Light (white & dark grey) ---------- */
   body[data-theme="light"][data-mode="focus"]{
     --bg:#EAE9E5; --bg2:#E1E0DB; --fg:#3A3A3A; --muted:rgba(58,58,58,.72);
@@ -143,32 +105,64 @@
     --accent:#3A3A3A; --accent-ink:#EFEEEA; --line:rgba(58,58,58,.14); --chip:#D8D7D1;
   }
 
-  /* ---------- THEME: Dusk (warm low-light plum, stays dark) ---------- */
-  body[data-theme="dusk"][data-mode="focus"]{
-    --bg:#2A1E33; --bg2:#342641; --fg:#F3E9F0; --muted:#A98BB0;
-    --accent:#F3E9F0; --accent-ink:#2A1E33; --line:rgba(243,233,240,.13); --chip:#3D2C4C;
+
+
+  /* ---------- THEME: Midnight (deep navy, stays dark) ---------- */
+  body[data-theme="midnight"][data-mode="focus"]{
+    --bg:#0F1E33; --bg2:#17293F; --fg:#E8EEF7; --muted:#7E92AD;
+    --accent:#E8EEF7; --accent-ink:#0F1E33; --line:rgba(232,238,247,.12); --chip:#1E3350;
   }
-  body[data-theme="dusk"][data-mode="sweat"]{
-    --bg:#241826; --bg2:#2F2033; --fg:#F3E9F0; --muted:#A07E97;
-    --accent:#F3E9F0; --accent-ink:#241826; --line:rgba(243,233,240,.13); --chip:#38273D;
+  body[data-theme="midnight"][data-mode="sweat"]{
+    --bg:#0B1728; --bg2:#132234; --fg:#E8EEF7; --muted:#71859F;
+    --accent:#E8EEF7; --accent-ink:#0B1728; --line:rgba(232,238,247,.12); --chip:#1A2C45;
   }
-  body[data-theme="dusk"][data-mode="rest"]{
-    --bg:#33253D; --bg2:#3E2E4A; --fg:#F3E9F0; --muted:#B294B9;
-    --accent:#F3E9F0; --accent-ink:#33253D; --line:rgba(243,233,240,.13); --chip:#48354F;
+  body[data-theme="midnight"][data-mode="rest"]{
+    --bg:#14263D; --bg2:#1D3350; --fg:#E8EEF7; --muted:#8A9EBA;
+    --accent:#E8EEF7; --accent-ink:#14263D; --line:rgba(232,238,247,.12); --chip:#243D5C;
   }
 
-  /* ---------- THEME: Terracotta (warm clay, fades to cream) ---------- */
-  body[data-theme="terracotta"][data-mode="focus"]{
-    --bg:#C25E3E; --bg2:#B85436; --fg:#FFF6EF; --muted:rgba(255,246,239,.78);
-    --accent:#FFF6EF; --accent-ink:#8E3D22; --line:rgba(255,246,239,.2); --chip:#AE4E33;
+
+
+  /* ---------- THEME: Slate (cool blue-grey, fades to soft white) ---------- */
+  body[data-theme="slate"][data-mode="focus"]{
+    --bg:#5A6B78; --bg2:#4F5F6B; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
+    --accent:#F4F7F9; --accent-ink:#37444E; --line:rgba(244,247,249,.2); --chip:#485863;
   }
-  body[data-theme="terracotta"][data-mode="sweat"]{
-    --bg:#B85436; --bg2:#AC4B2F; --fg:#FFF6EF; --muted:rgba(255,246,239,.78);
-    --accent:#FFF6EF; --accent-ink:#82371E; --line:rgba(255,246,239,.2); --chip:#A2472C;
+  body[data-theme="slate"][data-mode="sweat"]{
+    --bg:#4F5F6B; --bg2:#465561; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
+    --accent:#F4F7F9; --accent-ink:#2E3A42; --line:rgba(244,247,249,.2); --chip:#3F4E58;
   }
-  body[data-theme="terracotta"][data-mode="rest"]{
-    --bg:#CE6B49; --bg2:#C25E3E; --fg:#FFF6EF; --muted:rgba(255,246,239,.78);
-    --accent:#FFF6EF; --accent-ink:#8E3D22; --line:rgba(255,246,239,.2); --chip:#AE4E33;
+  body[data-theme="slate"][data-mode="rest"]{
+    --bg:#647585; --bg2:#5A6B78; --fg:#F4F7F9; --muted:rgba(244,247,249,.78);
+    --accent:#F4F7F9; --accent-ink:#37444E; --line:rgba(244,247,249,.2); --chip:#4F626F;
+  }
+
+  /* ---------- THEME: Rose Gold (warm blush-copper, fades to blush) ---------- */
+  body[data-theme="rosegold"][data-mode="focus"]{
+    --bg:#C88A78; --bg2:#BE7E6B; --fg:#FFF5F1; --muted:rgba(255,245,241,.8);
+    --accent:#FFF5F1; --accent-ink:#8E5546; --line:rgba(255,245,241,.22); --chip:#B57565;
+  }
+  body[data-theme="rosegold"][data-mode="sweat"]{
+    --bg:#BE7E6B; --bg2:#B27360; --fg:#FFF5F1; --muted:rgba(255,245,241,.8);
+    --accent:#FFF5F1; --accent-ink:#824B3D; --line:rgba(255,245,241,.22); --chip:#AA6C5A;
+  }
+  body[data-theme="rosegold"][data-mode="rest"]{
+    --bg:#D49685; --bg2:#C88A78; --fg:#FFF5F1; --muted:rgba(255,245,241,.8);
+    --accent:#FFF5F1; --accent-ink:#8E5546; --line:rgba(255,245,241,.22); --chip:#B57565;
+  }
+
+  /* ---------- THEME: Wine ---------- */
+  body[data-theme="wine"][data-mode="focus"]{
+    --bg:#3A1220; --bg2:#35101D; --fg:#F5E4EA; --muted:#B07E90;
+    --accent:#F5E4EA; --accent-ink:#220A13; --line:rgba(245,228,234,.16); --chip:#330F1C;
+  }
+  body[data-theme="wine"][data-mode="sweat"]{
+    --bg:#34101C; --bg2:#2F0E19; --fg:#F5E4EA; --muted:#B07E90;
+    --accent:#F5E4EA; --accent-ink:#1F0910; --line:rgba(245,228,234,.16); --chip:#2D0E18;
+  }
+  body[data-theme="wine"][data-mode="rest"]{
+    --bg:#492431; --bg2:#43212D; --fg:#F5E4EA; --muted:#B07E90;
+    --accent:#F5E4EA; --accent-ink:#2B151D; --line:rgba(245,228,234,.16); --chip:#401F2B;
   }
 
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
@@ -191,27 +185,26 @@
     font-family:'Noto Sans Arabic', system-ui, sans-serif;
   }
   @media (prefers-reduced-motion: reduce){ body{transition:none;} }
-  /* gradient themes (ocean/pink/ember): a gentle vertical gradient that lightens
-     toward the bottom. Applied to <html> spanning the WHOLE document (not the
-     viewport), so there's no seam on mobile where a fixed/viewport-height
-     gradient would end and the flat page colour would show through. Body is
-     transparent so the html gradient shows; the html base colour matches the
-     gradient's END colour so any area past the gradient blends invisibly. */
-  html[data-theme-html="ocean"],
-  html[data-theme-html="pink"],
-  html[data-theme-html="ember"],
-  html[data-theme-html="terracotta"]{
+  /* gradient themes: a gentle vertical gradient that lightens toward the bottom.
+     Applied to <html> spanning the WHOLE document (not the viewport), so there's
+     no seam on mobile where a fixed/viewport-height gradient would end and the
+     flat page colour would show through. Body is transparent so the html
+     gradient shows; the html base colour matches the gradient's END colour so
+     any area past the gradient blends invisibly. */
+  html[data-theme-html="slate"],
+  html[data-theme-html="rosegold"]{
     min-height:100%;
     background:
-      color-mix(in srgb, var(--grad-bg, #2E7191) 82%, #FFFFFF)
+      color-mix(in srgb, var(--grad-bg, #5A6B78) 82%, #FFFFFF)
       linear-gradient(to bottom,
-        var(--grad-bg, #2E7191) 0%,
-        var(--grad-bg, #2E7191) 38%,
-        color-mix(in srgb, var(--grad-bg, #2E7191) 82%, #FFFFFF) 100%) no-repeat;
+        var(--grad-bg, #5A6B78) 0%,
+        var(--grad-bg, #5A6B78) 38%,
+        color-mix(in srgb, var(--grad-bg, #5A6B78) 82%, #FFFFFF) 100%) no-repeat;
     background-size:100% 100%;
   }
-  /* dusk stays dark — a subtle deepen toward the bottom (mix with black, not white) */
-  html[data-theme-html="dusk"]{
+  /* dark themes stay dark — a subtle deepen toward the bottom (mix with black) */
+  html[data-theme-html="midnight"],
+  html[data-theme-html="wine"]{
     min-height:100%;
     background:
       color-mix(in srgb, var(--grad-bg, #2A1E33) 78%, #000000)
@@ -221,11 +214,10 @@
         color-mix(in srgb, var(--grad-bg, #2A1E33) 78%, #000000) 100%) no-repeat;
     background-size:100% 100%;
   }
-  body[data-theme="ocean"],
-  body[data-theme="pink"],
-  body[data-theme="ember"],
-  body[data-theme="terracotta"],
-  body[data-theme="dusk"]{ background:transparent; }
+  body[data-theme="slate"],
+  body[data-theme="rosegold"],
+  body[data-theme="midnight"],
+  body[data-theme="wine"]{ background:transparent; }
   /* during boot nothing may animate its colour — prevents the theme fading in
      from the markup default (ocean blue) on refresh */
   html.boot body{ transition:none !important; }
@@ -1828,7 +1820,7 @@
   .footer-sep{ color:var(--muted); opacity:.5; margin:0 7px; }
 </style>
 </head>
-<body data-mode="focus" data-theme="ocean">
+<body data-mode="focus" data-theme="slate">
 <script>
   // apply saved theme immediately so the entry page matches the user's preference
   try{
@@ -2045,6 +2037,7 @@
     <div class="shortcut-row"><span>Co-work</span><kbd>C</kbd></div>
     <div class="shortcut-row"><span>Friends</span><kbd>F</kbd></div>
     <div class="shortcut-row"><span>Leaderboard</span><kbd>L</kbd></div>
+    <div class="shortcut-row"><span>Settings</span><kbd>,</kbd></div>
     <div class="shortcut-row"><span>Close a panel</span><kbd>Esc</kbd></div>
     <button class="welcome-tour-btn" id="shortcutsCloseBtn" type="button" style="margin-top:16px;">Got it</button>
   </div>
@@ -2860,7 +2853,12 @@ async function loadSettings(){
   let saved=null;
   try{ saved = JSON.parse((await store.get('pomofit:settings'))||'null'); }catch(e){ saved=null; }
   if(!saved) return;
-  if(saved.theme){ document.body.dataset.theme = saved.theme; }
+  if(saved.theme){
+    // a theme saved before the palette was trimmed (e.g. ocean, ember, pink)
+    // no longer exists — fall back to the new default rather than leaving an
+    // unmatched value that CSS/JS don't recognise
+    document.body.dataset.theme = THEME_ORDER.includes(saved.theme) ? saved.theme : 'slate';
+  }
   if(typeof saved.focusMin==='number') S.focusMin = saved.focusMin;
   if(typeof saved.breakMin==='number') S.breakMin = saved.breakMin;
   if(typeof saved.longMin==='number') S.longMin = saved.longMin;
@@ -5708,6 +5706,11 @@ document.addEventListener('keydown',e=>{
       { if(document.querySelector('#leaderboardSheet.show')){ if(typeof closeSheets==='function') closeSheets(); }
         else if(typeof openLeaderboard==='function') openLeaderboard(); }
       return;
+    case ',': // toggle settings (the conventional "preferences" key)
+      e.preventDefault();
+      { if(document.querySelector('#settingsSheet.show')){ if(typeof closeSheets==='function') closeSheets(); }
+        else if(typeof openSheet==='function'){ if(typeof closeMenu==='function') closeMenu(); openSheet('settingsSheet'); } }
+      return;
   }
 
   // the remaining shortcuts only apply when no sheet/overlay is covering the timer
@@ -7345,7 +7348,7 @@ function syncChromeColour(){
     const theme = document.body.dataset.theme;
     const htmlEl = document.documentElement;
     // themes that use the full-page lighten-toward-bottom gradient
-    const GRADIENT_THEMES = ['ocean','pink','ember','terracotta','dusk'];
+    const GRADIENT_THEMES = ['slate','rosegold','midnight','wine'];
     if(GRADIENT_THEMES.includes(theme)){
       // feed the gradient the current mode's colour via --grad-bg and flag which
       // theme it is, rather than painting html a flat colour (which would clobber
@@ -7706,22 +7709,22 @@ sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
 /* themes: cycles between Ember and Mono */
-const THEME_ORDER=['ember','mono','pink','ocean','terracotta','dusk','light'];
-const THEME_ICON={ember:'◐', mono:'◑', pink:'◓', ocean:'◒', terracotta:'◑', dusk:'◕', light:'○'};
+const THEME_ORDER=['slate','midnight','rosegold','wine','light'];
+const THEME_ICON={slate:'◒', midnight:'●', rosegold:'◑', wine:'●', light:'○'};
 const THEME_NAMES={ember:'Field Grey', mono:'Black & White'};
 const themeToggleBtn=$('themeToggleBtn');
 function applyTheme(k){
   document.body.dataset.theme=k;
   if(typeof syncChromeColour==='function') syncChromeColour();
   themeToggleBtn.textContent=THEME_ICON[k]||'◐';
-  const themeNames={ember:'Field Green', mono:'Black & White', pink:'Pink & White', ocean:'Ocean Blue', terracotta:'Terracotta', dusk:'Dusk'};
+  const themeNames={slate:'Slate', midnight:'Midnight', rosegold:'Rose Gold', wine:'Wine'};
   themeToggleBtn.title='Theme: '+(themeNames[k]||k)+' (tap to switch)';
   const stb=$('settingsThemeBtn');
   if(stb) stb.firstChild.textContent=THEME_ICON[k]||'◐';
 }
 themeToggleBtn.onclick=()=>{
   const cur=document.body.dataset.theme;
-  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1) % THEME_ORDER.length] || 'mono';
+  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1) % THEME_ORDER.length] || 'slate';
   applyTheme(next);
   saveSettings();
 };
@@ -7818,7 +7821,7 @@ $('sfxToggle').onclick=()=>{
 };
 $('settingsThemeBtn').onclick=()=>{
   const cur=document.body.dataset.theme;
-  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1)%THEME_ORDER.length]||'mono';
+  const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1)%THEME_ORDER.length]||'slate';
   applyTheme(next); saveSettings();
 };
 $('settingsSfxBtn').onclick=()=>{
