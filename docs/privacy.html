@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="background:#5A6B78; color-scheme:dark;">
+<html lang="en" style="background:#0F1E33; color-scheme:dark;">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,20 +20,36 @@
   // Match whatever theme the visitor chose in the app (saved under
   // 'pomofit:settings'). Read before first paint so this page mirrors the app.
   (function(){
-    var THEMES = {
-      slate: { bg:'#5A6B78', bg2:'#4F5F6B', fg:'#F4F7F9', muted:'rgba(244,247,249,.78)', accentInk:'#37444E', line:'rgba(244,247,249,.2)', chip:'#485863', grad:true, light:false },
-      midnight: { bg:'#0F1E33', bg2:'#17293F', fg:'#E8EEF7', muted:'#7E92AD', accentInk:'#0F1E33', line:'rgba(232,238,247,.12)', chip:'#1E3350', grad:false, light:false },
-      rosegold: { bg:'#C88A78', bg2:'#BE7E6B', fg:'#FFF5F1', muted:'rgba(255,245,241,.8)', accentInk:'#8E5546', line:'rgba(255,245,241,.22)', chip:'#B57565', grad:true, light:false },
-      wine: { bg:'#3A1220', bg2:'#341019', fg:'#F5E4EA', muted:'#B07E90', accentInk:'#3A1220', line:'rgba(245,228,234,.13)', chip:'#4A1E2C', grad:false, light:false },
-      sage: { bg:'#5C7A5C', bg2:'#4F6A4F', fg:'#FFFFFF', muted:'rgba(255,255,255,.75)', accentInk:'#2E3D2E', line:'rgba(255,255,255,.16)', chip:'#516D51', grad:false, light:false },
-      light: { bg:'#EAE9E5', bg2:'#E1E0DB', fg:'#3A3A3A', muted:'rgba(58,58,58,.72)',    accentInk:'#EAE9E5', line:'rgba(58,58,58,.14)',  chip:'#D8D7D1', grad:false, light:true }
-    };
-    var key = 'ember';
-    try{
-      var s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
-      if(s && s.theme){ key = s.theme === 'cream' ? 'slate' : s.theme; }
-    }catch(e){}
-    var t = THEMES[key] || THEMES.ember;
+          var THEMES = {
+        'midnight-dark':  { bg:'#0F1E33', bg2:'#17293F', fg:'#E8EEF7', muted:'#7E92AD',                 accentInk:'#0F1E33', line:'rgba(232,238,247,.12)', chip:'#1E3350', grad:false, light:false },
+        'midnight-light': { bg:'#E4EAF2', bg2:'#D9E1EC', fg:'#1C2E44', muted:'rgba(28,46,68,.72)',       accentInk:'#E4EAF2', line:'rgba(28,46,68,.14)',    chip:'#CBD6E4', grad:true,  light:true },
+        'wine-dark':      { bg:'#3A1220', bg2:'#35101D', fg:'#F5E4EA', muted:'#B07E90',                  accentInk:'#220A13', line:'rgba(245,228,234,.16)', chip:'#330F1C', grad:false, light:false },
+        'wine-light':     { bg:'#F1E3E8', bg2:'#E7D4DB', fg:'#4A1B29', muted:'rgba(74,27,41,.72)',       accentInk:'#F1E3E8', line:'rgba(74,27,41,.14)',    chip:'#DFC3CD', grad:true,  light:true },
+        'sage-dark':      { bg:'#5C7A5C', bg2:'#4F6A4F', fg:'#FFFFFF', muted:'rgba(255,255,255,.75)',    accentInk:'#2E3D2E', line:'rgba(255,255,255,.16)', chip:'#516D51', grad:false, light:false },
+        'sage-light':     { bg:'#DCE6DC', bg2:'#D0DCD0', fg:'#2C3A2C', muted:'rgba(44,58,44,.72)',       accentInk:'#DCE6DC', line:'rgba(44,58,44,.14)',    chip:'#C4D2C4', grad:true,  light:true }
+      };
+      // each colour has its own default appearance — Sage defaults light,
+      // Navy/Purple default dark — UNLESS the visitor explicitly toggled the
+      // light bulb in the app, in which case that sticky choice applies no
+      // matter which colour is active (matches the app's own logic)
+      var DEFAULT_APPEARANCE = { midnight:'dark', wine:'dark', sage:'light' };
+      var fam = 'midnight';
+      var override = null;
+      try{
+        var s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
+        if(s && ['midnight','wine','sage'].indexOf(s.theme) >= 0) fam = s.theme;
+        if(s && (s.appearanceOverride==='light' || s.appearanceOverride==='dark')){
+          override = s.appearanceOverride;
+        } else if(s && s.themeAppearance && (s.themeAppearance[fam]==='light' || s.themeAppearance[fam]==='dark')){
+          // backward compatibility: an older deploy of the app saved a
+          // per-colour map under this name before the sticky global toggle
+          // existed — honour it if that's what's actually saved
+          override = s.themeAppearance[fam];
+        }
+      }catch(e){}
+      var appr = override || DEFAULT_APPEARANCE[fam] || 'dark';
+      var key = fam + '-' + appr;
+      var t = THEMES[key] || THEMES['midnight-dark'];
     var r = document.documentElement;
     r.style.setProperty('--bg', t.bg);
     r.style.setProperty('--bg2', t.bg2);
