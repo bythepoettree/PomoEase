@@ -857,12 +857,12 @@
   .friend-online-toast{
     position:fixed; top:18px; right:18px; z-index:1250;
     display:flex; align-items:center; gap:10px;
-    padding:11px 16px 11px 11px; border-radius:14px;
-    background:color-mix(in srgb, var(--bg2) 70%, transparent);
-    -webkit-backdrop-filter:blur(14px) saturate(1.4);
-    backdrop-filter:blur(14px) saturate(1.4);
-    border:1px solid var(--line);
-    box-shadow:0 8px 28px rgba(0,0,0,.22);
+    padding:10px 15px 10px 10px; border-radius:14px;
+    background:color-mix(in srgb, var(--bg2) 42%, transparent);
+    -webkit-backdrop-filter:blur(18px) saturate(1.2);
+    backdrop-filter:blur(18px) saturate(1.2);
+    border:1px solid color-mix(in srgb, var(--line) 60%, transparent);
+    box-shadow:0 6px 20px rgba(0,0,0,.14);
     cursor:pointer; font-family:inherit; text-align:left;
     max-width:min(78vw, 300px);
     transform:translateX(calc(100% + 30px)); opacity:0;
@@ -870,22 +870,18 @@
     pointer-events:none;
   }
   .friend-online-toast.show{
-    transform:translateX(0); opacity:1; pointer-events:auto;
+    transform:translateX(0); opacity:.92; pointer-events:auto;
   }
+  .friend-online-toast:hover{ opacity:1; }
   .friend-online-toast .fot-avatar{
-    width:30px; height:30px; border-radius:50%; flex:none; overflow:hidden;
+    width:28px; height:28px; border-radius:50%; flex:none; overflow:hidden;
     display:flex; align-items:center; justify-content:center;
-    background:var(--chip); border:1px solid var(--line); font-size:15px; line-height:1;
-    position:relative;
-  }
-  .friend-online-toast .fot-avatar::after{
-    content:''; position:absolute; right:-1px; bottom:-1px;
-    width:9px; height:9px; border-radius:50%;
-    background:#3DDC84; border:2px solid var(--bg2);
+    background:color-mix(in srgb, var(--chip) 70%, transparent);
+    border:1px solid color-mix(in srgb, var(--line) 60%, transparent); font-size:14px; line-height:1;
   }
   .friend-online-toast .fot-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
   .friend-online-toast .fot-name{
-    font-size:13px; font-weight:600; color:var(--fg); line-height:1.3;
+    font-size:12.5px; font-weight:600; color:var(--fg); line-height:1.3; opacity:.9;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   @media (prefers-reduced-motion: reduce){ .friend-online-toast{ transition:opacity .3s ease; transform:none !important; } }
@@ -1397,10 +1393,12 @@
     transition:max-height .28s ease, margin .28s ease;
     margin-top:0;
   }
-  .danger-toggle[aria-expanded="true"] + .danger-body{ max-height:200px; margin-top:8px; }
+  .danger-toggle[aria-expanded="true"] + .danger-body{ max-height:320px; margin-top:8px; }
   .danger-note{
     font-size:11px; line-height:1.5; color:var(--muted); margin:0 0 8px;
   }
+  .danger-body .profile-action-btn{ width:100%; margin-bottom:16px; }
+  .danger-body .profile-action-btn:last-child{ margin-bottom:0; }
   .stat{background:var(--bg2); border:none; border-radius:14px; padding:14px;}
   .stat .num{font-family:'Anton',sans-serif; font-size:26px;}
   .stat .lab{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:2px;}
@@ -2430,12 +2428,13 @@
 
 
     <div class="profile-actions">
-      <button class="profile-action-btn" id="resetStatsBtn">Reset</button>
       <button class="profile-action-btn" id="signOutBtn">Sign out</button>
     </div>
     <div class="danger-zone">
       <button type="button" class="danger-toggle" id="dangerToggle" aria-expanded="false"><span>Advanced settings</span><span class="danger-chev">⌄</span></button>
       <div class="danger-body" id="dangerBody">
+        <p class="danger-note" id="resetStatsNote">Clears your rounds, minutes, reps and history. Your account stays — only the stats reset.</p>
+        <button class="profile-action-btn" id="resetStatsBtn">Reset</button>
         <p class="danger-note">Deleting your account permanently removes your profile, tasks, and all saved progress. This can't be undone.</p>
         <button class="profile-action-btn danger" id="deleteAccountBtn">Delete account</button>
       </div>
@@ -7463,8 +7462,7 @@ function applyLang(lang){
   const signOutEl=$('signOutBtn'); if(signOutEl) signOutEl.textContent=t.signOut;
   const delAccEl=$('deleteAccountBtn'); if(delAccEl && !delAccEl.classList.contains('armed')) delAccEl.textContent='Delete account';
   // reset stats label
-  const resetStatsLab=document.querySelector('.lab2'); if(resetStatsLab) resetStatsLab.textContent=t.resetStats;
-  const resetStatsSub=document.querySelector('.sub2'); if(resetStatsSub) resetStatsSub.textContent=t.resetStatsNote;
+  const resetStatsSub=$('resetStatsNote'); if(resetStatsSub) resetStatsSub.textContent=t.resetStatsNote;
   // crop sheet
   const cropCancelEl=$('cropCancelBtn'); if(cropCancelEl) cropCancelEl.textContent=t.cropCancel;
   const cropUseEl=$('cropUseBtn'); if(cropUseEl) cropUseEl.textContent=t.cropUse;
