@@ -851,6 +851,44 @@
     color:var(--muted); font-family:inherit; font-size:11.5px; opacity:.7; text-decoration:underline;
   }
   .guest-nudge-never:hover{ opacity:1; }
+
+  /* "friend just came online" toast — quiet, slides in from the right,
+     translucent/blurred so it never feels like an alert or interruption */
+  .friend-online-toast{
+    position:fixed; top:18px; right:18px; z-index:1250;
+    display:flex; align-items:center; gap:10px;
+    padding:11px 16px 11px 11px; border-radius:14px;
+    background:color-mix(in srgb, var(--bg2) 70%, transparent);
+    -webkit-backdrop-filter:blur(14px) saturate(1.4);
+    backdrop-filter:blur(14px) saturate(1.4);
+    border:1px solid var(--line);
+    box-shadow:0 8px 28px rgba(0,0,0,.22);
+    cursor:pointer; font-family:inherit; text-align:left;
+    max-width:min(78vw, 300px);
+    transform:translateX(calc(100% + 30px)); opacity:0;
+    transition:transform .4s cubic-bezier(.22,.61,.36,1), opacity .4s ease;
+    pointer-events:none;
+  }
+  .friend-online-toast.show{
+    transform:translateX(0); opacity:1; pointer-events:auto;
+  }
+  .friend-online-toast .fot-avatar{
+    width:30px; height:30px; border-radius:50%; flex:none; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--chip); border:1px solid var(--line); font-size:15px; line-height:1;
+    position:relative;
+  }
+  .friend-online-toast .fot-avatar::after{
+    content:''; position:absolute; right:-1px; bottom:-1px;
+    width:9px; height:9px; border-radius:50%;
+    background:#3DDC84; border:2px solid var(--bg2);
+  }
+  .friend-online-toast .fot-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .friend-online-toast .fot-name{
+    font-size:13px; font-weight:600; color:var(--fg); line-height:1.3;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  @media (prefers-reduced-motion: reduce){ .friend-online-toast{ transition:opacity .3s ease; transform:none !important; } }
   .welcome-skip{
     display:block; width:100%; margin-top:10px; padding:8px;
     background:none; border:none; cursor:pointer;
@@ -2208,6 +2246,11 @@
   </div>
 </div>
 
+<button class="friend-online-toast" id="friendOnlineToast" type="button" aria-live="polite">
+  <span class="fot-avatar"></span>
+  <span class="fot-name"></span>
+</button>
+
 <div class="sheet-bg" id="sheetBg"></div>
 
 <div class="sheet" id="settingsSheet">
@@ -3116,6 +3159,7 @@ function applyCloudUser(user, cloudDoc){
   attachInviteListener().catch(e=>console.error('invite listener attach failed', e));
   attachJoinRequestListener().catch(e=>console.error('join request listener attach failed', e));
   attachFriendsLive();
+  attachFriendsOnlineWatch();
   publishLeaderboard();
 }
 
@@ -3304,6 +3348,7 @@ async function cloudSignOut(){
   detachInviteListener();
   detachJoinRequestListener();
   detachFriendsLive();
+  detachFriendsOnlineWatch();
   try{ if(fb && fb.auth) await fb.auth.signOut(); }catch(e){}
   cloudUser=null; cloudDataRef=null;
   try{ localStorage.removeItem('pomofit:cloudSession'); }catch(e){}
@@ -3909,6 +3954,99 @@ function detachFriendsLive(){
   friendsLiveRefs=[];
   clearTimeout(friendsRenderTimer);
 }
+
+// ---- "a friend just came online" notification ----
+// Quiet, in-app only: watches every friend's presence in the background (not
+// just while the Friends panel is open) and slides in a small toast the
+// moment one of them goes from offline to online. Never fires for friends
+// who were already online when the watcher first attaches — only genuine
+// offline -> online transitions count, so signing in doesn't trigger a burst.
+let friendOnlineListRef=null, friendOnlineListHandler=null;
+let friendOnlinePerFriendRefs={};      // fUid -> {ref, handler}
+let friendOnlineKnownState={};         // fUid -> true/false, undefined = not yet baselined
+function attachFriendsOnlineWatch(){
+  detachFriendsOnlineWatch();
+  if(!cloudUser || !fb || !fb.db) return;
+  friendOnlineListRef = fb.db.ref('friends/'+cloudUser.uid);
+  friendOnlineListHandler = friendOnlineListRef.on('value', snap=>{
+    const list = snap.val() || {};
+    const uids = Object.keys(list);
+    // stop watching anyone no longer a friend
+    Object.keys(friendOnlinePerFriendRefs).forEach(fUid=>{
+      if(!uids.includes(fUid)){
+        try{ friendOnlinePerFriendRefs[fUid].ref.off('value', friendOnlinePerFriendRefs[fUid].handler); }catch(e){}
+        delete friendOnlinePerFriendRefs[fUid];
+        delete friendOnlineKnownState[fUid];
+      }
+    });
+    // start watching any newly-added friend
+    uids.forEach(fUid=>{
+      if(friendOnlinePerFriendRefs[fUid]) return;
+      const info = list[fUid] || {};
+      const ref = fb.db.ref('presence/'+fUid);
+      const handler = ref.on('value', s=>{
+        const v = s.val();
+        const theirSession = (v && v.session) || null;
+        const sameRoom = theirSession && mySession && theirSession===mySession;
+        const online = !!(v && v.online) || sameRoom;
+        const prev = friendOnlineKnownState[fUid];
+        if(prev===undefined){
+          // first read for this friend — just establish the baseline, don't notify
+          friendOnlineKnownState[fUid] = online;
+          return;
+        }
+        if(!prev && online) showFriendOnlineToast(info);
+        friendOnlineKnownState[fUid] = online;
+      }, ()=>{});
+      friendOnlinePerFriendRefs[fUid] = {ref, handler};
+    });
+  }, ()=>{});
+}
+function detachFriendsOnlineWatch(){
+  if(friendOnlineListRef && friendOnlineListHandler){ try{ friendOnlineListRef.off('value', friendOnlineListHandler); }catch(e){} }
+  friendOnlineListRef=null; friendOnlineListHandler=null;
+  Object.values(friendOnlinePerFriendRefs).forEach(({ref,handler})=>{ try{ ref.off('value', handler); }catch(e){} });
+  friendOnlinePerFriendRefs={};
+  friendOnlineKnownState={};
+}
+let friendOnlineToastTimer=null, friendOnlineToastQueue=[];
+function showFriendOnlineToast(info){
+  // queue so two friends coming online in quick succession don't overlap —
+  // each one gets its own clean slide-in rather than jumping mid-animation
+  friendOnlineToastQueue.push(info);
+  if(friendOnlineToastQueue.length===1) runFriendOnlineToastQueue();
+}
+function runFriendOnlineToastQueue(){
+  const info = friendOnlineToastQueue[0];
+  if(!info){ return; }
+  const el = $('friendOnlineToast');
+  if(!el){ friendOnlineToastQueue.shift(); runFriendOnlineToastQueue(); return; }
+  const av = el.querySelector('.fot-avatar');
+  const nameEl = el.querySelector('.fot-name');
+  const a = info.avatar || null;
+  av.innerHTML='';
+  if(a && String(a).startsWith('emoji:')) av.textContent = a.slice(6);
+  else if(a){ const img=document.createElement('img'); img.src=a; img.alt=''; av.appendChild(img); }
+  else av.textContent = ((info.name||'?')[0]||'?').toUpperCase();
+  nameEl.textContent = (info.name || 'A friend') + ' is online';
+  el.classList.remove('show'); void el.offsetWidth; // restart animation if already mid-cycle
+  el.classList.add('show');
+  clearTimeout(friendOnlineToastTimer);
+  friendOnlineToastTimer = setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=>{
+      friendOnlineToastQueue.shift();
+      if(friendOnlineToastQueue.length) runFriendOnlineToastQueue();
+    }, 400); // matches the slide-out transition duration
+  }, 4200);
+}
+{ const el=$('friendOnlineToast'); if(el) el.addEventListener('click', ()=>{
+  clearTimeout(friendOnlineToastTimer);
+  el.classList.remove('show');
+  if(typeof closeMenu==='function') closeMenu();
+  if(typeof openPortal==='function') openPortal('friends');
+  setTimeout(()=>{ friendOnlineToastQueue.shift(); if(friendOnlineToastQueue.length) runFriendOnlineToastQueue(); }, 400);
+}); }
 
 let inviteListenerRef=null, inviteListenerHandler=null;
 async function attachInviteListener(){
@@ -5332,6 +5470,7 @@ $('deleteAccountBtn').onclick=async ()=>{
     detachInviteListener();
     detachJoinRequestListener();
     detachFriendsLive();
+    detachFriendsOnlineWatch();
     try{ if(cloudDataRef) await cloudDataRef.remove(); }catch(e){}
     try{ await cloudUser.delete(); }catch(e){ /* may need recent login; sign out regardless */ }
     cloudUser=null; cloudDataRef=null;
