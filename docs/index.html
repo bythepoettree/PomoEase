@@ -284,6 +284,12 @@
     color:var(--fg); animation:grPop .5s var(--ease);
   }
   .get-ready-cap{ font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-top:10px; }
+  .get-ready-cancel{
+    margin-top:26px; padding:10px 22px; border-radius:12px; cursor:pointer;
+    background:none; border:1px solid var(--line); color:var(--muted);
+    font-family:inherit; font-size:13px; font-weight:600;
+  }
+  .get-ready-cancel:hover{ color:var(--fg); border-color:var(--fg); }
   @keyframes grPop{ 0%{transform:scale(.6);opacity:0} 45%{transform:scale(1.08);opacity:1} 100%{transform:scale(1)} }
   @media (prefers-reduced-motion: reduce){ .get-ready-num{ animation:none; } .get-ready-overlay.show{ animation:none; } }
 
@@ -311,6 +317,17 @@
   #startBtn .ic-pause{display:none;}
   body.timer-running #startBtn .ic-play{display:none;}
   body.timer-running #startBtn .ic-pause{display:block;}
+  /* workout play/pause — a prominent rectangular control replacing the old
+     text pill, using the same play/pause icon language as the main timer button */
+  .workout-play-pause{
+    width:120px; height:56px; border-radius:16px;
+    background:var(--accent); color:var(--accent-ink);
+    box-shadow:0 6px 18px rgba(0,0,0,.18);
+  }
+  .workout-play-pause:hover{ transform:scale(1.04); color:var(--accent-ink); }
+  .workout-play-pause .ic-pause{ display:none; }
+  .workout-play-pause.wk-running .ic-play{ display:none; }
+  .workout-play-pause.wk-running .ic-pause{ display:block; }
 
 
   header{
@@ -623,8 +640,7 @@
   .counter .big{font-family:'Anton',sans-serif; font-size:50px; line-height:1;}
   .counter .of{font-size:15px; color:var(--muted);}
   .traj{
-    display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-items:center;
-    margin-top:12px; max-width:530px;
+    display:none !important;
   }
   .tstep{
     background:var(--chip); border:none; border-radius:11px;
@@ -2271,7 +2287,7 @@
       <span>👋 This is a workout preview — during real breaks, this replaces your timer. Pick one and try a rep or two!</span>
       <button class="demo-exit-btn" id="workoutDemoExit" type="button">Done — back to timer</button>
     </div>
-    <div class="get-ready-overlay" id="getReadyOverlay"><div class="get-ready-num" id="getReadyNum">3</div><div class="get-ready-cap">Get ready…</div></div>
+    <div class="get-ready-overlay" id="getReadyOverlay"><div class="get-ready-num" id="getReadyNum">3</div><div class="get-ready-cap">Get ready…</div><button class="get-ready-cancel" id="getReadyCancelBtn" type="button">Hide</button></div>
     <div class="back-row">
       <button class="back-btn" id="backBtn" aria-label="Back to study" title="Back to study">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
@@ -2285,7 +2301,10 @@
       <div class="of" id="repOf">/ 20 reps</div>
     </div>
     <div class="traj" id="traj"></div>
-    <button class="btn" id="progStartBtn" style="display:none;margin-top:12px;">START PROGRAMME</button>
+    <button class="ctl-ic ctl-main workout-play-pause" id="progStartBtn" title="Start / pause workout" aria-label="Start or pause workout" style="display:none;margin-top:14px;">
+      <svg class="ic-play" width="34" height="34" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="ic-pause" width="34" height="34" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+    </button>
     <div class="prog-list" id="progList"></div>
     <div class="split-btn-row" id="workoutSplitRow">
       <button id="shuffleBtn" class="split-btn">🎲 Surprise mix</button>
@@ -4587,13 +4606,18 @@ function ensureNotifPermission(){
    EXERCISES + PROGRAMMES
    ===================================================== */
 const EX = {
-  jacks:  {name:'Jumping Jacks', period:0.9,  minR:10, maxR:20},
-  squats: {name:'Squats',        period:2.6,  minR:6,  maxR:12},
+  jacks:  {name:'Jumping Jacks', period:0.9,  minR:30, maxR:30},
+  squats: {name:'Squats',        period:2.6,  minR:10, maxR:10},
   pushups:{name:'Push-ups',      period:2.2,  minR:5,  maxR:10},
   knees:  {name:'High Knees',    period:0.42, minR:16, maxR:30},
   lunges: {name:'Lunges',        period:2.0,  minR:6,  maxR:10, note:'Switches sides halfway'},
   plank:  {name:'Plank',         period:1, timeBased:true, minR:15, maxR:40, note:'Keep your back flat'},
 };
+// removes a leading emoji (and the space after it) — used only for the big
+// title shown once a programme is picked; the emoji stays in the picker list
+function stripLeadingEmoji(str){
+  return String(str).replace(/^[\p{Extended_Pictographic}\u200d\ufe0f\s]+/u, '').trim();
+}
 const PROGRAMMES = {
   cardio:  {name:'⚡ Cardio Spark',     steps:['jacks','knees','squats']},
   strength:{name:'🏋 Strength Circuit', steps:['squats','pushups','lunges']},
@@ -4620,28 +4644,51 @@ function selectProgramme(pkey, keys){
   PROG.mode='ready';
   PROG._pkey=pkey||null; PROG._keys=keys||null;
   document.querySelectorAll('#progList .prog-card').forEach(c=>c.classList.toggle('active', c.dataset.key===pkey));
-  exName.textContent=PROG.name;
+  exName.textContent=stripLeadingEmoji(PROG.name);
   exNote.textContent=PROG.steps.length+(LANGS[currentLang]||LANGS.en).sizednote;
   counterRow.style.visibility='hidden';
-  $('progStartBtn').style.display='inline-block';
-  $('progStartBtn').textContent=T().startProgramme;
+  $('progStartBtn').style.display='inline-flex';
+  $('progStartBtn').classList.remove('wk-running');
   renderTraj();
   beep(880,.08,.05);
   // broadcast card selection (not start) so others see the same card highlighted
   if(typeof broadcastWorkout==='function' && !suppressWorkoutBroadcast)
     broadcastWorkout({action:'select', key:PROG._pkey, keys:PROG._keys});
 }
-$('progStartBtn').onclick=()=>{
+// the same button (and the space bar, while on the workout screen) starts the
+// workout the first time, then pauses/resumes the exercise in progress —
+// pausing freezes the elapsed-time clock the animation and rep count are
+// driven by, so resuming continues exactly where it left off
+function workoutTogglePlayPause(){
   if(!PROG) return;
-  $('progStartBtn').style.display='none';
-  enterWorkoutFocus();
-  startGetReady(()=>{
-    beep(1100,.1,.05);
-    beginStep();
-    if(typeof broadcastWorkout==='function')
-      broadcastWorkout({action:'start', key:PROG._pkey, keys:PROG._keys});
-  });
-};
+  const btn=$('progStartBtn');
+  if(PROG.mode==='ready'){
+    enterWorkoutFocus();
+    btn.classList.add('wk-running');
+    startGetReady(()=>{
+      beep(1100,.1,.05);
+      beginStep();
+      if(typeof broadcastWorkout==='function')
+        broadcastWorkout({action:'start', key:PROG._pkey, keys:PROG._keys});
+    });
+    return;
+  }
+  if(PROG.mode==='done') return; // nothing left to pause
+  if(PROG.paused){
+    // resume — shift the clock forward by however long we were paused, so
+    // elapsed-time math continues from exactly where it stopped
+    PROG.tStart += (performance.now()-PROG.pausedAt);
+    PROG.paused=false;
+    btn.classList.add('wk-running');
+    beep(880,.07,.05);
+  } else {
+    PROG.paused=true;
+    PROG.pausedAt=performance.now();
+    btn.classList.remove('wk-running');
+    beep(520,.07,.05);
+  }
+}
+$('progStartBtn').onclick=workoutTogglePlayPause;
 
 /* 3-2-1 get-ready countdown before the first exercise, so there's time to
    stand up and get into position. Shown big and centred over the animation. */
@@ -4670,7 +4717,19 @@ function startGetReady(then){
 function cancelGetReady(){
   clearInterval(getReadyTimer);
   const ov=$('getReadyOverlay'); if(ov) ov.classList.remove('show');
+  // the countdown never got to beginStep(), so the workout is still just
+  // "picked, not started" — put the play button back to its not-running look
+  const btn=$('progStartBtn'); if(btn) btn.classList.remove('wk-running');
 }
+// tapping out of the fullscreen countdown only hides the big overlay — it
+// does NOT stop the countdown itself. The 3-2-1 keeps ticking in the
+// background and the exercise still begins automatically when it reaches
+// zero; this just lets someone skip watching the big fullscreen number.
+function dismissGetReadyOverlay(){
+  const ov=$('getReadyOverlay'); if(ov) ov.classList.remove('show');
+}
+{ const cb=$('getReadyCancelBtn'); if(cb) cb.onclick=(e)=>{ e.stopPropagation(); dismissGetReadyOverlay(); }; }
+{ const ov=$('getReadyOverlay'); if(ov) ov.addEventListener('click', (e)=>{ if(e.target===ov) dismissGetReadyOverlay(); }); }
 
 /* workout focus mode — mirrors the timer's: hide everything but the enlarged,
    centred animation with its name and rep count. Tap anywhere to exit. */
@@ -4989,6 +5048,7 @@ function animate(){
   const workoutVisible = workoutBlock.classList.contains('show') || workoutBlock.offsetParent !== null;
   if(!workoutVisible){ drawIdle(); return; }
   if(!PROG || PROG.mode==='done' || PROG.mode==='ready'){ drawIdle(); return; }
+  if(PROG.paused){ drawIdle(); return; }
   const el=(performance.now()-PROG.tStart)/1000;
 
   if(PROG.mode==='rest'){
@@ -6116,6 +6176,7 @@ function setPhase(p){
     exNote.textContent = p==='rest'
       ? T().programmeNote
       : T().programmeNote;
+    if(typeof renderProgList==='function') renderProgList();
   }
   nextFact();
   renderDots();
@@ -6283,9 +6344,13 @@ document.addEventListener('keydown',e=>{
   if(document.querySelector('.welcome-bg.show, .lobby-bg.show, .signin-splash.show')) return;
 
   switch(e.key){
-    case ' ': // start / pause — only on the timer view, never on the workout screen
-      if(workoutBlock && workoutBlock.classList.contains('show')) return;
-      if(typeof __workoutDemoActive!=='undefined' && __workoutDemoActive) return;
+    case ' ': // start / pause — the timer's, or the workout's, depending on which screen is showing
+      if(workoutBlock && workoutBlock.classList.contains('show')){
+        if(typeof PROG!=='undefined' && PROG && typeof workoutTogglePlayPause==='function'){
+          e.preventDefault(); workoutTogglePlayPause();
+        }
+        return;
+      }
       e.preventDefault(); S.running?pause():start(); break;
     case 'r': case 'R': // reset the current round — timer view only
       if(workoutBlock && workoutBlock.classList.contains('show')) return;
@@ -6310,13 +6375,25 @@ Object.keys(PROGRAMMES).forEach(k=>{
   const prog=PROGRAMMES[k];
   const card=document.createElement('button');
   card.type='button'; card.className='prog-card'; card.dataset.key=k;
-  const n=prog.steps.length;
   card.innerHTML=`<span class="prog-name"></span><span class="prog-meta"></span>`;
   card.querySelector('.prog-name').textContent=prog.name;
-  card.querySelector('.prog-meta').textContent=n+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
   card.onclick=()=>{ clickSelect(); selectProgramme(k); };
   progList.appendChild(card);
 });
+// fills in each card's rep-count preview, e.g. "3 · Jumping Jacks (30), High
+// Knees (24), Squats (10)" — sized to however much break time is left right
+// now, so it's called again every time the workout view is (re)shown, not
+// just once at page load
+function renderProgList(){
+  document.querySelectorAll('#progList .prog-card').forEach(card=>{
+    const k = card.dataset.key;
+    const prog = PROGRAMMES[k];
+    const metaEl = card.querySelector('.prog-meta');
+    if(!prog || !metaEl) return;
+    metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
+  });
+}
+renderProgList();
 $('shuffleBtn').onclick=()=>{
   const keys=Object.keys(EX).sort(()=>Math.random()-0.5).slice(0,3);
   selectProgramme(null, keys);
