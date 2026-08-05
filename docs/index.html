@@ -1138,6 +1138,94 @@
 
   .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 4px;}
 
+  /* ---------- study goal card ---------- */
+  .goal-card{
+    background:var(--chip); border:1px solid var(--line); border-radius:14px;
+    padding:14px; margin-top:12px;
+  }
+  .goal-empty{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .goal-empty-text{ font-size:12.5px; color:var(--muted); line-height:1.4; }
+  .goal-set-btn{
+    padding:8px 14px; border:none; border-radius:10px; cursor:pointer; white-space:nowrap;
+    background:var(--accent); color:var(--accent-ink); font-family:inherit; font-size:12px; font-weight:700;
+  }
+  .goal-set-btn:hover{ opacity:.9; }
+  .goal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; }
+  .goal-head span{ font-size:12.5px; font-weight:600; color:var(--fg); }
+  .goal-edit-btn{
+    background:none; border:none; cursor:pointer; padding:2px;
+    color:var(--muted); font-family:inherit; font-size:11.5px; font-weight:600;
+    text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--muted) 50%, transparent);
+  }
+  .goal-edit-btn:hover{ color:var(--fg); }
+  .goal-bar{
+    width:100%; height:9px; border-radius:6px; overflow:hidden;
+    background:color-mix(in srgb, var(--bg) 60%, transparent);
+  }
+  .goal-bar-fill{
+    height:100%; border-radius:6px; background:var(--accent);
+    transition:width .5s cubic-bezier(.22,.61,.36,1);
+  }
+  .goal-editor{ display:flex; flex-direction:column; gap:10px; }
+  .goal-type-toggle{ display:flex; gap:8px; }
+  .goal-type-btn{
+    flex:1; padding:9px 0; border-radius:10px; cursor:pointer;
+    background:var(--bg2); border:1px solid var(--line); color:var(--muted);
+    font-family:inherit; font-size:12px; font-weight:600;
+  }
+  .goal-type-btn.active{ background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+  .goal-target-row{ display:flex; gap:8px; }
+  .goal-target-row input{
+    flex:1; min-width:0; padding:10px 12px; border-radius:10px;
+    background:var(--bg2); border:1px solid var(--line); color:var(--fg);
+    font-family:inherit; font-size:14px;
+  }
+  .goal-target-row input:focus{ outline:2px solid var(--accent); outline-offset:-1px; }
+  .goal-save-btn{
+    padding:0 18px; border:none; border-radius:10px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:inherit; font-size:12.5px; font-weight:700;
+  }
+  .goal-save-btn:hover{ opacity:.9; }
+  .goal-editor-foot{ display:flex; align-items:center; justify-content:space-between; }
+  .goal-cancel-btn{
+    background:none; border:none; cursor:pointer; padding:2px;
+    color:var(--muted); font-family:inherit; font-size:11.5px;
+  }
+  .goal-cancel-btn:hover{ color:var(--fg); }
+  .goal-clear-btn{
+    background:none; border:none; cursor:pointer; padding:2px;
+    color:#E8604C; font-family:inherit; font-size:11.5px; font-weight:600;
+  }
+  .goal-clear-btn:hover{ opacity:.8; }
+
+  /* milestone celebration toast — same slide-in language as the friend-online one */
+  .goal-milestone-toast{
+    position:fixed;
+    top:max(18px, calc(env(safe-area-inset-top, 0px) + 10px));
+    right:max(18px, calc(env(safe-area-inset-right, 0px) + 10px));
+    z-index:1250;
+    -webkit-appearance:none; appearance:none;
+    display:flex; align-items:center; gap:11px;
+    padding:11px 16px 11px 12px; border-radius:14px;
+    background:color-mix(in srgb, var(--bg2) 42%, transparent);
+    -webkit-backdrop-filter:blur(18px) saturate(1.2);
+    backdrop-filter:blur(18px) saturate(1.2);
+    border:1px solid color-mix(in srgb, var(--line) 60%, transparent);
+    box-shadow:0 6px 20px rgba(0,0,0,.14);
+    cursor:pointer; font-family:inherit; text-align:left;
+    max-width:min(80vw, 310px);
+    transform:translateX(calc(100% + 30px)); opacity:0;
+    transition:transform .4s cubic-bezier(.22,.61,.36,1), opacity .4s ease;
+    pointer-events:none;
+  }
+  .goal-milestone-toast.show{ transform:translateX(0); opacity:.96; pointer-events:auto; }
+  .goal-milestone-toast:hover{ opacity:1; }
+  .goal-milestone-toast .gmt-emoji{ font-size:22px; line-height:1; flex:none; }
+  .goal-milestone-toast .gmt-text{ display:flex; flex-direction:column; gap:1px; }
+  .goal-milestone-toast .gmt-title{ font-size:13px; font-weight:700; color:var(--fg); line-height:1.3; }
+  .goal-milestone-toast .gmt-sub{ font-size:11.5px; color:var(--muted); line-height:1.3; }
+  @media (prefers-reduced-motion: reduce){ .goal-milestone-toast{ transition:opacity .3s ease; transform:none !important; } }
+
   /* ---------- account sections (grouped, consistent) ---------- */
   .acct-section{
     background:var(--chip); border-radius:16px; padding:14px;
@@ -2253,6 +2341,14 @@
   <span class="fot-name"></span>
 </button>
 
+<button class="goal-milestone-toast" id="goalMilestoneToast" type="button" aria-live="polite">
+  <span class="gmt-emoji"></span>
+  <span class="gmt-text">
+    <span class="gmt-title"></span>
+    <span class="gmt-sub"></span>
+  </span>
+</button>
+
 <div class="sheet-bg" id="sheetBg"></div>
 
 <div class="sheet" id="settingsSheet">
@@ -2426,6 +2522,34 @@
         <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Focus rounds</div></div>
         <div class="stat"><div class="num" id="stMinutes">0</div><div class="lab">Minutes</div></div>
         <div class="stat"><div class="num" id="stReps">0</div><div class="lab">Total reps</div></div>
+      </div>
+
+      <div class="goal-card" id="goalCard">
+        <div class="goal-empty" id="goalEmpty">
+          <span class="goal-empty-text">Set a study goal to track your progress</span>
+          <button type="button" class="goal-set-btn" id="goalSetBtn">Set a goal</button>
+        </div>
+        <div class="goal-active" id="goalActive" style="display:none;">
+          <div class="goal-head">
+            <span id="goalProgressLabel">0 / 0 min this week</span>
+            <button type="button" class="goal-edit-btn" id="goalEditBtn">Edit</button>
+          </div>
+          <div class="goal-bar"><div class="goal-bar-fill" id="goalBarFill" style="width:0%"></div></div>
+        </div>
+        <div class="goal-editor" id="goalEditor" style="display:none;">
+          <div class="goal-type-toggle">
+            <button type="button" class="goal-type-btn" id="goalTypeWeekly" data-type="weekly">Weekly</button>
+            <button type="button" class="goal-type-btn" id="goalTypeMonthly" data-type="monthly">Monthly</button>
+          </div>
+          <div class="goal-target-row">
+            <input type="number" id="goalTargetInput" inputmode="numeric" min="15" max="20000" step="15" placeholder="Minutes">
+            <button type="button" class="goal-save-btn" id="goalSaveBtn">Save</button>
+          </div>
+          <div class="goal-editor-foot">
+            <button type="button" class="goal-cancel-btn" id="goalCancelBtn">Cancel</button>
+            <button type="button" class="goal-clear-btn" id="goalClearBtn" style="display:none;">Remove goal</button>
+          </div>
+        </div>
       </div>
       </div>
     </details>
@@ -2877,7 +3001,8 @@ const store = {
   }
 };
 let ACCOUNTS={};
-const blankData=()=>({name:null, displayName:null, avatar:null, tasks:[], history:[], totals:{sessions:0, minutes:0, reps:0}});
+const blankData=()=>({name:null, displayName:null, avatar:null, tasks:[], history:[], totals:{sessions:0, minutes:0, reps:0},
+  studyGoal:{enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]}});
 async function sha(text){
   try{
     const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -2908,7 +3033,7 @@ function saveData(){
   setTimeout(async ()=>{
     saveQueued=false;
     if(DATA.name && ACCOUNTS[DATA.name]){
-      ACCOUNTS[DATA.name].data = {displayName:DATA.displayName, avatar:DATA.avatar, tasks:DATA.tasks, history:DATA.history, totals:DATA.totals};
+      ACCOUNTS[DATA.name].data = {displayName:DATA.displayName, avatar:DATA.avatar, tasks:DATA.tasks, history:DATA.history, totals:DATA.totals, studyGoal:DATA.studyGoal};
       await store.set('pomofit:accounts', JSON.stringify(ACCOUNTS));
     }
   }, 300);
@@ -3060,6 +3185,7 @@ function saveCloudData(){
         tasks: DATA.tasks || [],
         history: DATA.history || [],
         totals: DATA.totals || {sessions:0,minutes:0,reps:0},
+        studyGoal: DATA.studyGoal || {enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]},
         email: cloudUser.email || null,
         updatedAt: firebase.database.ServerValue.TIMESTAMP
       });
@@ -3113,6 +3239,7 @@ function captureLocalData(){
     tasks: Array.isArray(DATA.tasks) ? DATA.tasks.slice() : [],
     history: Array.isArray(DATA.history) ? DATA.history.slice() : [],
     totals: Object.assign({sessions:0,minutes:0,reps:0}, DATA.totals||{}),
+    studyGoal: Object.assign({enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]}, DATA.studyGoal||{}),
     displayName: DATA.displayName || null,
     avatar: DATA.avatar || null
   };
@@ -4022,18 +4149,32 @@ function detachFriendsOnlineWatch(){
   friendOnlinePerFriendRefs={};
   friendOnlineKnownState={};
 }
-let friendOnlineToastTimer=null, friendOnlineToastQueue=[];
-function showFriendOnlineToast(info){
-  // queue so two friends coming online in quick succession don't overlap —
-  // each one gets its own clean slide-in rather than jumping mid-animation
-  friendOnlineToastQueue.push(info);
-  if(friendOnlineToastQueue.length===1) runFriendOnlineToastQueue();
+// shared queue so different toast types (friend online, goal milestone) never
+// overlap in the same top-right corner — only one shows at a time, in order
+let uiToastTimer=null, uiToastQueue=[];
+function enqueueUiToast(item){
+  uiToastQueue.push(item);
+  if(uiToastQueue.length===1) runUiToastQueue();
 }
-function runFriendOnlineToastQueue(){
-  const info = friendOnlineToastQueue[0];
-  if(!info){ return; }
+function runUiToastQueue(){
+  const item = uiToastQueue[0];
+  if(!item) return;
+  if(item.kind==='friend') showFriendOnlineToastNow(item.info);
+  else if(item.kind==='goal') showGoalMilestoneToastNow(item.milestone, item.goal);
+  else advanceUiToastQueue(0);
+}
+function advanceUiToastQueue(delay){
+  setTimeout(()=>{
+    uiToastQueue.shift();
+    if(uiToastQueue.length) runUiToastQueue();
+  }, delay);
+}
+function showFriendOnlineToast(info){
+  enqueueUiToast({kind:'friend', info});
+}
+function showFriendOnlineToastNow(info){
   const el = $('friendOnlineToast');
-  if(!el){ friendOnlineToastQueue.shift(); runFriendOnlineToastQueue(); return; }
+  if(!el){ advanceUiToastQueue(0); return; }
   const av = el.querySelector('.fot-avatar');
   const nameEl = el.querySelector('.fot-name');
   const a = info.avatar || null;
@@ -4044,21 +4185,52 @@ function runFriendOnlineToastQueue(){
   nameEl.textContent = (info.name || 'A friend') + ' is online';
   el.classList.remove('show'); void el.offsetWidth; // restart animation if already mid-cycle
   el.classList.add('show');
-  clearTimeout(friendOnlineToastTimer);
-  friendOnlineToastTimer = setTimeout(()=>{
+  clearTimeout(uiToastTimer);
+  uiToastTimer = setTimeout(()=>{
     el.classList.remove('show');
-    setTimeout(()=>{
-      friendOnlineToastQueue.shift();
-      if(friendOnlineToastQueue.length) runFriendOnlineToastQueue();
-    }, 400); // matches the slide-out transition duration
+    advanceUiToastQueue(400); // matches the slide-out transition duration
   }, 4200);
 }
 { const el=$('friendOnlineToast'); if(el) el.addEventListener('click', ()=>{
-  clearTimeout(friendOnlineToastTimer);
+  clearTimeout(uiToastTimer);
   el.classList.remove('show');
   if(typeof closeMenu==='function') closeMenu();
   if(typeof openPortal==='function') openPortal('friends');
-  setTimeout(()=>{ friendOnlineToastQueue.shift(); if(friendOnlineToastQueue.length) runFriendOnlineToastQueue(); }, 400);
+  advanceUiToastQueue(400);
+}); }
+
+// ---- study goal milestone celebration ----
+const GOAL_MILESTONE_COPY = {
+  25:  {emoji:'🌱', title:"You're 25% there!"},
+  50:  {emoji:'🔥', title:'Halfway to your goal!'},
+  75:  {emoji:'💪', title:'75% — almost there!'},
+  100: {emoji:'🏆', title:'Goal complete!'}
+};
+function showGoalMilestoneToast(milestone, goal){
+  enqueueUiToast({kind:'goal', milestone, goal:{type:goal.type, targetMinutes:goal.targetMinutes, progressMinutes:goal.progressMinutes}});
+}
+function showGoalMilestoneToastNow(milestone, goal){
+  const el = $('goalMilestoneToast');
+  if(!el){ advanceUiToastQueue(0); return; }
+  const copy = GOAL_MILESTONE_COPY[milestone] || {emoji:'🎉', title:'Nice progress!'};
+  el.querySelector('.gmt-emoji').textContent = copy.emoji;
+  el.querySelector('.gmt-title').textContent = copy.title;
+  const periodWord = goal.type==='monthly' ? 'month' : 'week';
+  el.querySelector('.gmt-sub').textContent = Math.round(goal.progressMinutes)+' / '+Math.round(goal.targetMinutes)+' min this '+periodWord;
+  el.classList.remove('show'); void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(uiToastTimer);
+  uiToastTimer = setTimeout(()=>{
+    el.classList.remove('show');
+    advanceUiToastQueue(400);
+  }, 4600);
+}
+{ const el=$('goalMilestoneToast'); if(el) el.addEventListener('click', ()=>{
+  clearTimeout(uiToastTimer);
+  el.classList.remove('show');
+  if(typeof closeMenu==='function') closeMenu();
+  if(typeof openSheet==='function') openSheet('profileSheet');
+  advanceUiToastQueue(400);
 }); }
 
 let inviteListenerRef=null, inviteListenerHandler=null;
@@ -5293,8 +5465,113 @@ function logFocus(minutes, completed){
     if(t) t.minutes+=minutes;
     logEntry({type:'focus', min:minutes, task:t?t.title:null});
   }
+  if(minutes>=1 && typeof addGoalProgress==='function') addGoalProgress(minutes);
   saveData(); renderTasks();
 }
+
+/* ---------- study goal (weekly / monthly target + milestone toasts) ---------- */
+// weekly resets every Monday; monthly resets on the 1st — calendar-based, not a
+// rolling window, so it matches how people actually think about "this week"
+function goalPeriodStart(type){
+  const now = new Date();
+  if(type==='monthly') return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const day = now.getDay(); // 0=Sun..6=Sat
+  const diffToMonday = (day===0 ? -6 : 1-day);
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate()+diffToMonday);
+  monday.setHours(0,0,0,0);
+  return monday.getTime();
+}
+function ensureGoalPeriodCurrent(){
+  const g = DATA.studyGoal;
+  if(!g || !g.enabled) return;
+  const curStart = goalPeriodStart(g.type);
+  if(g.periodStart !== curStart){
+    // a new week/month has started — progress and milestone history reset,
+    // but the goal itself (type + target) stays as the user set it
+    g.periodStart = curStart;
+    g.progressMinutes = 0;
+    g.milestonesShown = [];
+  }
+}
+function addGoalProgress(minutes){
+  const g = DATA.studyGoal;
+  if(!g || !g.enabled || !g.targetMinutes) return;
+  ensureGoalPeriodCurrent();
+  g.progressMinutes = (g.progressMinutes||0) + minutes;
+  const pct = Math.floor((g.progressMinutes / g.targetMinutes) * 100);
+  g.milestonesShown = g.milestonesShown || [];
+  [25,50,75,100].forEach(mile=>{
+    if(pct>=mile && !g.milestonesShown.includes(mile)){
+      g.milestonesShown.push(mile);
+      if(typeof showGoalMilestoneToast==='function') showGoalMilestoneToast(mile, g);
+    }
+  });
+  if(typeof renderGoal==='function') renderGoal();
+}
+function renderGoal(){
+  const g = DATA.studyGoal;
+  const empty=$('goalEmpty'), active=$('goalActive'), editor=$('goalEditor');
+  if(!empty || !active || !editor) return;
+  if(editor.style.display==='flex' || editor.style.display==='block') return; // don't clobber an open editor mid-edit
+  if(!g || !g.enabled || !g.targetMinutes){
+    empty.style.display='flex'; active.style.display='none'; editor.style.display='none';
+    return;
+  }
+  ensureGoalPeriodCurrent();
+  empty.style.display='none'; active.style.display='block'; editor.style.display='none';
+  const pct = Math.max(0, Math.min(100, Math.round((g.progressMinutes / g.targetMinutes) * 100)));
+  const periodWord = g.type==='monthly' ? 'month' : 'week';
+  $('goalProgressLabel').textContent = Math.round(g.progressMinutes)+' / '+Math.round(g.targetMinutes)+' min this '+periodWord+' ('+pct+'%)';
+  $('goalBarFill').style.width = pct+'%';
+}
+function openGoalEditor(){
+  const g = DATA.studyGoal || {};
+  $('goalEmpty').style.display='none';
+  $('goalActive').style.display='none';
+  $('goalEditor').style.display='flex';
+  const type = (g.enabled && g.type) || 'weekly';
+  $('goalTypeWeekly').classList.toggle('active', type==='weekly');
+  $('goalTypeMonthly').classList.toggle('active', type==='monthly');
+  $('goalEditor').dataset.selectedType = type;
+  $('goalTargetInput').value = (g.enabled && g.targetMinutes) ? g.targetMinutes : '';
+  $('goalClearBtn').style.display = g.enabled ? '' : 'none';
+  setTimeout(()=>{ try{ $('goalTargetInput').focus(); }catch(e){} }, 50);
+}
+function closeGoalEditor(){
+  $('goalEditor').style.display='none';
+  renderGoal();
+}
+{ const b=$('goalSetBtn'); if(b) b.onclick=openGoalEditor; }
+{ const b=$('goalEditBtn'); if(b) b.onclick=openGoalEditor; }
+{ const b=$('goalCancelBtn'); if(b) b.onclick=closeGoalEditor; }
+{ const wb=$('goalTypeWeekly'), mb=$('goalTypeMonthly'), ed=$('goalEditor');
+  if(wb) wb.onclick=()=>{ ed.dataset.selectedType='weekly'; wb.classList.add('active'); mb.classList.remove('active'); };
+  if(mb) mb.onclick=()=>{ ed.dataset.selectedType='monthly'; mb.classList.add('active'); wb.classList.remove('active'); };
+}
+{ const b=$('goalSaveBtn'); if(b) b.onclick=()=>{
+  const input=$('goalTargetInput');
+  const mins=Math.round(Number(input.value));
+  if(!mins || mins<15){ input.focus(); return; }
+  const type=$('goalEditor').dataset.selectedType || 'weekly';
+  const prevGoal = DATA.studyGoal;
+  const isNewOrChangedType = !prevGoal || !prevGoal.enabled || prevGoal.type!==type;
+  DATA.studyGoal = {
+    enabled:true, type, targetMinutes:mins,
+    // changing the goal type restarts the tracking period cleanly; just editing
+    // the target on the SAME type/period keeps current progress toward it
+    periodStart: isNewOrChangedType ? goalPeriodStart(type) : (prevGoal.periodStart||goalPeriodStart(type)),
+    progressMinutes: isNewOrChangedType ? 0 : (prevGoal.progressMinutes||0),
+    milestonesShown: isNewOrChangedType ? [] : (prevGoal.milestonesShown||[])
+  };
+  ensureGoalPeriodCurrent();
+  saveData();
+  closeGoalEditor();
+}; }
+{ const b=$('goalClearBtn'); if(b) b.onclick=()=>{
+  DATA.studyGoal = {enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]};
+  saveData();
+  closeGoalEditor();
+}; }
 function displayName(){ return (DATA.displayName && DATA.displayName.trim()) || DATA.name || ''; }
 
 /* ---------- performance dashboard (Stage 5) ---------- */
@@ -5426,6 +5703,7 @@ function renderProfile(){
     $('stReps').textContent=DATA.totals.reps;
     renderDashboard();
     renderFriends();
+    if(typeof renderGoal==='function') renderGoal();
   }
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
