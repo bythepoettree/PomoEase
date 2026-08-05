@@ -855,7 +855,11 @@
   /* "friend just came online" toast — quiet, slides in from the right,
      translucent/blurred so it never feels like an alert or interruption */
   .friend-online-toast{
-    position:fixed; top:18px; right:18px; z-index:1250;
+    position:fixed;
+    top:max(18px, calc(env(safe-area-inset-top, 0px) + 10px));
+    right:max(18px, calc(env(safe-area-inset-right, 0px) + 10px));
+    z-index:1250;
+    -webkit-appearance:none; appearance:none;
     display:flex; align-items:center; gap:10px;
     padding:10px 15px 10px 10px; border-radius:14px;
     background:color-mix(in srgb, var(--bg2) 42%, transparent);
@@ -2433,9 +2437,7 @@
     <div class="danger-zone">
       <button type="button" class="danger-toggle" id="dangerToggle" aria-expanded="false"><span>Advanced settings</span><span class="danger-chev">⌄</span></button>
       <div class="danger-body" id="dangerBody">
-        <p class="danger-note" id="resetStatsNote">Clears your rounds, minutes, reps and history. Your account stays — only the stats reset.</p>
-        <button class="profile-action-btn" id="resetStatsBtn">Reset</button>
-        <p class="danger-note">Deleting your account permanently removes your profile, tasks, and all saved progress. This can't be undone.</p>
+        <button class="profile-action-btn" id="resetStatsBtn">Reset stats</button>
         <button class="profile-action-btn danger" id="deleteAccountBtn">Delete account</button>
       </div>
     </div>
@@ -2914,22 +2916,34 @@ function saveData(){
 
 /* ---------- settings persistence (theme, durations, toggles) ---------- */
 let settingsSaveQueued=false;
+function buildSettingsSnapshot(){
+  return {
+    theme: document.body.dataset.theme,
+    appearanceOverride: (typeof appearanceOverride!=='undefined') ? appearanceOverride : null,
+    focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
+
+    longBreakEvery: S.longBreakEvery,
+    reminders: S.reminders, remindersMin: S.remindersMin, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+  };
+}
 function saveSettings(){
   if(settingsSaveQueued) return;
   settingsSaveQueued=true;
   setTimeout(async ()=>{
     settingsSaveQueued=false;
-    const snap={
-      theme: document.body.dataset.theme,
-      appearanceOverride: (typeof appearanceOverride!=='undefined') ? appearanceOverride : null,
-      focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
-
-      longBreakEvery: S.longBreakEvery,
-      reminders: S.reminders, remindersMin: S.remindersMin, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
-    };
-    await store.set('pomofit:settings', JSON.stringify(snap));
+    await store.set('pomofit:settings', JSON.stringify(buildSettingsSnapshot()));
   }, 300);
 }
+// theme/appearance changes write immediately (no debounce) — someone can toggle
+// the bulb and tap a footer link (About/Contact/Privacy) within a fraction of a
+// second, and those pages read this same value on load, so it can't be left
+// sitting in a queued, not-yet-written state
+async function saveSettingsNow(){
+  clearTimeout(saveSettingsNowTimer);
+  settingsSaveQueued=false;
+  await store.set('pomofit:settings', JSON.stringify(buildSettingsSnapshot()));
+}
+let saveSettingsNowTimer=null;
 async function loadSettings(){
   let saved=null;
   try{ saved = JSON.parse((await store.get('pomofit:settings'))||'null'); }catch(e){ saved=null; }
@@ -5354,12 +5368,9 @@ function renderDashboard(){
 }
 
 function renderProfile(){
-  resetArmed=false;
-  const b=$('resetStatsBtn'); if(b){ b.textContent='Reset'; b.classList.remove('armed'); }
-  // keep the danger zone collapsed and delete disarmed each time the profile renders
+  // keep the danger zone collapsed each time the profile renders
   const dt=$('dangerToggle'); if(dt){ dt.setAttribute('aria-expanded','false'); }
   const et=$('emojiToggle'); if(et){ et.setAttribute('aria-expanded','false'); et.textContent='Use an emoji instead ⌄'; }
-  const db=$('deleteAccountBtn'); if(db){ deleteArmed=false; db.textContent='Delete account'; db.classList.remove('armed'); }
   const signed=!!DATA.name;
   const nm=displayName();
   // menu label: show the user's first name when signed in, else "My account"
@@ -5443,24 +5454,16 @@ $('signUpBtn').onclick=cloudSignUp;
 $('passInput').addEventListener('keydown',e=>{ if(e.key==='Enter') cloudSignIn(); });
 $('signOutBtn').onclick=cloudSignOut;
 
-let deleteArmed=false;
-// collapsed "Advanced" disclosure that hides the delete button
+// collapsed "Advanced" disclosure that hides the reset/delete buttons
 $('dangerToggle').onclick=()=>{
   const t=$('dangerToggle');
   const open = t.getAttribute('aria-expanded')==='true';
   t.setAttribute('aria-expanded', open?'false':'true');
-  // re-disarm delete whenever the zone is toggled
-  deleteArmed=false;
-  const b=$('deleteAccountBtn'); b.textContent='Delete account'; b.classList.remove('armed');
 };
 $('deleteAccountBtn').onclick=async ()=>{
-  const b=$('deleteAccountBtn');
-  if(!deleteArmed){
-    deleteArmed=true; b.textContent='Tap again to permanently delete'; b.classList.add('armed');
-    setTimeout(()=>{ if(deleteArmed){ deleteArmed=false; b.textContent='Delete account'; b.classList.remove('armed'); } }, 5000);
-    return;
-  }
-  deleteArmed=false; b.textContent='Delete account'; b.classList.remove('armed');
+  const t=T();
+  const ok = confirm((t.deleteAccountNote||"Deleting your account permanently removes your profile, tasks, and all saved progress. This can't be undone.")+'\n\n'+(t.deleteAccount||'Delete account')+'?');
+  if(!ok) return;
   // cloud account: remove cloud data + the auth user
   if(cloudUser){
     detachLiveSync();
@@ -5607,15 +5610,10 @@ $('cropUseBtn').onclick=()=>{
 };
 
 /* ---------- reset statistics ---------- */
-let resetArmed=false;
 $('resetStatsBtn').onclick=()=>{
-  const b=$('resetStatsBtn');
-  if(!resetArmed){
-    resetArmed=true; b.textContent='Confirm?'; b.classList.add('armed');
-    setTimeout(()=>{ if(resetArmed){ resetArmed=false; b.textContent='Reset'; b.classList.remove('armed'); } }, 4000);
-    return;
-  }
-  resetArmed=false; b.textContent='Reset'; b.classList.remove('armed');
+  const t=T();
+  const ok = confirm((t.resetStatsNote||'Clears your rounds, minutes, reps and history. Your account stays — only the stats reset.')+'\n\n'+(t.resetStats||'Reset stats')+'?');
+  if(!ok) return;
   DATA.totals = {sessions:0, minutes:0, reps:0};
   DATA.history = [];
   renderProfile(); saveData();
@@ -7073,7 +7071,7 @@ const LANGS = {
     timeToFocus:'Time to focus!', dir:'ltr',
     taskPlaceholder:'What are you working on?', estLabel:'Estimated pomodoros',
     saveTask:'SAVE', cancelTask:'Cancel',
-    signOut:'Sign out', deleteAccount:'Delete account', resetStats:'Reset statistics', resetStatsNote:'Clears your rounds, minutes, reps and history', resetBtn:'Reset', confirmReset:'Confirm?', progressTitle:(n)=>`${n}'s progress`,
+    signOut:'Sign out', deleteAccount:'Delete account', resetStats:'Reset statistics', resetStatsNote:'Clears your rounds, minutes, reps and history', deleteAccountNote:"Deleting your account permanently removes your profile, tasks, and all saved progress. This can't be undone.", resetBtn:'Reset', confirmReset:'Confirm?', progressTitle:(n)=>`${n}'s progress`,
     usernamePlaceholder:'Username', passwordPlaceholder:'Password', securityNote:'Creating an account? Set a security question in case you forget your password:', secAnswerPlaceholder:'Your answer', forgotPassword:'Forgot password?', storageNote:'Accounts live in this browser — sign back in any time on this device.',
     secQ:{pet:"What was the name of your first pet?",city:"What city were you born in?",school:"What was your first school?",word:"What's a word only you would remember?"},
     resetIntro:'Answer your security question to set a new password.', resetUserPlaceholder:'Username', resetAnswerPlaceholder:'Your answer', saveNewPassword:'SAVE NEW PASSWORD', continueBtn:'CONTINUE',
@@ -7118,7 +7116,7 @@ const LANGS = {
     timeToFocus:'Odaklanma zamanı!', dir:'ltr',
     taskPlaceholder:'Ne üzerinde çalışıyorsun?', estLabel:'Tahmini pomodoro 🍅',
     saveTask:'KAYDET', cancelTask:'İptal',
-    signOut:'Çıkış yap', deleteAccount:'Hesabı sil', resetStats:'İstatistikleri sıfırla', resetStatsNote:'Turlar, dakikalar, tekrarlar ve geçmişi temizler', resetBtn:'Sıfırla', confirmReset:'Emin misin?', progressTitle:(n)=>`${n} ilerleme`,
+    signOut:'Çıkış yap', deleteAccount:'Hesabı sil', resetStats:'İstatistikleri sıfırla', resetStatsNote:'Turlar, dakikalar, tekrarlar ve geçmişi temizler', deleteAccountNote:'Hesabını silmek profilini, görevlerini ve tüm kayıtlı ilerlemeni kalıcı olarak kaldırır. Bu işlem geri alınamaz.', resetBtn:'Sıfırla', confirmReset:'Emin misin?', progressTitle:(n)=>`${n} ilerleme`,
     usernamePlaceholder:'Kullanıcı adı', passwordPlaceholder:'Şifre', securityNote:'Hesap oluşturuyor musun? Şifreni unutursan kurtarmak için bir güvenlik sorusu belirle:', secAnswerPlaceholder:'Cevabın', forgotPassword:'Şifremi unuttum', storageNote:'Hesaplar bu tarayıcıda saklanır — istediğin zaman geri oturum aç.',
     secQ:{pet:'İlk evcil hayvanının adı neydi?',city:'Hangi şehirde doğdun?',school:'İlk okulun hangisiydi?',word:'Sadece senin bileceğin bir kelime nedir?'},
     resetIntro:'Yeni bir şifre belirlemek için güvenlik sorusunu yanıtla.', resetUserPlaceholder:'Kullanıcı adı', resetAnswerPlaceholder:'Cevabın', saveNewPassword:'YENİ ŞİFREYİ KAYDET', continueBtn:'DEVAM',
@@ -7163,7 +7161,7 @@ const LANGS = {
     timeToFocus:'Zeit zum Fokussieren!', dir:'ltr',
     taskPlaceholder:'Woran arbeitest du?', estLabel:'Geschätzte Pomodoros 🍅',
     saveTask:'SPEICHERN', cancelTask:'Abbrechen',
-    signOut:'Abmelden', deleteAccount:'Konto löschen', resetStats:'Statistiken zurücksetzen', resetStatsNote:'Löscht Runden, Minuten, Wiederholungen und Verlauf', resetBtn:'Zurücksetzen', confirmReset:'Bestätigen?', progressTitle:(n)=>`${n}s Fortschritt`,
+    signOut:'Abmelden', deleteAccount:'Konto löschen', resetStats:'Statistiken zurücksetzen', resetStatsNote:'Löscht Runden, Minuten, Wiederholungen und Verlauf', deleteAccountNote:'Das Löschen deines Kontos entfernt dauerhaft dein Profil, deine Aufgaben und deinen gesamten gespeicherten Fortschritt. Dies kann nicht rückgängig gemacht werden.', resetBtn:'Zurücksetzen', confirmReset:'Bestätigen?', progressTitle:(n)=>`${n}s Fortschritt`,
     usernamePlaceholder:'Benutzername', passwordPlaceholder:'Passwort', securityNote:'Konto erstellen? Lege eine Sicherheitsfrage fest, falls du dein Passwort vergisst:', secAnswerPlaceholder:'Deine Antwort', forgotPassword:'Passwort vergessen', storageNote:'Konten werden in diesem Browser gespeichert — melde dich jederzeit wieder an.',
     secQ:{pet:'Wie hieß dein erstes Haustier?',city:'In welcher Stadt wurdest du geboren?',school:'Wie hieß deine erste Schule?',word:'Ein Wort, das nur du kennen würdest?'},
     resetIntro:'Beantworte deine Sicherheitsfrage, um ein neues Passwort zu setzen.', resetUserPlaceholder:'Benutzername', resetAnswerPlaceholder:'Deine Antwort', saveNewPassword:'NEUES PASSWORT SPEICHERN', continueBtn:'WEITER',
@@ -7208,7 +7206,7 @@ const LANGS = {
     timeToFocus:'وقت التركيز!', dir:'rtl',
     taskPlaceholder:'ماذا تعمل الآن؟', estLabel:'بومودورو متوقعة 🍅',
     saveTask:'حفظ', cancelTask:'إلغاء',
-    signOut:'تسجيل الخروج', deleteAccount:'حذف الحساب', resetStats:'إعادة تعيين الإحصائيات', resetStatsNote:'يمسح الجولات والدقائق والتكرارات والسجل', resetBtn:'إعادة تعيين', confirmReset:'تأكيد؟', progressTitle:(n)=>`تقدم ${n}`,
+    signOut:'تسجيل الخروج', deleteAccount:'حذف الحساب', resetStats:'إعادة تعيين الإحصائيات', resetStatsNote:'يمسح الجولات والدقائق والتكرارات والسجل', deleteAccountNote:'حذف حسابك يزيل نهائيًا ملفك الشخصي ومهامك وكل تقدمك المحفوظ. لا يمكن التراجع عن هذا الإجراء.', resetBtn:'إعادة تعيين', confirmReset:'تأكيد؟', progressTitle:(n)=>`تقدم ${n}`,
     usernamePlaceholder:'اسم المستخدم', passwordPlaceholder:'كلمة المرور', securityNote:'هل تنشئ حساباً؟ عيّن سؤال أمان لاستعادة حسابك:', secAnswerPlaceholder:'إجابتك', forgotPassword:'نسيت كلمة المرور', storageNote:'الحسابات مخزنة في هذا المتصفح — سجّل دخولك في أي وقت.',
     secQ:{pet:'ما اسم حيوانك الأليف الأول؟',city:'في أي مدينة وُلدت؟',school:'ما اسم أول مدرسة دخلتها؟',word:'كلمة لا يعرفها إلا أنت؟'},
     resetIntro:'أجب على سؤال الأمان لتعيين كلمة مرور جديدة.', resetUserPlaceholder:'اسم المستخدم', resetAnswerPlaceholder:'إجابتك', saveNewPassword:'حفظ كلمة المرور الجديدة', continueBtn:'متابعة',
@@ -7263,7 +7261,7 @@ const LANGS = {
     joinSession:'加入专注',
     taskPlaceholder:'你在做什么？', estLabel:'预计番茄数 🍅',
     saveTask:'保存', cancelTask:'取消',
-    signOut:'退出登录', deleteAccount:'删除账户', resetStats:'重置统计', resetStatsNote:'清除轮次、分钟、次数和历史记录', resetBtn:'重置', confirmReset:'确认？', progressTitle:(n)=>`${n} 的进度`,
+    signOut:'退出登录', deleteAccount:'删除账户', resetStats:'重置统计', resetStatsNote:'清除轮次、分钟、次数和历史记录', deleteAccountNote:'删除账户将永久移除你的个人资料、任务和所有已保存的进度，且无法撤销。', resetBtn:'重置', confirmReset:'确认？', progressTitle:(n)=>`${n} 的进度`,
     usernamePlaceholder:'用户名', passwordPlaceholder:'密码', securityNote:'创建账户？设置一个安全问题以防忘记密码：', secAnswerPlaceholder:'你的答案', forgotPassword:'忘记密码', storageNote:'账户保存在此浏览器中 — 随时可以重新登录。',
     secQ:{pet:'你的第一只宠物叫什么名字？',city:'你出生在哪个城市？',school:'你的第一所学校叫什么？',word:'只有你知道的一个词是什么？'},
     resetIntro:'回答安全问题以设置新密码。', resetUserPlaceholder:'用户名', resetAnswerPlaceholder:'你的答案', saveNewPassword:'保存新密码', continueBtn:'继续',
@@ -7458,11 +7456,9 @@ function applyLang(lang){
   const resetAnswerEl=$('resetAnswerInput'); if(resetAnswerEl) resetAnswerEl.placeholder=t.resetAnswerPlaceholder;
   const resetCancelEl=$('resetCancelBtn'); if(resetCancelEl) resetCancelEl.textContent=t.cancelTask;
   // stats box
-  const resetStatsBtnEl=$('resetStatsBtn'); if(resetStatsBtnEl && resetStatsBtnEl.textContent!==t.confirmReset) resetStatsBtnEl.textContent=t.resetBtn;
+  const resetStatsBtnEl=$('resetStatsBtn'); if(resetStatsBtnEl) resetStatsBtnEl.textContent=t.resetStats;
   const signOutEl=$('signOutBtn'); if(signOutEl) signOutEl.textContent=t.signOut;
-  const delAccEl=$('deleteAccountBtn'); if(delAccEl && !delAccEl.classList.contains('armed')) delAccEl.textContent='Delete account';
-  // reset stats label
-  const resetStatsSub=$('resetStatsNote'); if(resetStatsSub) resetStatsSub.textContent=t.resetStatsNote;
+  const delAccEl=$('deleteAccountBtn'); if(delAccEl) delAccEl.textContent=t.deleteAccount;
   // crop sheet
   const cropCancelEl=$('cropCancelBtn'); if(cropCancelEl) cropCancelEl.textContent=t.cropCancel;
   const cropUseEl=$('cropUseBtn'); if(cropUseEl) cropUseEl.textContent=t.cropUse;
@@ -7941,7 +7937,7 @@ themeToggleBtn.onclick=()=>{
   const cur=document.body.dataset.theme;
   const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1) % THEME_ORDER.length] || 'midnight';
   applyTheme(next);
-  saveSettings();
+  saveSettingsNow();
 };
 applyTheme(document.body.dataset.theme);
 
@@ -7950,7 +7946,7 @@ function toggleAppearance(){
   const cur=document.body.dataset.theme || 'midnight';
   appearanceOverride = (appearanceFor(cur)==='light') ? 'dark' : 'light';
   setAppearanceDOM(appearanceOverride);
-  saveSettings();
+  saveSettingsNow();
 }
 { const ab=$('appearanceToggleBtn'); if(ab) ab.onclick=toggleAppearance; }
 
@@ -8046,7 +8042,7 @@ $('sfxToggle').onclick=()=>{
 $('settingsThemeBtn').onclick=()=>{
   const cur=document.body.dataset.theme;
   const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1)%THEME_ORDER.length]||'midnight';
-  applyTheme(next); saveSettings();
+  applyTheme(next); saveSettingsNow();
 };
 $('settingsSfxBtn').onclick=()=>{
   S.sound=!S.sound;
