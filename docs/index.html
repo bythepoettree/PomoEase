@@ -1181,6 +1181,15 @@
     font-family:inherit; font-size:14px;
   }
   .goal-target-row input:focus{ outline:2px solid var(--accent); outline-offset:-1px; }
+  .goal-target-row input.goal-input-error{
+    outline:2px solid #E8604C; outline-offset:-1px;
+    animation:goalInputShake .3s ease;
+  }
+  @keyframes goalInputShake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-3px); }
+    75%{ transform:translateX(3px); }
+  }
   .goal-save-btn{
     padding:0 18px; border:none; border-radius:10px; cursor:pointer;
     background:var(--accent); color:var(--accent-ink); font-family:inherit; font-size:12.5px; font-weight:700;
@@ -2538,11 +2547,12 @@
         </div>
         <div class="goal-editor" id="goalEditor" style="display:none;">
           <div class="goal-type-toggle">
+            <button type="button" class="goal-type-btn" id="goalTypeDaily" data-type="daily">Daily</button>
             <button type="button" class="goal-type-btn" id="goalTypeWeekly" data-type="weekly">Weekly</button>
             <button type="button" class="goal-type-btn" id="goalTypeMonthly" data-type="monthly">Monthly</button>
           </div>
           <div class="goal-target-row">
-            <input type="number" id="goalTargetInput" inputmode="numeric" min="15" max="20000" step="15" placeholder="Minutes">
+            <input type="number" id="goalTargetInput" min="1" max="20000" placeholder="Minutes">
             <button type="button" class="goal-save-btn" id="goalSaveBtn">Save</button>
           </div>
           <div class="goal-editor-foot">
@@ -4215,15 +4225,15 @@ function showGoalMilestoneToastNow(milestone, goal){
   const copy = GOAL_MILESTONE_COPY[milestone] || {emoji:'🎉', title:'Nice progress!'};
   el.querySelector('.gmt-emoji').textContent = copy.emoji;
   el.querySelector('.gmt-title').textContent = copy.title;
-  const periodWord = goal.type==='monthly' ? 'month' : 'week';
-  el.querySelector('.gmt-sub').textContent = Math.round(goal.progressMinutes)+' / '+Math.round(goal.targetMinutes)+' min this '+periodWord;
+  const periodPhrase = typeof goalPeriodPhrase==='function' ? goalPeriodPhrase(goal.type) : 'this '+(goal.type==='monthly' ? 'month' : 'week');
+  el.querySelector('.gmt-sub').textContent = Math.round(goal.progressMinutes)+' / '+Math.round(goal.targetMinutes)+' min '+periodPhrase;
   el.classList.remove('show'); void el.offsetWidth;
   el.classList.add('show');
   clearTimeout(uiToastTimer);
   uiToastTimer = setTimeout(()=>{
     el.classList.remove('show');
     advanceUiToastQueue(400);
-  }, 4600);
+  }, 7500);
 }
 { const el=$('goalMilestoneToast'); if(el) el.addEventListener('click', ()=>{
   clearTimeout(uiToastTimer);
@@ -5448,26 +5458,63 @@ function logEntry(e){
   DATA.history.unshift(e);
   if(DATA.history.length>40) DATA.history.length=40;
 }
+let focusMinutesFlushedThisRound = 0; // minutes of the CURRENT focus round already credited to stats
+// returns only the NEW minutes to credit (beyond what's already been
+// safety-flushed for this round) and advances the baseline accordingly —
+// this is what stops a periodic/abandonment flush and the eventual real
+// logFocus call from double-counting the same minutes
+function takeFocusMinutesDelta(totalMinutesSoFar){
+  const whole = Math.max(0, Math.round(totalMinutesSoFar));
+  const delta = whole - focusMinutesFlushedThisRound;
+  focusMinutesFlushedThisRound = whole;
+  return Math.max(0, delta);
+}
 function logFocus(minutes, completed){
   minutes=Math.round(minutes);
-  DATA.totals.minutes += minutes;
+  const delta = takeFocusMinutesDelta(minutes);
+  DATA.totals.minutes += delta;
   const t=DATA.tasks.find(x=>x.id===S.activeTask);
   if(completed){
     // a pomodoro only counts when the full focus timer elapses
     DATA.totals.sessions++;
     if(t){
-      t.sessions++; t.minutes+=minutes;
+      t.sessions++; t.minutes+=delta;
       if(t.est && t.sessions>=t.est) t.done=true;   // auto cross-out at estimate
     }
     logEntry({type:'focus', min:minutes, task:t?t.title:null});
     if(typeof maybeNudgeGuestBackup==='function') maybeNudgeGuestBackup();
   } else if(minutes>=1){
-    if(t) t.minutes+=minutes;
+    if(t) t.minutes+=delta;
     logEntry({type:'focus', min:minutes, task:t?t.title:null});
   }
-  if(minutes>=1 && typeof addGoalProgress==='function') addGoalProgress(minutes);
+  if(delta>=1 && typeof addGoalProgress==='function') addGoalProgress(delta);
+  focusMinutesFlushedThisRound = 0; // this round is concluded — next one starts fresh
   saveData(); renderTasks();
 }
+// safety net: studied time used to only get recorded when a round was
+// explicitly completed or skipped — closing the tab, backgrounding the app,
+// or the phone locking mid-round silently lost whatever had been studied.
+// This credits real elapsed minutes as they happen, so nothing is lost no
+// matter how the session ends. It never touches the visible timer, the
+// session/round count, or task-complete logic — only the raw minute tally —
+// so if the tab comes back, everything else resumes completely normally.
+function flushPartialFocusMinutes(){
+  if(S.phase!=='focus') return;
+  const liveLeft = S.running ? Math.max(0, S.endAt-Date.now()) : S.remaining;
+  const elapsedMin = (phaseDuration()-liveLeft)/60000;
+  const delta = takeFocusMinutesDelta(elapsedMin);
+  if(delta>=1){
+    DATA.totals.minutes += delta;
+    const t=DATA.tasks.find(x=>x.id===S.activeTask);
+    if(t) t.minutes += delta;
+    if(typeof addGoalProgress==='function') addGoalProgress(delta);
+    saveData();
+  }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='hidden') flushPartialFocusMinutes();
+});
+window.addEventListener('pagehide', flushPartialFocusMinutes);
 
 /* ---------- study goal (weekly / monthly target + milestone toasts) ---------- */
 // weekly resets every Monday; monthly resets on the 1st — calendar-based, not a
@@ -5475,6 +5522,11 @@ function logFocus(minutes, completed){
 function goalPeriodStart(type){
   const now = new Date();
   if(type==='monthly') return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  if(type==='daily'){
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    d.setHours(0,0,0,0);
+    return d.getTime();
+  }
   const day = now.getDay(); // 0=Sun..6=Sat
   const diffToMonday = (day===0 ? -6 : 1-day);
   const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate()+diffToMonday);
@@ -5486,7 +5538,7 @@ function ensureGoalPeriodCurrent(){
   if(!g || !g.enabled) return;
   const curStart = goalPeriodStart(g.type);
   if(g.periodStart !== curStart){
-    // a new week/month has started — progress and milestone history reset,
+    // a new day/week/month has started — progress and milestone history reset,
     // but the goal itself (type + target) stays as the user set it
     g.periodStart = curStart;
     g.progressMinutes = 0;
@@ -5508,6 +5560,12 @@ function addGoalProgress(minutes){
   });
   if(typeof renderGoal==='function') renderGoal();
 }
+function goalPeriodWord(type){
+  return type==='monthly' ? 'month' : type==='daily' ? 'day' : 'week';
+}
+function goalPeriodPhrase(type){
+  return type==='daily' ? 'today' : 'this '+goalPeriodWord(type);
+}
 function renderGoal(){
   const g = DATA.studyGoal;
   const empty=$('goalEmpty'), active=$('goalActive'), editor=$('goalEditor');
@@ -5520,9 +5578,16 @@ function renderGoal(){
   ensureGoalPeriodCurrent();
   empty.style.display='none'; active.style.display='block'; editor.style.display='none';
   const pct = Math.max(0, Math.min(100, Math.round((g.progressMinutes / g.targetMinutes) * 100)));
-  const periodWord = g.type==='monthly' ? 'month' : 'week';
-  $('goalProgressLabel').textContent = Math.round(g.progressMinutes)+' / '+Math.round(g.targetMinutes)+' min this '+periodWord+' ('+pct+'%)';
+  const periodPhrase = goalPeriodPhrase(g.type);
+  $('goalProgressLabel').textContent = Math.round(g.progressMinutes)+' / '+Math.round(g.targetMinutes)+' min '+periodPhrase+' ('+pct+'%)';
   $('goalBarFill').style.width = pct+'%';
+}
+const GOAL_TYPE_BTN_IDS = {daily:'goalTypeDaily', weekly:'goalTypeWeekly', monthly:'goalTypeMonthly'};
+function setGoalTypeSelection(type){
+  $('goalEditor').dataset.selectedType = type;
+  Object.entries(GOAL_TYPE_BTN_IDS).forEach(([t,id])=>{
+    const btn=$(id); if(btn) btn.classList.toggle('active', t===type);
+  });
 }
 function openGoalEditor(){
   const g = DATA.studyGoal || {};
@@ -5530,9 +5595,8 @@ function openGoalEditor(){
   $('goalActive').style.display='none';
   $('goalEditor').style.display='flex';
   const type = (g.enabled && g.type) || 'weekly';
-  $('goalTypeWeekly').classList.toggle('active', type==='weekly');
-  $('goalTypeMonthly').classList.toggle('active', type==='monthly');
-  $('goalEditor').dataset.selectedType = type;
+  setGoalTypeSelection(type);
+  $('goalTargetInput').classList.remove('goal-input-error');
   $('goalTargetInput').value = (g.enabled && g.targetMinutes) ? g.targetMinutes : '';
   $('goalClearBtn').style.display = g.enabled ? '' : 'none';
   setTimeout(()=>{ try{ $('goalTargetInput').focus(); }catch(e){} }, 50);
@@ -5544,14 +5608,23 @@ function closeGoalEditor(){
 { const b=$('goalSetBtn'); if(b) b.onclick=openGoalEditor; }
 { const b=$('goalEditBtn'); if(b) b.onclick=openGoalEditor; }
 { const b=$('goalCancelBtn'); if(b) b.onclick=closeGoalEditor; }
-{ const wb=$('goalTypeWeekly'), mb=$('goalTypeMonthly'), ed=$('goalEditor');
-  if(wb) wb.onclick=()=>{ ed.dataset.selectedType='weekly'; wb.classList.add('active'); mb.classList.remove('active'); };
-  if(mb) mb.onclick=()=>{ ed.dataset.selectedType='monthly'; mb.classList.add('active'); wb.classList.remove('active'); };
-}
+Object.entries(GOAL_TYPE_BTN_IDS).forEach(([type,id])=>{
+  const btn=$(id); if(btn) btn.onclick=()=>setGoalTypeSelection(type);
+});
 { const b=$('goalSaveBtn'); if(b) b.onclick=()=>{
   const input=$('goalTargetInput');
   const mins=Math.round(Number(input.value));
-  if(!mins || mins<15){ input.focus(); return; }
+  // any positive number is a valid personal goal — even 5 minutes a week is
+  // a real goal, so there's no arbitrary floor here. On invalid/empty input,
+  // dismiss the keyboard (blur) instead of refocusing it — refocusing is what
+  // made the iOS keyboard seem "stuck" and impossible to close
+  if(!mins || mins<1){
+    input.classList.add('goal-input-error');
+    input.blur();
+    return;
+  }
+  input.classList.remove('goal-input-error');
+  input.blur();
   const type=$('goalEditor').dataset.selectedType || 'weekly';
   const prevGoal = DATA.studyGoal;
   const isNewOrChangedType = !prevGoal || !prevGoal.enabled || prevGoal.type!==type;
@@ -6100,8 +6173,18 @@ function renderFooter(){
   if(sesEl) sesEl.textContent = S.session;
 }
 function renderDots(){
+  // defensive: "Session N" and the dots come from two separate counters that
+  // are supposed to always move together, but can drift apart (most likely
+  // after a co-work sync that only touched one of them) — recompute the
+  // within-cycle progress from the session number itself so the dots can
+  // never show something that contradicts the "Session N" label
+  const cycleLen = (typeof S.longBreakEvery==='number' && S.longBreakEvery>0) ? S.longBreakEvery : 4;
+  if(typeof S.session==='number' && S.session>=1){
+    const expected = (S.session-1) % cycleLen;
+    if(S.completed!==expected) S.completed = expected;
+  }
   dotsEl.innerHTML='';
-  for(let i=0;i<4;i++){
+  for(let i=0;i<cycleLen;i++){
     const d=document.createElement('div'); d.className='dot';
     if(i<S.completed) d.classList.add('done');
     if(i===S.completed && S.phase==='focus') d.classList.add('now');
@@ -6141,6 +6224,7 @@ $('resetBtn').onclick=e=>{
   if(S.running){ pause(); }
   S.remaining = phaseDuration();
   S.endAt = Date.now() + S.remaining;
+  focusMinutesFlushedThisRound = 0; // starting over — don't carry the old baseline into the next attempt
   render(S.remaining);
   syncStartBtn();
   if(mySession) broadcastTimer();
