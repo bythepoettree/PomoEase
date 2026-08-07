@@ -3030,7 +3030,8 @@ const store = {
 };
 let ACCOUNTS={};
 const blankData=()=>({name:null, displayName:null, avatar:null, tasks:[], history:[], totals:{sessions:0, minutes:0, reps:0},
-  studyGoal:{enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]}});
+  studyGoal:{enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]},
+  dailyMinutes:{}});
 async function sha(text){
   try{
     const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -3050,7 +3051,23 @@ async function loadData(){
     DATA = Object.assign(blankData(), ACCOUNTS[ses].data||{});
     DATA.name = ses;
   }
+  migrateDailyMinutesFromHistory();
   renderProfile(); renderTasks();
+}
+// one-time migration: accounts saved before the uncapped daily-minutes ledger
+// existed only have the capped 40-entry activity log to go on — seed the
+// ledger from whatever's still in it, so nobody's recent streak resets to
+// zero the moment this update lands. Safe to call repeatedly: it only acts
+// when the ledger is genuinely empty.
+function migrateDailyMinutesFromHistory(){
+  if(!DATA.dailyMinutes || typeof DATA.dailyMinutes!=='object') DATA.dailyMinutes={};
+  if(Object.keys(DATA.dailyMinutes).length>0) return;
+  (DATA.history||[]).forEach(e=>{
+    if(e && e.type==='focus' && e.ts && e.min>0){
+      const k=dayKey(e.ts);
+      DATA.dailyMinutes[k]=(DATA.dailyMinutes[k]||0)+e.min;
+    }
+  });
 }
 let saveQueued=false;
 function saveData(){
@@ -3061,7 +3078,7 @@ function saveData(){
   setTimeout(async ()=>{
     saveQueued=false;
     if(DATA.name && ACCOUNTS[DATA.name]){
-      ACCOUNTS[DATA.name].data = {displayName:DATA.displayName, avatar:DATA.avatar, tasks:DATA.tasks, history:DATA.history, totals:DATA.totals, studyGoal:DATA.studyGoal};
+      ACCOUNTS[DATA.name].data = {displayName:DATA.displayName, avatar:DATA.avatar, tasks:DATA.tasks, history:DATA.history, totals:DATA.totals, studyGoal:DATA.studyGoal, dailyMinutes:DATA.dailyMinutes};
       await store.set('pomofit:accounts', JSON.stringify(ACCOUNTS));
     }
   }, 300);
@@ -3214,6 +3231,7 @@ function saveCloudData(){
         history: DATA.history || [],
         totals: DATA.totals || {sessions:0,minutes:0,reps:0},
         studyGoal: DATA.studyGoal || {enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]},
+        dailyMinutes: DATA.dailyMinutes || {},
         email: cloudUser.email || null,
         updatedAt: firebase.database.ServerValue.TIMESTAMP
       });
@@ -3268,6 +3286,7 @@ function captureLocalData(){
     history: Array.isArray(DATA.history) ? DATA.history.slice() : [],
     totals: Object.assign({sessions:0,minutes:0,reps:0}, DATA.totals||{}),
     studyGoal: Object.assign({enabled:false, type:'weekly', targetMinutes:0, periodStart:0, progressMinutes:0, milestonesShown:[]}, DATA.studyGoal||{}),
+    dailyMinutes: Object.assign({}, DATA.dailyMinutes||{}),
     displayName: DATA.displayName || null,
     avatar: DATA.avatar || null
   };
@@ -3308,6 +3327,13 @@ function mergeData(cloudDoc, local){
   // profile: keep cloud's if set, else adopt local
   if(!base.displayName && local.displayName) base.displayName = local.displayName;
   if(!base.avatar && local.avatar) base.avatar = local.avatar;
+  // daily-minutes ledger (streak/weekly data): merge per day, taking the
+  // larger figure for any day both sides have — avoids double-counting the
+  // same studied time while still picking up days only one side recorded
+  const cd = base.dailyMinutes||{}, ld = local.dailyMinutes||{};
+  const merged = Object.assign({}, cd);
+  Object.keys(ld).forEach(k=>{ merged[k] = Math.max(merged[k]||0, ld[k]||0); });
+  base.dailyMinutes = merged;
   return base;
 }
 
@@ -3320,6 +3346,7 @@ function applyCloudUser(user, cloudDoc){
   // name-driven UI keeps working; displayName overrides for what's shown
   DATA.name = user.email || ('user-'+user.uid.slice(0,6));
   if(!DATA.displayName && cloudDoc && cloudDoc.displayName) DATA.displayName = cloudDoc.displayName;
+  if(typeof migrateDailyMinutesFromHistory==='function') migrateDailyMinutesFromHistory();
   S.activeTask = null;
   try{ localStorage.setItem('pomofit:cloudSession', '1'); }catch(e){}
   attachLiveSync();
@@ -5531,6 +5558,22 @@ function logEntry(e){
   e.ts=Date.now();
   DATA.history.unshift(e);
   if(DATA.history.length>40) DATA.history.length=40;
+  // the streak/weekly-bars need to see arbitrarily far back, but the activity
+  // log above is deliberately capped short (it's just "recent activity") —
+  // someone doing several rounds a day would exhaust 40 entries in under a
+  // week, silently truncating their streak. This ledger is separate and only
+  // ever grows (trimmed generously, not to a handful of days).
+  if(e.type==='focus' && e.min>0){
+    if(!DATA.dailyMinutes || typeof DATA.dailyMinutes!=='object') DATA.dailyMinutes={};
+    const k=dayKey(e.ts);
+    DATA.dailyMinutes[k]=(DATA.dailyMinutes[k]||0)+e.min;
+    // keep roughly the last 400 days — plenty for any realistic streak,
+    // while still bounding storage growth over years of use
+    const keys=Object.keys(DATA.dailyMinutes);
+    if(keys.length>400){
+      keys.sort().slice(0, keys.length-400).forEach(k=>delete DATA.dailyMinutes[k]);
+    }
+  }
 }
 let focusMinutesFlushedThisRound = 0; // minutes of the CURRENT focus round already credited to stats
 // returns only the NEW minutes to credit (beyond what's already been
@@ -5607,16 +5650,43 @@ function goalPeriodStart(type){
   monday.setHours(0,0,0,0);
   return monday.getTime();
 }
+// sums whatever's already been studied (from the uncapped daily-minutes
+// ledger) between a period's start and today, inclusive — so a goal that's
+// just been set, or has just rolled into a new day/week/month, starts
+// reflecting minutes already studied in that window rather than zero
+function minutesStudiedSince(periodStartTs){
+  if(!DATA.dailyMinutes || typeof DATA.dailyMinutes!=='object') return 0;
+  const start = new Date(periodStartTs);
+  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const today = new Date();
+  const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let total = 0;
+  while(cursor<=todayDay){
+    total += DATA.dailyMinutes[dayKey(cursor.getTime())] || 0;
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return total;
+}
+// fills in a goal's progress from what's already been studied in its current
+// period, and marks any milestone thresholds that figure already clears as
+// "shown" WITHOUT firing their celebration toast — only genuinely new
+// progress from this point on should trigger a toast, not a backdated one
+// the instant a goal is created or a new period begins
+function seedGoalProgress(goal){
+  goal.progressMinutes = minutesStudiedSince(goal.periodStart);
+  const pct = goal.targetMinutes>0 ? Math.floor((goal.progressMinutes/goal.targetMinutes)*100) : 0;
+  goal.milestonesShown = [25,50,75,100].filter(m=>pct>=m);
+}
 function ensureGoalPeriodCurrent(){
   const g = DATA.studyGoal;
   if(!g || !g.enabled) return;
   const curStart = goalPeriodStart(g.type);
   if(g.periodStart !== curStart){
-    // a new day/week/month has started — progress and milestone history reset,
-    // but the goal itself (type + target) stays as the user set it
+    // a new day/week/month has started — progress and milestone history
+    // reset, but re-seed from anything already studied in the NEW period
+    // (e.g. the app was closed, they studied earlier today, then reopened it)
     g.periodStart = curStart;
-    g.progressMinutes = 0;
-    g.milestonesShown = [];
+    seedGoalProgress(g);
   }
 }
 function addGoalProgress(minutes){
@@ -5704,12 +5774,16 @@ Object.entries(GOAL_TYPE_BTN_IDS).forEach(([type,id])=>{
   const isNewOrChangedType = !prevGoal || !prevGoal.enabled || prevGoal.type!==type;
   DATA.studyGoal = {
     enabled:true, type, targetMinutes:mins,
-    // changing the goal type restarts the tracking period cleanly; just editing
-    // the target on the SAME type/period keeps current progress toward it
+    // changing the goal type restarts the tracking period cleanly; just
+    // editing the target on the SAME type/period keeps the same boundary
     periodStart: isNewOrChangedType ? goalPeriodStart(type) : (prevGoal.periodStart||goalPeriodStart(type)),
-    progressMinutes: isNewOrChangedType ? 0 : (prevGoal.progressMinutes||0),
-    milestonesShown: isNewOrChangedType ? [] : (prevGoal.milestonesShown||[])
+    progressMinutes: 0, milestonesShown: []
   };
+  // always derive progress from what's actually been studied in this period
+  // (via the daily-minutes ledger) — covers a brand-new goal, a changed
+  // type, and simply editing the target, all from the same source of truth,
+  // so minutes already studied today/this week/this month count immediately
+  seedGoalProgress(DATA.studyGoal);
   ensureGoalPeriodCurrent();
   saveData();
   closeGoalEditor();
@@ -5732,10 +5806,13 @@ function fmtMins(m){
   return Math.round(m||0)+'m';
 }
 function renderDashboard(){
-  const focus = (DATA.history||[]).filter(e=>e && e.type==='focus' && e.ts);
-  // minutes per day
-  const perDay = {};
-  focus.forEach(e=>{ const k=dayKey(e.ts); perDay[k]=(perDay[k]||0)+(e.min||0); });
+  // streak/weekly figures come from the uncapped daily-minutes ledger, not
+  // the 40-entry activity log (which exists only for "recent activity" and
+  // would otherwise silently cut the streak short for anyone doing more than
+  // a handful of rounds a day — that log fills up in about a week for a
+  // regular user, at which point older days simply vanish from it)
+  if(!DATA.dailyMinutes || typeof DATA.dailyMinutes!=='object') DATA.dailyMinutes={};
+  const perDay = DATA.dailyMinutes;
 
   const today = new Date();
   const todayKey = dayKey(today.getTime());
@@ -6246,23 +6323,29 @@ function render(left){
 function renderFooter(){
   const sesEl = $('sesNum');
   if(sesEl) sesEl.textContent = S.session;
+  // the dots must never be able to show something that contradicts this
+  // number — call this every time "Session N" is set, not just at some of
+  // the call sites, so there's no path left where they can drift apart
+  if(typeof renderDots==='function') renderDots();
 }
 function renderDots(){
-  // defensive: "Session N" and the dots come from two separate counters that
-  // are supposed to always move together, but can drift apart (most likely
-  // after a co-work sync that only touched one of them) — recompute the
-  // within-cycle progress from the session number itself so the dots can
-  // never show something that contradicts the "Session N" label
+  // display-only: derive what the dots SHOULD show from the session number,
+  // without ever touching the real S.completed counter here. This function
+  // can run mid-transition (e.g. right after a round increments S.completed
+  // but before the long-break threshold check runs) — earlier this function
+  // used to overwrite S.completed to "fix" a mismatch, which silently broke
+  // the long-break trigger by resetting the counter before that check saw it.
+  // Now it only ever affects what's drawn, never the underlying state.
   const cycleLen = (typeof S.longBreakEvery==='number' && S.longBreakEvery>0) ? S.longBreakEvery : 4;
+  let displayCompleted = S.completed;
   if(typeof S.session==='number' && S.session>=1){
-    const expected = (S.session-1) % cycleLen;
-    if(S.completed!==expected) S.completed = expected;
+    displayCompleted = (S.session-1) % cycleLen;
   }
   dotsEl.innerHTML='';
   for(let i=0;i<cycleLen;i++){
     const d=document.createElement('div'); d.className='dot';
-    if(i<S.completed) d.classList.add('done');
-    if(i===S.completed && S.phase==='focus') d.classList.add('now');
+    if(i<displayCompleted) d.classList.add('done');
+    if(i===displayCompleted && S.phase==='focus') d.classList.add('now');
     dotsEl.appendChild(d);
   }
 }
