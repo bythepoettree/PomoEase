@@ -5147,40 +5147,45 @@ function stretchHand(b,s,kind,reachU,foldU){
   const rest={x:sh.x+s*5, y:sh.y+(B.uArm+B.fArm)*0.86};
   const out ={x:sh.x+s*(B.uArm+B.fArm)*0.98, y:sh.y-3};
   let fold;
-  if(kind==='neck') fold={x:b.hd.x+s*1, y:b.hd.y-B.head-3};        // hand on the crown
+  if(kind==='neck') fold={x:b.hd.x - s*B.head*0.5, y:b.hd.y - B.head*0.35};   // over the top to the far side of the face
   else              fold={x:b.hd.x-s*1, y:b.hd.y+B.head*0.15};      // hand tucks behind the head (hidden) → clean raised bent arm
   return {sh, han:_lp(_lp(rest,out,reachU),fold,foldU)};
 }
 function drawNeck(time, side){
   const s=side||1;
-  const reachU=clamp(time/0.45,0,1);
-  const foldU =clamp((time-0.45)/0.6,0,1);
-  const holdU =clamp((time-1.05)/0.4,0,1);
-  const br=(1-Math.cos(Math.max(0,time-1.05)*1.0))/2;
-  const tilt = foldU*0.10 + holdU*0.50 + br*0.06;         // head leans firmly toward the raised-arm side
+  const reachU=clamp(time/0.5,0,1);
+  const foldU =clamp((time-0.5)/0.65,0,1);
+  const holdU =clamp((time-1.3)/0.5,0,1);                // head tilts only AFTER the arm is out & folded
+  const br=(1-Math.cos(Math.max(0,time-1.3)*1.0))/2;
+  const tilt = holdU*0.42 + br*0.05;                     // no tilt during the reach/fold — only once the hand is set
   const b=frontBody(s, tilt);
-  const h=stretchHand(b,s,'neck',reachU,foldU);
-  const arm=armTo(h.sh, h.han, s);                       // elbow bends up & outward (rigid bones)
+  const sh = s>0 ? b.shR : b.shL;
+  // arm by interpolated joint ANGLES (rigid, no IK flopping): the arm extends
+  // straight & horizontal, then the elbow folds, bringing the hand up and OVER
+  // to rest on the OPPOSITE side of the face.
+  const upRest=0.16, upOut=1.52, upFold=Math.PI-0.05;
+  const foRest=0.06, foOut=1.52, foFold=2*Math.PI-1.31;  // fold over the top (through vertical) to the far temple
+  const up=_lerp(_lerp(upRest,upOut,reachU),upFold,foldU);
+  const fo=_lerp(_lerp(foRest,foOut,reachU),foFold,foldU);
+  const elb={x:sh.x+s*B.uArm*Math.sin(up), y:sh.y+B.uArm*Math.cos(up)};
+  let han={x:elb.x+s*B.fArm*Math.sin(fo), y:elb.y+B.fArm*Math.cos(fo)};
+  // once folded, keep the hand resting on the far side of the face as the head
+  // tilts — the forearm just re-points at the temple (stable, no flop)
+  if(holdU>0){
+    const temple={x:b.hd.x - s*B.head*0.55, y:b.hd.y - B.head*0.10};
+    const dx=temple.x-elb.x, dy=temple.y-elb.y, d=Math.hypot(dx,dy)||0.001;
+    const tracked={x:elb.x+dx/d*B.fArm, y:elb.y+dy/d*B.fArm};
+    han={x:_lerp(han.x,tracked.x,holdU), y:_lerp(han.y,tracked.y,holdU)};
+  }
   drawFrontBase(b);
   drawRestArm(s>0?b.shL:b.shR, -s);
   limb(b.nb,b.neckEnd);
   head(b.hd);
-  limb(arm.sh,arm.elb,arm.han);                 // arm arcs over to rest a hand on the crown, guiding the tilt
+  limb(sh,elb,han);      // arm drawn over the head, hand resting on the far side of the face
 }
-function drawShoulders(time, side){
-  const s=side||1;
-  const reachU=clamp(time/0.45,0,1);
-  const foldU =clamp((time-0.45)/0.6,0,1);
+function _shoulderFrame(s, up, fo){
   const b=frontBody(0,0);
   const sh = s>0 ? b.shR : b.shL;
-  // arm driven by interpolated joint ANGLES (rigid bones): the upper arm sweeps
-  // down → out → straight up; the forearm sweeps out → down, tucking behind the
-  // head. Drawn before the head so the forearm/hand disappear behind it, leaving
-  // a clean raised, bent arm (the overhead shoulder/triceps stretch).
-  const upRest=0.16, upOut=1.52, upFold=Math.PI+0.28;
-  const foRest=0.06, foOut=1.52, foFold=Math.PI+0.28;    // fore-arm ends at the SAME angle as the upper arm → the arm finishes STRAIGHT, raised up & over
-  const up=_lerp(_lerp(upRest,upOut,reachU),upFold,foldU);
-  const fo=_lerp(_lerp(foRest,foOut,reachU),foFold,foldU);
   const elb={x:sh.x+s*B.uArm*Math.sin(up), y:sh.y+B.uArm*Math.cos(up)};
   const han={x:elb.x+s*B.fArm*Math.sin(fo), y:elb.y+B.fArm*Math.cos(fo)};
   drawFrontBase(b);
@@ -5189,23 +5194,52 @@ function drawShoulders(time, side){
   limb(b.nb,b.neckEnd);
   head(b.hd);
 }
+// hold pose: upper arm up, forearm folded down BEHIND the neck (bent) — reached
+// out and over the top, not under
+const SH_UPHOLD=Math.PI+0.12, SH_FOHOLD=2*Math.PI-0.62;
+function drawShoulders(time, side){
+  const s=side||1;
+  const reachU=clamp(time/0.45,0,1);
+  const foldU =clamp((time-0.45)/0.6,0,1);
+  const upRest=0.16, upOut=1.52, foRest=0.06, foOut=1.52;
+  const up=_lerp(_lerp(upRest,upOut,reachU),SH_UPHOLD,foldU);   // out → up
+  const fo=_lerp(_lerp(foRest,foOut,reachU),SH_FOHOLD,foldU);   // out → up & over, folding behind the neck
+  _shoulderFrame(s, up, fo);
+}
+// lowering the finished side: first STRAIGHTEN the arm (unfold it overhead), then
+// bring the straight arm down to the side — so it's straight the whole way down
+function drawShouldersLower(side, u){
+  const s=side||1;
+  const upStr=Math.PI+0.12, foStr=Math.PI+0.12;   // straight, raised overhead
+  const upRest=0.16, foRest=0.06;
+  let up, fo;
+  if(u<0.34){ const k=u/0.34; up=_lerp(SH_UPHOLD,upStr,k); fo=_lerp(SH_FOHOLD,foStr,k); }
+  else      { const k=(u-0.34)/0.66; up=_lerp(upStr,upRest,k); fo=_lerp(foStr,foRest,k); }
+  _shoulderFrame(s, up, fo);
+}
 function drawHamstring(time){
-  const ph=(1-Math.cos(time*0.8))/2;
-  const fold=1.12+ph*0.06;                        // flat-ish back, hinged ~horizontally at the hip
-  const pel={x:CX-12, y:GROUND-84};               // hips high; legs straight & vertical below
-  const sh=fk(pel,B.torso,fold);                  // shoulders a full torso-length forward & down
-  const ctrl={x:(pel.x+sh.x)/2-4, y:(pel.y+sh.y)/2-8};   // gently lift the control point → rounded back
-  const neckB=fk(sh,B.neck,0.10), hd=fk(sh,B.neck+B.head,0.10);   // head hangs down toward the knees
+  const bendU=clamp(time/1.7,0,1);
+  const be=bendU*bendU*(3-2*bendU);                // smoothstep ease from standing → folded
+  const ph=time>1.7 ? (1-Math.cos((time-1.7)*0.8))/2 : 0;   // gentle breathing once folded
+  const pel={x:CX-12, y:GROUND-84};                // hips high; legs straight & vertical below
+  const torsoAng=_lerp(Math.PI, 1.12, be) - ph*0.05;   // torso rotates from straight-up (standing) to the forward fold
+  const sh=fk(pel,B.torso,torsoAng);
+  const headAng=_lerp(Math.PI, 0.10, be);          // head goes from upright to hanging down
+  const neckB=fk(sh,B.neck,headAng), hd=fk(sh,B.neck+B.head,headAng);
+  const mid={x:(pel.x+sh.x)/2, y:(pel.y+sh.y)/2};
+  const ctrl={x:mid.x-4*be, y:mid.y-8*be};          // back straightens out when standing, rounds as it folds
   const footN={x:pel.x+6,y:GROUND}, footF={x:pel.x-4,y:GROUND};
   const kneeN={x:(pel.x+footN.x)/2, y:(pel.y+GROUND)/2}, kneeF={x:(pel.x+footF.x)/2,y:(pel.y+GROUND)/2};
-  const handN={x:sh.x+1, y:GROUND-6}, handF={x:sh.x-8, y:GROUND-6};   // arms dangle straight down, in front of the legs
-  const armN=armTo(sh,handN,1), armF=armTo({x:sh.x-3,y:sh.y+2},handF,1);
+  // arms hang straight down from the shoulders (naturally follow them down as the body folds)
+  const hLen=(B.uArm+B.fArm)*0.96;
+  const armN=armTo(sh, {x:sh.x+3, y:sh.y+hLen}, 1);
+  const armF=armTo({x:sh.x-3,y:sh.y+2}, {x:sh.x-6, y:sh.y+2+hLen}, 1);
   shadow(pel.x+8,50);
   limb(pel,kneeF,footF,true);
   limb({x:sh.x-3,y:sh.y+2},armF.elb,armF.han,true);
   limb(pel,kneeN,footN);
-  curvedTorso(pel,sh,ctrl);                        // rounded spine instead of a straight rigid line
-  limb(sh,neckB);                                  // neck connects the shoulders to the hanging head
+  curvedTorso(pel,sh,ctrl);                         // rounded spine instead of a straight rigid line
+  limb(sh,neckB);                                   // neck connects the shoulders to the head
   head(hd);
   limb(sh,armN.elb,armN.han);
 }
@@ -5219,7 +5253,8 @@ function drawStretchSide(key, side, t){
 // begins, so there's no jump — the arm doesn't shoot up and snap back to the start.
 function drawSwitchAnim(key, ts, dur){
   const u=clamp(ts/1.0,0,1);                // lower within ~1s, then hold at rest while the prompt shows
-  drawStretchSide(key, 1, 1.3*(1-u));       // from a held time (1.3) down to 0 = rest
+  if(key==='shoulders') drawShouldersLower(1, u);   // straighten, then lower the straight arm
+  else drawStretchSide(key, 1, 1.3*(1-u));          // neck: release the arm & untilt
 }
 function drawEx(key, t, el){
   switch(key){
@@ -6597,6 +6632,16 @@ document.addEventListener('keydown',e=>{
   if(tag==='INPUT' || tag==='TEXTAREA' || (e.target && e.target.isContentEditable)) return;
   // don't fire shortcuts with browser-reserved modifier combos
   if(e.metaKey || e.ctrlKey || e.altKey) return;
+
+  // While the timer is actively running ("timer mode"), lock the keyboard so a
+  // stray shortcut can't disrupt the session. Space still pauses/resumes the
+  // timer and Escape still works (leave the timer-only view / close a sheet);
+  // every other shortcut is ignored, with a gentle hint.
+  if(document.body.classList.contains('timer-running') && e.key!==' ' && e.key!=='Escape'){
+    e.preventDefault();
+    if(typeof showToast==='function') showToast('🔒 Timer running — press Space to pause first');
+    return;
+  }
 
   // In the distraction-free "just the timer" focus view, everything except the
   // timer is hidden — so a shortcut that opened a sheet or panel would render it
