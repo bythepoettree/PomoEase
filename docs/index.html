@@ -4928,6 +4928,11 @@ function torso(pel,sh){
   ctx.beginPath(); ctx.moveTo(pel.x,pel.y); ctx.lineTo(sh.x,sh.y);
   ctx.lineWidth=8.5; ctx.strokeStyle=col(); ctx.lineCap='round'; ctx.stroke();
 }
+function curvedTorso(pel,sh,ctrl,far){
+  ctx.beginPath(); ctx.moveTo(pel.x,pel.y);
+  ctx.quadraticCurveTo(ctrl.x,ctrl.y, sh.x,sh.y);
+  ctx.lineWidth=8.5; ctx.strokeStyle=far?colFar():col(); ctx.lineCap='round'; ctx.stroke();
+}
 function shadow(x, w){
   ctx.beginPath(); ctx.ellipse(x, GROUND+8, w, 6, 0, 0, 7);
   ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fill();
@@ -5172,8 +5177,8 @@ function drawShoulders(time, side){
   // down → out → straight up; the forearm sweeps out → down, tucking behind the
   // head. Drawn before the head so the forearm/hand disappear behind it, leaving
   // a clean raised, bent arm (the overhead shoulder/triceps stretch).
-  const upRest=0.16, upOut=1.52, upFold=Math.PI+0.12;
-  const foRest=0.06, foOut=1.52, foFold=-0.62;
+  const upRest=0.16, upOut=1.52, upFold=Math.PI+0.28;
+  const foRest=0.06, foOut=1.52, foFold=Math.PI+0.28;    // fore-arm ends at the SAME angle as the upper arm → the arm finishes STRAIGHT, raised up & over
   const up=_lerp(_lerp(upRest,upOut,reachU),upFold,foldU);
   const fo=_lerp(_lerp(foRest,foOut,reachU),foFold,foldU);
   const elb={x:sh.x+s*B.uArm*Math.sin(up), y:sh.y+B.uArm*Math.cos(up)};
@@ -5186,22 +5191,21 @@ function drawShoulders(time, side){
 }
 function drawHamstring(time){
   const ph=(1-Math.cos(time*0.8))/2;
-  const lean=0.52+ph*0.06;                       // upper body tips forward (to the right)
-  const pel={x:CX-4, y:GROUND-(B.thigh+B.shin-2)};
-  const sh=fk(pel,B.torso, Math.PI-lean);        // torso leans forward; shoulders come forward & the
-  const hd=fk(sh,B.neck+B.head, Math.PI-lean-0.16); //   arms then angle back to the legs (clear triangle)
-  // straight VERTICAL legs, feet directly under the hips, a subtle knee on the line
-  const footN={x:CX+2,y:GROUND}, footF={x:CX-8,y:GROUND};
+  const fold=1.12+ph*0.06;                        // flat-ish back, hinged ~horizontally at the hip
+  const pel={x:CX-12, y:GROUND-84};               // hips high; legs straight & vertical below
+  const sh=fk(pel,B.torso,fold);                  // shoulders a full torso-length forward & down
+  const ctrl={x:(pel.x+sh.x)/2-4, y:(pel.y+sh.y)/2-8};   // gently lift the control point → rounded back
+  const neckB=fk(sh,B.neck,0.10), hd=fk(sh,B.neck+B.head,0.10);   // head hangs down toward the knees
+  const footN={x:pel.x+6,y:GROUND}, footF={x:pel.x-4,y:GROUND};
   const kneeN={x:(pel.x+footN.x)/2, y:(pel.y+GROUND)/2}, kneeF={x:(pel.x+footF.x)/2,y:(pel.y+GROUND)/2};
-  // both hands rest on the thighs; arms are rigid (IK) so they lie naturally along the legs
-  const thN=_lp(pel,footN,0.34), thF=_lp({x:pel.x-2,y:pel.y},footF,0.36);
-  const armN=armTo(sh, {x:thN.x+2,y:thN.y}, 1);
-  const armF=armTo({x:sh.x-3,y:sh.y+2}, {x:thF.x-1,y:thF.y}, 1);
-  shadow(CX-2,46);
+  const handN={x:sh.x+1, y:GROUND-6}, handF={x:sh.x-8, y:GROUND-6};   // arms dangle straight down, in front of the legs
+  const armN=armTo(sh,handN,1), armF=armTo({x:sh.x-3,y:sh.y+2},handF,1);
+  shadow(pel.x+8,50);
   limb(pel,kneeF,footF,true);
   limb({x:sh.x-3,y:sh.y+2},armF.elb,armF.han,true);
   limb(pel,kneeN,footN);
-  torso(pel,sh);
+  curvedTorso(pel,sh,ctrl);                        // rounded spine instead of a straight rigid line
+  limb(sh,neckB);                                  // neck connects the shoulders to the hanging head
   head(hd);
   limb(sh,armN.elb,armN.han);
 }
@@ -6594,12 +6598,12 @@ document.addEventListener('keydown',e=>{
   // don't fire shortcuts with browser-reserved modifier combos
   if(e.metaKey || e.ctrlKey || e.altKey) return;
 
-  // Focus mode is meant to be distraction-free, so no app shortcut should fire
-  // while it's engaged — a stray keypress that flipped the theme, opened a sheet
-  // or jumped to the workout would defeat the whole point. Swallow every defined
-  // shortcut and, on the first one, gently prompt the user to leave focus mode
-  // if they actually want it. Escape is the one exception: it's the keyboard
-  // equivalent of "tap anywhere to exit", so it simply leaves focus mode.
+  // In the distraction-free "just the timer" focus view, everything except the
+  // timer is hidden — so a shortcut that opened a sheet or panel would render it
+  // BEHIND the timer and look unclean. But shortcuts should still work during a
+  // study session. So a shortcut keypress here first LEAVES the timer-only view
+  // (exactly like tapping anywhere to exit), then falls through to run normally
+  // against the restored full UI. Escape just exits, as before.
   if(document.body.classList.contains('focus-mode')){
     if(e.key==='Escape'){
       e.preventDefault();
@@ -6607,15 +6611,14 @@ document.addEventListener('keydown',e=>{
       if(typeof exitFocusMode==='function') exitFocusMode();
       return;
     }
-    // the full set of keys that are shortcuts elsewhere in the app
-    const FOCUS_BLOCKED_KEYS = [' ','r','R','s','S','c','C','f','F','l','L',',','t','T','d','D','?'];
-    if(FOCUS_BLOCKED_KEYS.indexOf(e.key)!==-1){
-      e.preventDefault();
-      if(typeof showToast==='function'){
-        showToast('🔒 Focus mode is on — tap anywhere to exit before using shortcuts.');
-      }
+    const FOCUS_KEYS = [' ','r','R','s','S','c','C','f','F','l','L',',','t','T','d','D','?'];
+    if(FOCUS_KEYS.indexOf(e.key)!==-1){
+      userExitedFocus = true;
+      if(typeof exitFocusMode==='function') exitFocusMode();
+      // no return — the shortcut now runs on the full UI, not under the timer
+    } else {
+      return;   // ignore stray non-shortcut keys while in the timer-only view
     }
-    return; // in focus mode, no shortcut runs no matter which key it was
   }
 
   const sheetOpen = !!document.querySelector('.sheet.show');
