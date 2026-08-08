@@ -3373,9 +3373,22 @@ function attachLiveSync(){
     if(remote.updatedAt && (Date.now() - lastLocalWriteAt) < 3000) return;
     // don't disrupt an in-progress task edit or a running session mid-tick
     if(document.body.classList.contains('timer-running')) return;
+    // The daily-minutes ledger (which the day streak and weekly bars are built
+    // from) is monotonic: a given day's minutes only ever grow. A blind replace
+    // with the remote snapshot could therefore SHRINK it whenever another device
+    // pushed a slightly staler ledger (e.g. it hadn't yet synced a day this
+    // device already recorded) — which is exactly what made streaks visibly
+    // "rewind" from 7 to 6. Merge union-max instead, identical to how mergeData()
+    // reconciles the same field on sign-in, so a remote update can only ever hold
+    // or extend the streak across devices, never lose a day already earned.
+    const prevDaily = (DATA && DATA.dailyMinutes && typeof DATA.dailyMinutes==='object') ? DATA.dailyMinutes : {};
     // apply remote data
     DATA = Object.assign(blankData(), remote);
     DATA.name = cloudUser.email || ('user-'+cloudUser.uid.slice(0,6));
+    if(!DATA.dailyMinutes || typeof DATA.dailyMinutes!=='object') DATA.dailyMinutes={};
+    Object.keys(prevDaily).forEach(k=>{
+      DATA.dailyMinutes[k] = Math.max(DATA.dailyMinutes[k]||0, prevDaily[k]||0);
+    });
     renderProfile(); renderTasks();
   }, err=>{ console.error('live sync error', err); });
 }
@@ -4638,6 +4651,12 @@ const EX = {
   knees:  {name:'High Knees',    period:0.42, minR:16, maxR:30},
   lunges: {name:'Lunges',        period:2.0,  minR:6,  maxR:10, note:'Switches sides halfway'},
   plank:  {name:'Plank',         period:1, timeBased:true, minR:15, maxR:40, note:'Keep your back flat'},
+  // gentle time-based holds for the cool-down stretch programme. neck & shoulders
+  // are two-sided: each runs its per-side seconds, prompts a switch, then repeats
+  // mirrored. They're drawn facing the viewer so the reach-and-fold reads clearly.
+  neck:      {name:'Neck Stretch',      period:1, timeBased:true, twoSided:true, minR:20, maxR:20, note:'Reach over and ease your head to the side'},
+  shoulders: {name:'Shoulder Stretch',  period:1, timeBased:true, twoSided:true, minR:20, maxR:20, note:'Reach up, then fold your hand behind your head'},
+  hamstring: {name:'Hamstring Stretch', period:1, timeBased:true, minR:20, maxR:30, note:'Fold forward with soft knees, let your head hang'},
 };
 // removes a leading emoji (and the space after it) — used only for the big
 // title shown once a programme is picked; the emoji stays in the picker list
@@ -4649,6 +4668,7 @@ const PROGRAMMES = {
   strength:{name:'🏋 Strength Circuit', steps:['squats','pushups','lunges']},
   core:    {name:'🧘 Core & Hold',      steps:['plank','pushups','knees']},
   full:    {name:'🔥 Full Body',        steps:['jacks','squats','pushups','knees']},
+  stretch: {name:'🤸 Stretch It Out',   steps:['neck','shoulders','hamstring']},
 };
 let PROG=null; // {name, steps:[{key,target,unit}], idx, mode:'ex'|'rest'|'done', tStart, rest}
 
@@ -4829,6 +4849,7 @@ cv.style.cursor='default';
 function beginStep(){
   const st=PROG.steps[PROG.idx], ex=EX[st.key];
   PROG.mode='ex'; PROG.tStart=performance.now(); S.reps=0;
+  PROG._phase=null;   // two-sided stretches re-init their side/switch labels on the first frame
   exName.textContent=(ex._tname||ex.name);
   exNote.textContent=`Step ${PROG.idx+1} of ${PROG.steps.length} · ${PROG.name}`+(ex.note?' · '+ex.note:'');
   counterRow.style.visibility='visible';
@@ -4848,6 +4869,9 @@ function stepDone(){
     exName.textContent=T().programmeDone;
     exNote.textContent=T().programmeDoneNote;
     counterRow.style.visibility='hidden';
+    // the programme is over, so there's nothing to pause — flip the main button
+    // back to the play icon (play + reset), ready to run the programme again
+    { const b=$('progStartBtn'); if(b) b.classList.remove('wk-running'); }
     renderTraj(true);
     if(typeof updateTapFocusHint==='function') updateTapFocusHint();
   } else {
@@ -4866,7 +4890,7 @@ function renderTraj(allDone){
     if(allDone || i<PROG.idx || (i===PROG.idx && PROG.mode==='rest')) cls+=' done';
     else if(i===PROG.idx && PROG.mode==='ex') cls+=' current';
     d.className=cls;
-    d.innerHTML=`<b></b><span>${st.target} ${T()[st.unit]||st.unit}</span>`;
+    d.innerHTML=`<b></b><span>${st.target} ${T()[st.unit]||st.unit}${EX[st.key].twoSided?' ×2':''}</span>`;
     d.querySelector('b').textContent=(EX[st.key]._tname||EX[st.key].name);
     trajEl.appendChild(d);
     if(i<PROG.steps.length-1){
@@ -5065,6 +5089,134 @@ function drawIdle(){
   limb(sh,elb,han);
   head(hd);
 }
+/* ---- cool-down stretches ----
+   Neck & shoulders FACE THE VIEWER (front view) so the reach-and-fold reads
+   clearly; the hamstring stays in side profile. Neck & shoulders are
+   parameterised by side (+1 = the figure raises the arm on the viewer's right,
+   -1 = the left) and t = seconds elapsed on the current side, so one function
+   animates reach → fold → hold and also reverses cleanly for the switch. */
+const _lerp=(a,b,u)=>a+(b-a)*u;
+const _lp=(a,b,u)=>({x:_lerp(a.x,b.x,u), y:_lerp(a.y,b.y,u)});
+
+// shared front-facing body (legs + torso + shoulder line + head); the head can
+// tilt sideways (dir = +1 right / -1 left, amt in radians) for the neck stretch
+function frontBody(tiltDir, tiltAmt){
+  const pelY=GROUND-(B.thigh+B.shin-4);
+  const pelC={x:CX,y:pelY};
+  const shY=pelY-B.torso;
+  const shHalf=15;
+  const shL={x:CX-shHalf,y:shY}, shR={x:CX+shHalf,y:shY};
+  const nb={x:CX,y:shY-2};                                 // neck base = head pivot
+  const th=(tiltDir||0)*(tiltAmt||0);
+  const hd={x:nb.x+(B.neck+B.head-3)*Math.sin(th), y:nb.y-(B.neck+B.head-3)*Math.cos(th)};
+  const neckEnd={x:nb.x+B.neck*Math.sin(th), y:nb.y-B.neck*Math.cos(th)};
+  const footL={x:CX-12,y:GROUND}, footR={x:CX+12,y:GROUND};
+  const hipL={x:CX-7,y:pelY}, hipR={x:CX+7,y:pelY};
+  // straight legs with a knee slightly toward the mid-line — no bow-legged IK splay
+  const kneeL={x:CX-10,y:(pelY+GROUND)/2}, kneeR={x:CX+10,y:(pelY+GROUND)/2};
+  return {pelC,shY,shL,shR,nb,hd,neckEnd,footL,footR,hipL,hipR,kneeL,kneeR};
+}
+function drawFrontBase(b){
+  shadow(CX,34);
+  limb(b.hipL,b.kneeL,b.footL);
+  limb(b.hipR,b.kneeR,b.footR);
+  torso(b.pelC,{x:CX,y:b.shY});
+  limb(b.shL,b.shR);                                       // shoulder line → clearly front-on
+}
+// resting (non-active) arm hanging at the side
+function drawRestArm(sh,s){
+  limb(sh,{x:sh.x-s*2,y:sh.y+B.uArm*0.92},{x:sh.x-s*2,y:sh.y+(B.uArm+B.fArm)*0.9},true);
+}
+// place a rigid arm: the HAND follows its target path, the elbow is solved with
+// IK so the upper arm and forearm keep constant length (no rubber-limb stretch).
+function armTo(sh,target,bend){
+  const dx=target.x-sh.x, dy=target.y-sh.y, d=Math.hypot(dx,dy)||0.001;
+  const cd=clamp(d, Math.abs(B.uArm-B.fArm)+0.5, B.uArm+B.fArm-0.5);
+  const han={x:sh.x+dx/d*cd, y:sh.y+dy/d*cd};
+  return {sh, elb:ik(sh,han,B.uArm,B.fArm,bend), han};
+}
+// the active hand's target for a given side; only the hand is interpolated
+// (rest → reached-out → folded), and armTo turns it into a rigid arm.
+function stretchHand(b,s,kind,reachU,foldU){
+  const sh = s>0 ? b.shR : b.shL;
+  const rest={x:sh.x+s*5, y:sh.y+(B.uArm+B.fArm)*0.86};
+  const out ={x:sh.x+s*(B.uArm+B.fArm)*0.98, y:sh.y-3};
+  let fold;
+  if(kind==='neck') fold={x:b.hd.x+s*1, y:b.hd.y-B.head-3};        // hand on the crown
+  else              fold={x:b.hd.x-s*1, y:b.hd.y+B.head*0.15};      // hand tucks behind the head (hidden) → clean raised bent arm
+  return {sh, han:_lp(_lp(rest,out,reachU),fold,foldU)};
+}
+function drawNeck(time, side){
+  const s=side||1;
+  const reachU=clamp(time/0.45,0,1);
+  const foldU =clamp((time-0.45)/0.6,0,1);
+  const holdU =clamp((time-1.05)/0.4,0,1);
+  const br=(1-Math.cos(Math.max(0,time-1.05)*1.0))/2;
+  const tilt = foldU*0.10 + holdU*0.50 + br*0.06;         // head leans firmly toward the raised-arm side
+  const b=frontBody(s, tilt);
+  const h=stretchHand(b,s,'neck',reachU,foldU);
+  const arm=armTo(h.sh, h.han, s);                       // elbow bends up & outward (rigid bones)
+  drawFrontBase(b);
+  drawRestArm(s>0?b.shL:b.shR, -s);
+  limb(b.nb,b.neckEnd);
+  head(b.hd);
+  limb(arm.sh,arm.elb,arm.han);                 // arm arcs over to rest a hand on the crown, guiding the tilt
+}
+function drawShoulders(time, side){
+  const s=side||1;
+  const reachU=clamp(time/0.45,0,1);
+  const foldU =clamp((time-0.45)/0.6,0,1);
+  const b=frontBody(0,0);
+  const sh = s>0 ? b.shR : b.shL;
+  // arm driven by interpolated joint ANGLES (rigid bones): the upper arm sweeps
+  // down → out → straight up; the forearm sweeps out → down, tucking behind the
+  // head. Drawn before the head so the forearm/hand disappear behind it, leaving
+  // a clean raised, bent arm (the overhead shoulder/triceps stretch).
+  const upRest=0.16, upOut=1.52, upFold=Math.PI+0.12;
+  const foRest=0.06, foOut=1.52, foFold=-0.62;
+  const up=_lerp(_lerp(upRest,upOut,reachU),upFold,foldU);
+  const fo=_lerp(_lerp(foRest,foOut,reachU),foFold,foldU);
+  const elb={x:sh.x+s*B.uArm*Math.sin(up), y:sh.y+B.uArm*Math.cos(up)};
+  const han={x:elb.x+s*B.fArm*Math.sin(fo), y:elb.y+B.fArm*Math.cos(fo)};
+  drawFrontBase(b);
+  drawRestArm(s>0?b.shL:b.shR, -s);
+  limb(sh,elb,han);               // before the head → forearm & hand tuck behind it
+  limb(b.nb,b.neckEnd);
+  head(b.hd);
+}
+function drawHamstring(time){
+  const ph=(1-Math.cos(time*0.8))/2;
+  const lean=0.52+ph*0.06;                       // upper body tips forward (to the right)
+  const pel={x:CX-4, y:GROUND-(B.thigh+B.shin-2)};
+  const sh=fk(pel,B.torso, Math.PI-lean);        // torso leans forward; shoulders come forward & the
+  const hd=fk(sh,B.neck+B.head, Math.PI-lean-0.16); //   arms then angle back to the legs (clear triangle)
+  // straight VERTICAL legs, feet directly under the hips, a subtle knee on the line
+  const footN={x:CX+2,y:GROUND}, footF={x:CX-8,y:GROUND};
+  const kneeN={x:(pel.x+footN.x)/2, y:(pel.y+GROUND)/2}, kneeF={x:(pel.x+footF.x)/2,y:(pel.y+GROUND)/2};
+  // both hands rest on the thighs; arms are rigid (IK) so they lie naturally along the legs
+  const thN=_lp(pel,footN,0.34), thF=_lp({x:pel.x-2,y:pel.y},footF,0.36);
+  const armN=armTo(sh, {x:thN.x+2,y:thN.y}, 1);
+  const armF=armTo({x:sh.x-3,y:sh.y+2}, {x:thF.x-1,y:thF.y}, 1);
+  shadow(CX-2,46);
+  limb(pel,kneeF,footF,true);
+  limb({x:sh.x-3,y:sh.y+2},armF.elb,armF.han,true);
+  limb(pel,kneeN,footN);
+  torso(pel,sh);
+  head(hd);
+  limb(sh,armN.elb,armN.han);
+}
+// dispatch for the two-sided stretches (side +1 / -1, t = seconds on this side)
+function drawStretchSide(key, side, t){
+  if(key==='neck') drawNeck(t, side);
+  else if(key==='shoulders') drawShoulders(t, side);
+}
+// the "switch sides" transition: gently RELEASE the finished (right) side back
+// to rest and untilt the head. The next side then performs its own reach when it
+// begins, so there's no jump — the arm doesn't shoot up and snap back to the start.
+function drawSwitchAnim(key, ts, dur){
+  const u=clamp(ts/1.0,0,1);                // lower within ~1s, then hold at rest while the prompt shows
+  drawStretchSide(key, 1, 1.3*(1-u));       // from a held time (1.3) down to 0 = rest
+}
 function drawEx(key, t, el){
   switch(key){
     case 'jacks':  drawJacks(t); break;
@@ -5073,6 +5225,9 @@ function drawEx(key, t, el){
     case 'knees':  drawHighKnees(el); break;
     case 'lunges': drawLunge(t, PROG && S.reps >= PROG.steps[PROG.idx].target/2); break;
     case 'plank':  drawPlank(el); break;
+    case 'neck':      drawNeck(el); break;
+    case 'shoulders': drawShoulders(el); break;
+    case 'hamstring': drawHamstring(el); break;
   }
 }
 
@@ -5102,7 +5257,10 @@ function animate(){
   }
   const st=PROG.steps[PROG.idx], ex=EX[st.key];
   if(ex.timeBased){
-    drawPlank(el);
+    if(ex.twoSided){ runTwoSided(st, ex, el); return; }
+    // single-sided time hold (plank, hamstring): route through the dispatcher
+    // so it doesn't render as a plank, then count seconds up to the target.
+    drawEx(st.key, 0, el);
     const sec=Math.min(st.target, Math.floor(el));
     if(sec!==S.reps){ S.reps=sec; repNum.textContent=sec; if(sec && sec%5===0) repTick(); }
     if(el>=st.target) stepDone();
@@ -5113,6 +5271,45 @@ function animate(){
   if(rep!==S.reps){ S.reps=rep; repNum.textContent=rep; repTick(); }
   drawEx(st.key, t, (st.key==='knees')?((el/(ex.period*2))%1):el);
   if(rep>=st.target) stepDone();
+}
+
+// Two-sided stretch: run one side for `target` seconds, play a switch-sides
+// prompt + animation, then run the mirror for another `target` seconds. The
+// per-side seconds count up on the counter just like a plank hold does.
+const SWITCH_SECS = 2.5;
+function runTwoSided(st, ex, el){
+  const per=st.target, total=per*2+SWITCH_SECS;
+  let phase, side=0, tside=0;
+  if(el<per){ phase='s1'; side=1;  tside=el; }
+  else if(el<per+SWITCH_SECS){ phase='switch'; }
+  else if(el<total){ phase='s2'; side=-1; tside=el-per-SWITCH_SECS; }
+  else { stepDone(); return; }
+
+  if(phase==='switch') drawSwitchAnim(st.key, el-per, SWITCH_SECS);
+  else                 drawStretchSide(st.key, side, tside);
+
+  // update the on-screen labels only when the phase changes
+  if(PROG._phase!==phase){
+    PROG._phase=phase;
+    if(phase==='switch'){
+      exName.textContent = (T().switchSides || '🔄 Switch sides!');
+      exNote.textContent = (T().switchSidesNote || 'Ease off, then repeat on the other side');
+      counterRow.style.visibility='hidden';
+      beep(880,.12,.05);
+    } else {
+      exName.textContent = (ex._tname||ex.name);
+      const sideLabel = side>0 ? (T().rightSide||'Right side') : (T().leftSide||'Left side');
+      exNote.textContent = `${sideLabel} · Step ${PROG.idx+1} of ${PROG.steps.length} · ${PROG.name}`;
+      repOf.textContent = '/ '+per+' '+(T()[st.unit]||st.unit);
+      counterRow.style.visibility='visible';
+      S.reps=-1; // force the counter to repaint from 0 on the new side
+      beep(phase==='s2'?1100:660,.09,.05);
+    }
+  }
+  if(phase!=='switch'){
+    const sec=Math.min(per, Math.floor(tside));
+    if(sec!==S.reps){ S.reps=sec; repNum.textContent=sec; if(sec && sec%5===0) repTick(); }
+  }
 }
 
 /* ---------- brain fuel + hydration ---------- */
@@ -6364,7 +6561,7 @@ function goToWorkoutFromTimer(){
   const liveLeft = S.running ? Math.max(0, S.endAt-Date.now()) : S.remaining;
   const midFocus = S.phase==='focus' && liveLeft < phaseDuration();
   if(midFocus){
-    const ok = confirm("You're mid-focus round — skipping to the workout now won't count this round as complete, and you'll lose your progress on it.\n\nSkip anyway?");
+    const ok = confirm("You're mid-focus round — going to the workout now will end this round early. It won't count as a completed round, though the time you've studied so far is still saved.\n\nGo anyway?");
     if(!ok) return;
   }
   clickSkip();
@@ -6396,6 +6593,31 @@ document.addEventListener('keydown',e=>{
   if(tag==='INPUT' || tag==='TEXTAREA' || (e.target && e.target.isContentEditable)) return;
   // don't fire shortcuts with browser-reserved modifier combos
   if(e.metaKey || e.ctrlKey || e.altKey) return;
+
+  // Focus mode is meant to be distraction-free, so no app shortcut should fire
+  // while it's engaged — a stray keypress that flipped the theme, opened a sheet
+  // or jumped to the workout would defeat the whole point. Swallow every defined
+  // shortcut and, on the first one, gently prompt the user to leave focus mode
+  // if they actually want it. Escape is the one exception: it's the keyboard
+  // equivalent of "tap anywhere to exit", so it simply leaves focus mode.
+  if(document.body.classList.contains('focus-mode')){
+    if(e.key==='Escape'){
+      e.preventDefault();
+      userExitedFocus = true;
+      if(typeof exitFocusMode==='function') exitFocusMode();
+      return;
+    }
+    // the full set of keys that are shortcuts elsewhere in the app
+    const FOCUS_BLOCKED_KEYS = [' ','r','R','s','S','c','C','f','F','l','L',',','t','T','d','D','?'];
+    if(FOCUS_BLOCKED_KEYS.indexOf(e.key)!==-1){
+      e.preventDefault();
+      if(typeof showToast==='function'){
+        showToast('🔒 Focus mode is on — tap anywhere to exit before using shortcuts.');
+      }
+    }
+    return; // in focus mode, no shortcut runs no matter which key it was
+  }
+
   const sheetOpen = !!document.querySelector('.sheet.show');
 
   // Escape always closes an open sheet/menu (handled elsewhere too, kept safe)
@@ -7620,6 +7842,7 @@ const LANGS = {
     timeToFocus:'Time to focus!', backToStudy:'Back to study',
     pickProgramme:'Pick a programme', programmeNote:'Each programme is sized to fill your whole break.',
     startProgramme:'START PROGRAMME', surpriseMix:'🎲 Surprise mix', justRest:'Just rest',
+    switchSides:'🔄 Switch sides!', switchSidesNote:'Ease off, then repeat on the other side', rightSide:'Right side', leftSide:'Left side',
     restingEasy:'Resting easy', programmeDone:'Programme complete! 💪',
     programmeDoneNote:'Shake it out and breathe — focus is up next.',
     sizednote:' moves · sized to your break', restNote:'Take it easy — breathe and reset.',
