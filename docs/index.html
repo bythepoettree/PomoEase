@@ -2203,6 +2203,37 @@
   </div>
 </div>
 
+<!-- Reached only via the "reset your password" email link (?mode=resetPassword&oobCode=...).
+     Handled entirely in-app on our own domain so it (a) shows PomoEase branding rather than
+     the Firebase project's hosted page, and (b) is a same-site <form> with autocomplete="new-password"
+     so the browser's password manager correctly offers to save the new password. -->
+<div class="welcome-bg" id="resetPwOverlay" role="dialog" aria-modal="true" aria-labelledby="resetPwTitle" style="z-index:1500;">
+  <div class="welcome-card">
+    <div class="welcome-emoji">🔒</div>
+    <h2 id="resetPwTitle">Set a new password</h2>
+    <p id="resetPwSub" style="margin-bottom:16px;">Checking your reset link…</p>
+    <form id="resetPwForm" onsubmit="return false;" style="display:none;text-align:left;">
+      <input type="text" name="email" id="resetPwEmail" autocomplete="username" readonly style="position:absolute;opacity:0;height:0;width:0;border:0;padding:0;">
+      <div class="task-add" style="margin-bottom:8px;">
+        <input id="resetPwNew" name="new-password" type="password" maxlength="80" placeholder="New password" autocomplete="new-password">
+      </div>
+      <div class="task-add" style="margin-bottom:4px;">
+        <input id="resetPwConfirm" name="new-password-confirm" type="password" maxlength="80" placeholder="Confirm new password" autocomplete="new-password">
+      </div>
+      <p class="signin-note" id="resetPwMsg" style="min-height:0;"></p>
+      <button type="submit" class="welcome-tour-btn" id="resetPwSubmitBtn" style="margin-top:10px;">Save new password</button>
+    </form>
+    <div id="resetPwDone" style="display:none;">
+      <p class="signin-note" style="font-size:14px;color:var(--fg);margin-bottom:16px;">✅ Your password has been updated.</p>
+      <button class="welcome-tour-btn" id="resetPwSignInBtn" type="button">Sign in</button>
+    </div>
+    <div id="resetPwError" style="display:none;">
+      <p class="signin-note" id="resetPwErrorMsg" style="font-size:14px;color:var(--fg);margin-bottom:16px;"></p>
+      <button class="welcome-skip" id="resetPwCloseBtn" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="welcome-bg" id="shortcutsOverlay" role="dialog" aria-modal="true" style="z-index:1460;">
   <div class="welcome-card" style="text-align:left;">
     <h2 style="text-align:center;">Keyboard shortcuts</h2>
@@ -3575,7 +3606,11 @@ async function cloudSendReset(){
   if(!validEmail(email)) return authMsg('Enter your account email above first, then tap reset.');
   try{
     await ensureFirebase();
-    await fb.auth.sendPasswordResetEmail(email);
+    // Point the reset link back at OUR OWN domain (with handleCodeInApp) instead
+    // of Firebase's default *.firebaseapp.com hosted page — so the link the user
+    // clicks lands on pomoease.com, shows PomoEase branding, and is a same-site
+    // page the browser's password manager will actually offer to save into.
+    await fb.auth.sendPasswordResetEmail(email, { url: location.origin + '/', handleCodeInApp: true });
     authMsg('Password reset email sent — check your inbox.');
   }catch(e){ authMsg(cloudAuthError(e)); }
 }
@@ -3592,6 +3627,9 @@ function cloudAuthError(e){
   if(c==='auth/account-exists-with-different-credential') return 'You already have an account with this email — sign in with your password instead.';
   if(c==='auth/unauthorized-domain') return 'This site isn\'t authorised for Google sign-in yet.';
   if(c==='auth/operation-not-allowed') return 'Google sign-in isn\'t enabled for this project.';
+  if(c==='auth/expired-action-code') return 'This reset link has expired — request a new one.';
+  if(c==='auth/invalid-action-code') return 'This reset link is invalid or has already been used — request a new one.';
+  if(c==='auth/user-disabled') return 'This account has been disabled.';
   return 'Something went wrong. Please try again.';
 }
 
@@ -8636,6 +8674,62 @@ document.addEventListener('keydown', e=>{
   else if(e.key==='ArrowLeft' && tourIdx>0) showTourStep(tourIdx-1);
 });
 
+// ---- password reset link handler ----
+// Reached when the user taps the reset-password link in their email, which
+// (via cloudSendReset's actionCodeSettings) now points straight back at our
+// own domain instead of Firebase's hosted *.firebaseapp.com page.
+async function handlePasswordResetLink(oobCode){
+  const overlay=$('resetPwOverlay'), sub=$('resetPwSub'), form=$('resetPwForm'),
+        doneBox=$('resetPwDone'), errBox=$('resetPwError'), errMsg=$('resetPwErrorMsg'),
+        msg=$('resetPwMsg'), emailField=$('resetPwEmail'), newPw=$('resetPwNew'), confirmPw=$('resetPwConfirm');
+  overlay.classList.add('show');
+  try{
+    await ensureFirebase();
+    const email = await fb.auth.verifyPasswordResetCode(oobCode);
+    sub.textContent = 'for ' + email;
+    emailField.value = email;
+    form.style.display='block';
+    setTimeout(()=>newPw.focus(), 200);
+    form.onsubmit = async (e)=>{
+      e.preventDefault();
+      const p1=newPw.value, p2=confirmPw.value;
+      if(p1.length<6){ msg.textContent='Password must be at least 6 characters.'; return; }
+      if(p1!==p2){ msg.textContent='Passwords don\u2019t match.'; return; }
+      msg.textContent='';
+      const btn=$('resetPwSubmitBtn'); btn.disabled=true; btn.style.opacity='.6';
+      try{
+        await fb.auth.confirmPasswordReset(oobCode, p1);
+        // clear the sensitive oobCode out of the URL/history, then show success
+        try{ history.replaceState(null, '', location.pathname); }catch(_){}
+        form.style.display='none';
+        doneBox.style.display='block';
+        newPw.value=''; confirmPw.value='';
+      }catch(err){
+        msg.textContent = cloudAuthError(err);
+        btn.disabled=false; btn.style.opacity='';
+      }
+    };
+  }catch(err){
+    sub.style.display='none';
+    errMsg.textContent = cloudAuthError(err);
+    errBox.style.display='block';
+    try{ history.replaceState(null, '', location.pathname); }catch(_){}
+  }
+}
+$('resetPwSignInBtn').onclick=()=>{
+  $('resetPwOverlay').classList.remove('show');
+  const em=$('resetPwEmail').value;
+  if(em) $('userInput').value=em;
+  openSheet('profileSheet');
+};
+$('resetPwCloseBtn').onclick=()=>{ $('resetPwOverlay').classList.remove('show'); };
+{
+  const params=new URLSearchParams(location.search);
+  if(params.get('mode')==='resetPassword' && params.get('oobCode')){
+    handlePasswordResetLink(params.get('oobCode'));
+  }
+}
+
 // entry points
 { const htb=$('helpTourBtn'); if(htb) htb.onclick=()=>{ closeSheets(); setTimeout(()=>startTour('timer'), 260); }; }
 {
@@ -8651,7 +8745,9 @@ document.addEventListener('keydown', e=>{
     firstRun = !(localStorage.getItem('pomofit:tourOffered') || localStorage.getItem('pomofit:tourDone'));
   }catch(e){}
   if(firstRun && welcome){
-    welcome.classList.add('show');
+    const params=new URLSearchParams(location.search);
+    const isResetLink = params.get('mode')==='resetPassword' && params.get('oobCode');
+    if(!isResetLink) welcome.classList.add('show');
   }
   // welcome overlay actions
   if(welcomeTour) welcomeTour.onclick=()=>{ hideWelcome(); startTour('timer'); };
