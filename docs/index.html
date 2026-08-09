@@ -3606,11 +3606,11 @@ async function cloudSendReset(){
   if(!validEmail(email)) return authMsg('Enter your account email above first, then tap reset.');
   try{
     await ensureFirebase();
-    // Point the reset link back at OUR OWN domain (with handleCodeInApp) instead
-    // of Firebase's default *.firebaseapp.com hosted page — so the link the user
-    // clicks lands on pomoease.com, shows PomoEase branding, and is a same-site
-    // page the browser's password manager will actually offer to save into.
-    await fb.auth.sendPasswordResetEmail(email, { url: location.origin + '/', handleCodeInApp: true });
+    // NOTE: the link's domain (pomoease.com vs the default *.firebaseapp.com
+    // page) is controlled by the "Action URL" setting in the Firebase Console
+    // (Authentication > Templates), not by actionCodeSettings here — that's a
+    // web-app-wide setting, not something the client SDK can override per call.
+    await fb.auth.sendPasswordResetEmail(email);
     authMsg('Password reset email sent — check your inbox.');
   }catch(e){ authMsg(cloudAuthError(e)); }
 }
