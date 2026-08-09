@@ -5077,21 +5077,35 @@ function drawJacks(t){
   head(hd);
 }
 function drawIdle(){
-  const time=performance.now()/1000;
-  const sway=Math.sin(time*1.2)*0.03;
-  const pel={x:CX, y:GROUND-(B.thigh+B.shin-4)};
-  const sh={x:pel.x + sway*22, y:pel.y - B.torso};
-  const hd={x:sh.x+sway*30,y:sh.y-B.neck-B.head+3};
-  const kneeN=ik(pel,{x:CX+10,y:GROUND},B.thigh,B.shin,-1);
-  const kneeF=ik(pel,{x:CX-2,y:GROUND},B.thigh,B.shin,-1);
-  const elb=fk(sh,B.uArm,0.18+sway), han=fk(elb,B.fArm,0.3);
-  const elbF=fk({x:sh.x-3,y:sh.y+2},B.uArm,-0.15), hanF=fk(elbF,B.fArm,-0.05);
-  shadow(CX,38);
-  limb(pel,kneeF,{x:CX-2+B.foot,y:GROUND},true);
-  limb({x:sh.x-3,y:sh.y+2},elbF,hanF,true);
-  torso(pel,sh);
-  limb(pel,kneeN,{x:CX+10+B.foot,y:GROUND});
-  limb(sh,elb,han);
+  // faces the viewer (front-on) so it feels more personal while you browse
+  const t=performance.now()/1000;
+  const sway=Math.sin(t*0.85);                    // slow weight shift side to side (-1..1)
+  const sway2=Math.sin(t*0.85+1.0);               // phase-offset copy for the arms
+  const breath=Math.sin(t*1.5);                   // breathing (-1..1)
+  const pelY=GROUND-(B.thigh+B.shin-4);
+  const cx=CX + sway*2.5;                          // the whole upper body drifts a little
+  const pelC={x:cx, y:pelY};
+  const shY=pelY - B.torso - breath*1.2;           // chest rises & falls with the breath
+  const shHalf=15;
+  const shL={x:cx-shHalf, y:shY}, shR={x:cx+shHalf, y:shY};
+  const nb={x:cx, y:shY-2};
+  const hd={x:cx + sway*1.5, y:nb.y-(B.neck+B.head-3) - breath*0.5};   // subtle head bob/turn
+  const neckEnd={x:cx, y:nb.y-B.neck};
+  // feet planted; knees flex as the hips sway → a natural weight shift
+  const footL={x:CX-12,y:GROUND}, footR={x:CX+12,y:GROUND};
+  const hipL={x:cx-7,y:pelY}, hipR={x:cx+7,y:pelY};
+  const kneeL={x:CX-10 + sway*1.5, y:(pelY+GROUND)/2}, kneeR={x:CX+10 + sway*1.5, y:(pelY+GROUND)/2};
+  // arms hang at the sides and drift gently, easing with the sway
+  const elbL=fk(shL,B.uArm,-0.12+sway*0.05), hanL=fk(elbL,B.fArm,-0.05+sway2*0.04);
+  const elbR=fk(shR,B.uArm, 0.12+sway*0.05), hanR=fk(elbR,B.fArm, 0.05+sway2*0.04);
+  shadow(cx,34);
+  limb(hipL,kneeL,footL);
+  limb(hipR,kneeR,footR);
+  torso(pelC,{x:cx,y:shY});
+  limb(shL,shR);                                   // shoulder line → clearly front-on
+  limb(shL,elbL,hanL);
+  limb(shR,elbR,hanR);
+  limb(nb,neckEnd);
   head(hd);
 }
 /* ---- cool-down stretches ----
@@ -5163,17 +5177,16 @@ function drawNeck(time, side){
   // arm by interpolated joint ANGLES (rigid, no IK flopping): the arm extends
   // straight & horizontal, then the elbow folds, bringing the hand up and OVER
   // to rest on the OPPOSITE side of the face.
-  const upRest=0.16, upOut=1.52, upFold=Math.PI-0.05;
-  const foRest=0.06, foOut=1.52, foFold=2*Math.PI-1.31;  // fold over the top (through vertical) to the far temple
+  const upRest=0.16, upOut=1.52, upFold=2.60;
+  const foRest=0.06, foOut=1.52, foFold=2*Math.PI-1.93;  // fold over the top (through vertical) onto the crown
   const up=_lerp(_lerp(upRest,upOut,reachU),upFold,foldU);
   const fo=_lerp(_lerp(foRest,foOut,reachU),foFold,foldU);
   const elb={x:sh.x+s*B.uArm*Math.sin(up), y:sh.y+B.uArm*Math.cos(up)};
   let han={x:elb.x+s*B.fArm*Math.sin(fo), y:elb.y+B.fArm*Math.cos(fo)};
-  // once folded, keep the hand resting on the far side of the face as the head
-  // tilts — the forearm just re-points at the temple (stable, no flop)
+  // once folded, keep the hand on the crown as the head tilts (forearm re-points; stable, no flop)
   if(holdU>0){
-    const temple={x:b.hd.x - s*B.head*0.55, y:b.hd.y - B.head*0.10};
-    const dx=temple.x-elb.x, dy=temple.y-elb.y, d=Math.hypot(dx,dy)||0.001;
+    const crown={x:b.hd.x + s*1, y:b.hd.y - B.head - 2};
+    const dx=crown.x-elb.x, dy=crown.y-elb.y, d=Math.hypot(dx,dy)||0.001;
     const tracked={x:elb.x+dx/d*B.fArm, y:elb.y+dy/d*B.fArm};
     han={x:_lerp(han.x,tracked.x,holdU), y:_lerp(han.y,tracked.y,holdU)};
   }
@@ -5222,18 +5235,20 @@ function drawHamstring(time){
   const be=bendU*bendU*(3-2*bendU);                // smoothstep ease from standing → folded
   const ph=time>1.7 ? (1-Math.cos((time-1.7)*0.8))/2 : 0;   // gentle breathing once folded
   const pel={x:CX-12, y:GROUND-84};                // hips high; legs straight & vertical below
-  const torsoAng=_lerp(Math.PI, 1.12, be) - ph*0.05;   // torso rotates from straight-up (standing) to the forward fold
+  const torsoAng=_lerp(Math.PI, 0.70, be) - ph*0.05;   // torso folds forward; arms then reach down to the toes
   const sh=fk(pel,B.torso,torsoAng);
-  const headAng=_lerp(Math.PI, 0.10, be);          // head goes from upright to hanging down
+  const headAng=_lerp(Math.PI, 0.02, be);          // head goes from upright to hanging straight down
   const neckB=fk(sh,B.neck,headAng), hd=fk(sh,B.neck+B.head,headAng);
   const mid={x:(pel.x+sh.x)/2, y:(pel.y+sh.y)/2};
   const ctrl={x:mid.x-4*be, y:mid.y-8*be};          // back straightens out when standing, rounds as it folds
   const footN={x:pel.x+6,y:GROUND}, footF={x:pel.x-4,y:GROUND};
   const kneeN={x:(pel.x+footN.x)/2, y:(pel.y+GROUND)/2}, kneeF={x:(pel.x+footF.x)/2,y:(pel.y+GROUND)/2};
-  // arms hang straight down from the shoulders (naturally follow them down as the body folds)
+  // arms swing from hanging at the sides (standing) down to the TOES (folded)
   const hLen=(B.uArm+B.fArm)*0.96;
-  const armN=armTo(sh, {x:sh.x+3, y:sh.y+hLen}, 1);
-  const armF=armTo({x:sh.x-3,y:sh.y+2}, {x:sh.x-6, y:sh.y+2+hLen}, 1);
+  const handN=_lp({x:sh.x+3,y:sh.y+hLen}, {x:footN.x+2,y:GROUND-3}, be);
+  const handF=_lp({x:sh.x-6,y:sh.y+2+hLen}, {x:footF.x-2,y:GROUND-3}, be);
+  const armN=armTo(sh, handN, 1);
+  const armF=armTo({x:sh.x-3,y:sh.y+2}, handF, 1);
   shadow(pel.x+8,50);
   limb(pel,kneeF,footF,true);
   limb({x:sh.x-3,y:sh.y+2},armF.elb,armF.han,true);
