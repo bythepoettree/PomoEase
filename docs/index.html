@@ -488,6 +488,8 @@
     font-variant-numeric: tabular-nums; user-select:none;
   }
   .sub{color:var(--muted); font-size:15px; text-align:center; max-width:36ch;}
+  #breakClock{ font-size:20px; font-weight:800; color:var(--fg); text-align:center; letter-spacing:.3px; margin:2px 0 10px; opacity:.9; }
+  #breakClock:empty{ display:none; margin:0; }
   .controls{display:flex; gap:26px; margin-top:14px; align-items:center; flex-wrap:wrap; justify-content:center;}
   .btn{
     font-family:'Anton', sans-serif; letter-spacing:.08em; font-size:18px;
@@ -2207,6 +2209,7 @@
     <div class="shortcut-row"><span>Start / pause</span><kbd>Space</kbd></div>
     <div class="shortcut-row"><span>Reset round</span><kbd>R</kbd></div>
     <div class="shortcut-row"><span>Workout / back to timer</span><kbd>S</kbd></div>
+    <div class="shortcut-row"><span>Timer-only view</span><kbd>Z</kbd></div>
     <div class="shortcut-row"><span>Co-work</span><kbd>C</kbd></div>
     <div class="shortcut-row"><span>Friends</span><kbd>F</kbd></div>
     <div class="shortcut-row"><span>Leaderboard</span><kbd>L</kbd></div>
@@ -2287,6 +2290,7 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
     </div>
+    <div id="breakClock"></div>
     <div class="ex-name" id="exName">Pick a programme</div>
     <div class="ex-note" id="exNote">Each programme is sized to fill your whole break.</div>
     <canvas id="cv" width="340" height="250"></canvas>
@@ -2309,7 +2313,6 @@
       <button id="shuffleBtn" class="split-btn">🎲 Surprise mix</button>
       <button id="restBtn" class="split-btn">Just rest</button>
     </div>
-    <div class="sub" id="breakClock" style="margin-top:12px;"></div>
   </div>
 </main>
 
@@ -5076,38 +5079,102 @@ function drawJacks(t){
   limb(shL,elbL,hanL);    limb(shR,elbR,hanR);
   head(hd);
 }
+// ---- idle ragdoll easter egg ----
+// While idling you can grab the hands, feet or head and fling them around; on
+// release they spring back with a little wobble. Facing the viewer.
+const idleDrag = { showing:false, drag:null, mx:0, my:0,
+  pts:{ handL:{dx:0,dy:0,vx:0,vy:0}, handR:{dx:0,dy:0,vx:0,vy:0},
+        footL:{dx:0,dy:0,vx:0,vy:0}, footR:{dx:0,dy:0,vx:0,vy:0}, head:{dx:0,dy:0,vx:0,vy:0} },
+  rest:{} };
+function _idleSpring(p, tx, ty, dragging){
+  if(dragging){ p.vx += (tx-p.dx)*0.45; p.vy += (ty-p.dy)*0.45; p.vx*=0.55; p.vy*=0.55; }
+  else        { p.vx += (0-p.dx)*0.16;  p.vy += (0-p.dy)*0.16;  p.vx*=0.74; p.vy*=0.74; }  // bouncy return to rest
+  p.dx+=p.vx; p.dy+=p.vy;
+}
+function _clampReach(root, x, y, maxR){
+  const dx=x-root.x, dy=y-root.y, d=Math.hypot(dx,dy)||0.0001;
+  if(d<=maxR) return {x,y};
+  return {x:root.x+dx/d*maxR, y:root.y+dy/d*maxR};
+}
 function drawIdle(){
-  // faces the viewer (front-on) so it feels more personal while you browse
+  idleDrag.showing=true;
   const t=performance.now()/1000;
-  const sway=Math.sin(t*0.85);                    // slow weight shift side to side (-1..1)
-  const sway2=Math.sin(t*0.85+1.0);               // phase-offset copy for the arms
-  const breath=Math.sin(t*1.5);                   // breathing (-1..1)
+  const sway=Math.sin(t*0.85), breath=Math.sin(t*1.5);
   const pelY=GROUND-(B.thigh+B.shin-4);
-  const cx=CX + sway*2.5;                          // the whole upper body drifts a little
-  const pelC={x:cx, y:pelY};
-  const shY=pelY - B.torso - breath*1.2;           // chest rises & falls with the breath
+  const cx=CX + sway*2.5;                           // whole upper body drifts
+  const shY=pelY - B.torso - breath*1.2;            // chest rises & falls
   const shHalf=15;
   const shL={x:cx-shHalf, y:shY}, shR={x:cx+shHalf, y:shY};
   const nb={x:cx, y:shY-2};
-  const hd={x:cx + sway*1.5, y:nb.y-(B.neck+B.head-3) - breath*0.5};   // subtle head bob/turn
-  const neckEnd={x:cx, y:nb.y-B.neck};
-  // feet planted; knees flex as the hips sway → a natural weight shift
-  const footL={x:CX-12,y:GROUND}, footR={x:CX+12,y:GROUND};
   const hipL={x:cx-7,y:pelY}, hipR={x:cx+7,y:pelY};
-  const kneeL={x:CX-10 + sway*1.5, y:(pelY+GROUND)/2}, kneeR={x:CX+10 + sway*1.5, y:(pelY+GROUND)/2};
-  // arms hang at the sides and drift gently, easing with the sway
-  const elbL=fk(shL,B.uArm,-0.12+sway*0.05), hanL=fk(elbL,B.fArm,-0.05+sway2*0.04);
-  const elbR=fk(shR,B.uArm, 0.12+sway*0.05), hanR=fk(elbR,B.fArm, 0.05+sway2*0.04);
+  // resting pose — matches the original standing figure (straight legs, arms at the sides)
+  const restElbL=fk(shL,B.uArm,-0.12+sway*0.05), restHandL=fk(restElbL,B.fArm,-0.05);
+  const restElbR=fk(shR,B.uArm, 0.12+sway*0.05), restHandR=fk(restElbR,B.fArm, 0.05);
+  const restKneeL={x:CX-10+sway*1.5, y:(pelY+GROUND)/2}, restFootL={x:CX-12, y:GROUND};
+  const restKneeR={x:CX+10+sway*1.5, y:(pelY+GROUND)/2}, restFootR={x:CX+12, y:GROUND};
+  const restHead ={x:nb.x+sway*1.5, y:nb.y-(B.neck+B.head-3)-breath*0.5};
+  const D=idleDrag.pts, dg=idleDrag.drag;
+  const rests={handL:restHandL,handR:restHandR,footL:restFootL,footR:restFootR,head:restHead};
+  const roots={handL:shL,handR:shR,footL:hipL,footR:hipR,head:nb};
+  const reach={handL:B.uArm+B.fArm-1, handR:B.uArm+B.fArm-1, footL:B.thigh+B.shin-1, footR:B.thigh+B.shin-1, head:B.neck+B.head+4};
+  const out={};
+  for(const k of ['handL','handR','footL','footR','head']){
+    const r=rests[k], p=D[k], on=(dg===k);
+    _idleSpring(p, on?idleDrag.mx-r.x:0, on?idleDrag.my-r.y:0, on);
+    const c=_clampReach(roots[k], r.x+p.dx, r.y+p.dy, reach[k]);
+    p.dx=c.x-r.x; p.dy=c.y-r.y;                      // keep the spring bounded to what's drawable
+    out[k]=c;
+  }
+  idleDrag.rest=out;                                 // for hit-testing
+  // joints: keep the straight resting pose until a limb is actually pulled, then bend with IK
+  const bend=(restJ,root,end,l1,l2,b,p)=>{
+    const f=clamp(Math.hypot(p.dx,p.dy)/16,0,1);
+    if(f<=0.001) return restJ;
+    const j=ik(root,end,l1,l2,b);
+    return {x:_lerp(restJ.x,j.x,f), y:_lerp(restJ.y,j.y,f)};
+  };
+  const elbL=bend(restElbL,shL,out.handL,B.uArm,B.fArm, 1,D.handL);
+  const elbR=bend(restElbR,shR,out.handR,B.uArm,B.fArm,-1,D.handR);
+  const kneeL=bend(restKneeL,hipL,out.footL,B.thigh,B.shin, 1,D.footL);
+  const kneeR=bend(restKneeR,hipR,out.footR,B.thigh,B.shin,-1,D.footR);
+  const neckEnd={x:nb.x+(out.head.x-nb.x)*0.42, y:nb.y+(out.head.y-nb.y)*0.42};
   shadow(cx,34);
-  limb(hipL,kneeL,footL);
-  limb(hipR,kneeR,footR);
-  torso(pelC,{x:cx,y:shY});
-  limb(shL,shR);                                   // shoulder line → clearly front-on
-  limb(shL,elbL,hanL);
-  limb(shR,elbR,hanR);
+  limb(hipL,kneeL,out.footL);
+  limb(hipR,kneeR,out.footR);
+  torso({x:cx,y:pelY},{x:cx,y:shY});
+  limb(shL,shR);                                     // shoulder line → clearly front-on
+  limb(shL,elbL,out.handL);
+  limb(shR,elbR,out.handR);
   limb(nb,neckEnd);
-  head(hd);
+  head(out.head);
 }
+function _idlePick(x,y){
+  const r=idleDrag.rest; if(!r||!r.handL) return null;
+  let best=null, bestD=Infinity;
+  for(const k of ['head','handL','handR','footL','footR']){
+    const p=r[k], thr=(k==='head'?B.head+10:20), d=Math.hypot(x-p.x,y-p.y);
+    if(d<thr && d<bestD){ bestD=d; best=k; }
+  }
+  return best;
+}
+function _idleXY(e){
+  const rect=cv.getBoundingClientRect();
+  return { x:(e.clientX-rect.left)/rect.width*CW, y:(e.clientY-rect.top)/rect.height*CH };
+}
+cv.style.touchAction='none';
+cv.addEventListener('pointerdown', e=>{
+  if(!idleDrag.showing) return;
+  const {x,y}=_idleXY(e), k=_idlePick(x,y);
+  if(k){ idleDrag.drag=k; idleDrag.mx=x; idleDrag.my=y; cv.style.cursor='grabbing';
+         try{cv.setPointerCapture(e.pointerId);}catch(_){}; e.preventDefault(); }
+});
+cv.addEventListener('pointermove', e=>{
+  if(idleDrag.drag){ const {x,y}=_idleXY(e); idleDrag.mx=x; idleDrag.my=y; e.preventDefault(); return; }
+  if(idleDrag.showing){ const {x,y}=_idleXY(e); cv.style.cursor=_idlePick(x,y)?'grab':'default'; }
+});
+function _idleRelease(){ if(idleDrag.drag){ idleDrag.drag=null; cv.style.cursor='grab'; } }
+cv.addEventListener('pointerup', _idleRelease);
+cv.addEventListener('pointercancel', _idleRelease);
 /* ---- cool-down stretches ----
    Neck & shoulders FACE THE VIEWER (front view) so the reach-and-fold reads
    clearly; the hamstring stays in side profile. Neck & shoulders are
@@ -5288,6 +5355,7 @@ function drawEx(key, t, el){
 /* ---------- animation loop (programme engine) ---------- */
 function animate(){
   requestAnimationFrame(animate);
+  if(typeof idleDrag!=='undefined') idleDrag.showing=false;   // re-enabled only when drawIdle runs this frame
   _col = getComputedStyle(document.body).getPropertyValue('--fg').trim();
   ctx.clearRect(0,0,CW,CH);
   groundLine();
@@ -6648,37 +6716,28 @@ document.addEventListener('keydown',e=>{
   // don't fire shortcuts with browser-reserved modifier combos
   if(e.metaKey || e.ctrlKey || e.altKey) return;
 
-  // While the timer is actively running ("timer mode"), lock the keyboard so a
-  // stray shortcut can't disrupt the session. Space still pauses/resumes the
-  // timer and Escape still works (leave the timer-only view / close a sheet);
-  // every other shortcut is ignored, with a gentle hint.
-  if(document.body.classList.contains('timer-running') && e.key!==' ' && e.key!=='Escape'){
+  // Z toggles the distraction-free "timer-only" view. Handled first so it works
+  // even while the timer is running (when you'd most want it).
+  if(e.key==='z' || e.key==='Z'){
     e.preventDefault();
-    if(typeof showToast==='function') showToast('🔒 Timer running — press Space to pause first');
+    if(document.body.classList.contains('focus-mode')){
+      userExitedFocus = true; if(typeof exitFocusMode==='function') exitFocusMode();
+    } else if(S.running && S.phase==='focus'){
+      userExitedFocus = false; if(typeof enterFocusMode==='function') enterFocusMode();
+    } else if(typeof showToast==='function'){
+      showToast('⛶ Timer-only view is available during a focus round');
+    }
     return;
   }
 
-  // In the distraction-free "just the timer" focus view, everything except the
-  // timer is hidden — so a shortcut that opened a sheet or panel would render it
-  // BEHIND the timer and look unclean. But shortcuts should still work during a
-  // study session. So a shortcut keypress here first LEAVES the timer-only view
-  // (exactly like tapping anywhere to exit), then falls through to run normally
-  // against the restored full UI. Escape just exits, as before.
+  // Shortcuts always work. The only special case: if you're in the distraction-
+  // free "timer-only" view, a shortcut first LEAVES that view (so its panel never
+  // renders behind the timer), then runs normally. Escape just exits the view.
   if(document.body.classList.contains('focus-mode')){
-    if(e.key==='Escape'){
-      e.preventDefault();
-      userExitedFocus = true;
-      if(typeof exitFocusMode==='function') exitFocusMode();
-      return;
-    }
-    const FOCUS_KEYS = [' ','r','R','s','S','c','C','f','F','l','L',',','t','T','d','D','?'];
-    if(FOCUS_KEYS.indexOf(e.key)!==-1){
-      userExitedFocus = true;
-      if(typeof exitFocusMode==='function') exitFocusMode();
-      // no return — the shortcut now runs on the full UI, not under the timer
-    } else {
-      return;   // ignore stray non-shortcut keys while in the timer-only view
-    }
+    userExitedFocus = true;
+    if(typeof exitFocusMode==='function') exitFocusMode();
+    if(e.key==='Escape'){ e.preventDefault(); return; }   // Escape only leaves the view
+    // any other shortcut falls through and runs on the restored full UI
   }
 
   const sheetOpen = !!document.querySelector('.sheet.show');
