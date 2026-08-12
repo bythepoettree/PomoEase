@@ -2516,6 +2516,15 @@
       <span class="toggle-compact-desc">Starts break timer automatically</span>
     </button>
   </div>
+
+  <div style="height:1px;background:var(--line);margin:18px 0;"></div>
+
+  <div class="toggle-row-compact">
+    <button class="toggle-compact-btn" id="landOnWorkout" aria-pressed="false" title="Start with a workout">
+      🤸<span class="toggle-compact-label">Start with workout</span>
+      <span class="toggle-compact-desc">Opens the workout screen first, before you study</span>
+    </button>
+  </div>
 </div>
 
 <select id="langSelect" aria-hidden="true" style="display:none;">
@@ -3061,6 +3070,7 @@ const S = {
   focusMin: 25, breakMin: 5, longMin: 15, longBreakEvery: 4,
 
   autoBreak: true, autoFocus: false, sound: true, reminders: false, remindersMin: 45,
+  landOnWorkout: false,
   phase: 'focus', running: false,
   endAt: 0, remaining: 25*60*1000,
   session: 1, completed: 0,
@@ -3179,6 +3189,7 @@ function buildSettingsSnapshot(){
 
     longBreakEvery: S.longBreakEvery,
     reminders: S.reminders, remindersMin: S.remindersMin, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+    landOnWorkout: S.landOnWorkout,
   };
 }
 function saveSettings(){
@@ -3223,9 +3234,18 @@ async function loadSettings(){
   if(typeof saved.sound==='boolean') S.sound = saved.sound;
   if(typeof saved.autoBreak==='boolean') S.autoBreak = saved.autoBreak;
   if(typeof saved.autoFocus==='boolean') S.autoFocus = saved.autoFocus;
+  if(typeof saved.landOnWorkout==='boolean') S.landOnWorkout = saved.landOnWorkout;
   syncSettingsUI();
   if(typeof restartHydrateInterval==='function') restartHydrateInterval();
   if(!S.running){ S.remaining=phaseDuration(); render(S.remaining); }
+  // "Start with a workout": only ever applies to a genuinely fresh arrival —
+  // never overrides an in-progress round, and never fights a restorable
+  // co-work session (that sync takes precedence over a personal preference).
+  if(S.landOnWorkout && S.phase==='focus' && !S.running
+     && S.remaining>=phaseDuration()
+     && !localStorage.getItem('pomofit:activeSession')){
+    try{ nextPhase(false); }catch(e){}
+  }
 }
 
 /* ---------- intro note dismissal ---------- */
@@ -3241,7 +3261,7 @@ function syncSettingsUI(){
     if(el && el._syncStepper) el._syncStepper(val);
   });
   // toggles — CSS-driven slash/outline, just sync aria-pressed
-  [['autoBreak','autoBreak'],['autoFocus','autoFocus']].forEach(([id,key])=>{
+  [['autoBreak','autoBreak'],['autoFocus','autoFocus'],['landOnWorkout','landOnWorkout']].forEach(([id,key])=>{
     $(id).setAttribute('aria-pressed', S[key]);
   });
   // sound button uses icon + CSS slash, not text
@@ -8034,6 +8054,7 @@ const LANGS = {
     hydrationInterval:'Hydration Reminder Interval', autoBreaks:'Auto breaks',
     autoBreaksDesc:'Starts break timer automatically', autoFocus:'Auto focus',
     autoFocusDesc:'Restarts focus after each break', language:'Language',
+    landOnWorkout:'Start with workout', landOnWorkoutDesc:'Opens the workout screen first, before you study',
     tasks:'Tasks', addTask:'+ Add Task', startBtn:'START', pauseBtn:'PAUSE',
     resumeBtn:'RESUME', skipBtn:'Workout →', support:'Support',
     cowork:'Co-work', signIn:'Sign in', done:'DONE',
@@ -8080,6 +8101,7 @@ const LANGS = {
     hydrationInterval:'Hatırlatma aralığı', autoBreaks:'Otomatik mola',
     autoBreaksDesc:'Molayı otomatik başlatır', autoFocus:'Otomatik odak',
     autoFocusDesc:'Moladan sonra odağı yeniden başlatır', language:'Dil',
+    landOnWorkout:'Antrenmanla başla', landOnWorkoutDesc:'Çalışmadan önce antrenman ekranını açar',
     tasks:'Görevler', addTask:'+ Görev Ekle', startBtn:'BAŞLAT', pauseBtn:'DURAKLAT',
     resumeBtn:'DEVAM', skipBtn:'Egzersiz →', support:'Destek',
     cowork:'Birlikte', signIn:'Giriş yap', done:'TAMAM',
@@ -8125,6 +8147,7 @@ const LANGS = {
     hydrationInterval:'Trink-Erinnerung Intervall', autoBreaks:'Auto Pause',
     autoBreaksDesc:'Startet die Pause automatisch', autoFocus:'Auto Fokus',
     autoFocusDesc:'Startet den Fokus nach der Pause', language:'Sprache',
+    landOnWorkout:'Mit Workout starten', landOnWorkoutDesc:'Öffnet zuerst den Workout-Bildschirm, bevor du lernst',
     tasks:'Aufgaben', addTask:'+ Aufgabe', startBtn:'START', pauseBtn:'PAUSE',
     resumeBtn:'WEITER', skipBtn:'Training →', support:'Unterstützen',
     cowork:'Zusammen', signIn:'Anmelden', done:'FERTIG',
@@ -8170,6 +8193,7 @@ const LANGS = {
     hydrationInterval:'فترة تذكير الماء', autoBreaks:'بدء تلقائي للاستراحة',
     autoBreaksDesc:'يبدأ الاستراحة تلقائياً', autoFocus:'بدء تلقائي للتركيز',
     autoFocusDesc:'يعيد التركيز بعد الاستراحة', language:'اللغة',
+    landOnWorkout:'ابدأ بتمرين', landOnWorkoutDesc:'يفتح شاشة التمرين أولاً، قبل الدراسة',
     tasks:'المهام', addTask:'+ إضافة مهمة', startBtn:'ابدأ', pauseBtn:'إيقاف',
     resumeBtn:'استمر', skipBtn:'تمرين →', support:'دعم',
     cowork:'معاً', signIn:'تسجيل الدخول', done:'تم',
@@ -8215,6 +8239,7 @@ const LANGS = {
     hydrationInterval:'补水提醒间隔', autoBreaks:'自动休息',
     autoBreaksDesc:'自动开始休息计时', autoFocus:'自动专注',
     autoFocusDesc:'休息后自动重新专注', language:'语言',
+    landOnWorkout:'从锻炼开始', landOnWorkoutDesc:'先打开锻炼界面，再开始学习',
     tasks:'任务', addTask:'+ 添加任务', startBtn:'开始', pauseBtn:'暂停',
     resumeBtn:'继续', skipBtn:'训练 →', support:'支持',
     cowork:'协作', signIn:'登录', done:'完成',
@@ -8288,6 +8313,12 @@ function applyLang(lang){
   if(autoFocusEl){
     autoFocusEl.querySelector('.toggle-compact-label').textContent=t.autoFocus;
     autoFocusEl.querySelector('.toggle-compact-desc').textContent=t.autoFocusDesc;
+  }
+  { const el=$('landOnWorkout');
+    if(el){
+      el.querySelector('.toggle-compact-label').textContent=t.landOnWorkout;
+      el.querySelector('.toggle-compact-desc').textContent=t.landOnWorkoutDesc;
+    }
   }
   // tasks section
   const tasksHeading=document.querySelector('.tasks-heading');
@@ -9084,6 +9115,7 @@ function wireToggle(id, get, set){
         focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
         longBreakEvery: S.longBreakEvery, remindersMin: S.remindersMin,
         reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+        landOnWorkout: S.landOnWorkout,
       };
       localStorage.setItem('pomofit:settings', JSON.stringify(snap));
     }catch(e){ saveSettings(); }
@@ -9099,6 +9131,7 @@ $('sfxToggle').onclick=()=>{
       focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
       longBreakEvery: S.longBreakEvery, remindersMin: S.remindersMin,
       reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+      landOnWorkout: S.landOnWorkout,
     };
     localStorage.setItem('pomofit:settings', JSON.stringify(snap));
   }catch(e){ saveSettings(); }
@@ -9118,12 +9151,14 @@ $('settingsSfxBtn').onclick=()=>{
       focusMin: S.focusMin, breakMin: S.breakMin, longMin: S.longMin,
       longBreakEvery: S.longBreakEvery, remindersMin: S.remindersMin,
       reminders: S.reminders, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
+      landOnWorkout: S.landOnWorkout,
     };
     localStorage.setItem('pomofit:settings', JSON.stringify(snap));
   }catch(e){ saveSettings(); }
 };
 wireToggle('autoBreak',()=>S.autoBreak,v=>S.autoBreak=v);
 wireToggle('autoFocus',()=>S.autoFocus,v=>S.autoFocus=v);
+wireToggle('landOnWorkout',()=>S.landOnWorkout,v=>S.landOnWorkout=v);
 
 /* ---------- diagnostics ----------
    Everything below runs in one top-level script, so a single uncaught error
