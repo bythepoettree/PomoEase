@@ -81,10 +81,10 @@
       display:flex; flex-direction:column; align-items:center;
       padding:0 20px 60px;
     }
-    .page-head{ width:100%; max-width:640px; padding:22px 0 8px; display:flex; align-items:center; justify-content:space-between; }
+    .page-head{ width:100%; max-width:640px; padding:22px 0 8px; display:flex; align-items:center; justify-content:center; margin:0 auto; }
     .wordmark{ display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--fg); }
-    .wordmark .tomato{ font-size:22px; }
-    .wordmark .name{ font-family:'Anton', sans-serif; font-size:19px; letter-spacing:.02em; }
+    .wordmark .tomato-ic{ width:22px; height:22px; flex:0 0 auto; }
+    .wordmark .name{ font-family:'Anton', sans-serif; font-size:19px; letter-spacing:.02em; line-height:1; }
     .back-link{ color:var(--muted); text-decoration:none; font-size:13px; font-weight:600; }
     .back-link:hover{ color:var(--fg); }
     main{ width:100%; max-width:640px; }
@@ -104,7 +104,16 @@
 </head>
 <body>
   <div class="page-head">
-    <a class="wordmark" href="index.html"><span class="tomato">🍅</span><span class="name">PomoEase</span></a>
+    <a class="wordmark" href="index.html">
+      <svg class="tomato-ic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+        <line x1="16" y1="8" x2="16" y2="6" stroke="#4A8C38" stroke-width="1.5" stroke-linecap="round"/>
+        <ellipse cx="14" cy="6" rx="3" ry="1.5" fill="#4A8C38" transform="rotate(-30 14 6)"/>
+        <ellipse cx="18" cy="5.5" rx="2.5" ry="1.2" fill="#5AAA44" transform="rotate(20 18 5.5)"/>
+        <circle cx="16" cy="19" r="10" fill="#E8452A"/>
+        <ellipse cx="12.5" cy="14" rx="2.5" ry="1.8" fill="rgba(255,255,255,.25)" transform="rotate(-20 12.5 14)"/>
+      </svg>
+      <span class="name">PomoEase</span>
+    </a>
   </div>
 
   <main>
@@ -129,7 +138,7 @@
   </main>
 
   <footer>
-    <a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a><span class="footer-sep">·</span><a href="about.html">About</a>
+    <a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a><span class="footer-sep">·</span><a href="about.html">About</a><span class="footer-sep">·</span><a href="why-it-works.html">Our Philosophy</a>
     <div style="margin-top:10px; opacity:.7;">© <span id="yr"></span> PomoEase</div>
   </footer>
   <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
