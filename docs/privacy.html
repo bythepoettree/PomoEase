@@ -11,6 +11,15 @@
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  // Consent Mode: default everything to denied until the visitor chooses in
+  // the cookie banner below — shares the same stored choice as the main app,
+  // so a decision made on one page is respected on this one too.
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied'
+  });
   gtag('js', new Date());
   gtag('config', 'G-1946TF0P4L');
 </script>
@@ -66,6 +75,8 @@
     if(meta) meta.setAttribute('content', t.bg);
   })();
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -85,11 +96,13 @@
   /* sand fades fully to white at the bottom, matching the app */
   body{
     color:var(--fg); font-family:'Space Grotesk', system-ui, sans-serif;
-    min-height:100vh; padding:32px 18px 60px; display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:0 18px 60px; display:flex; flex-direction:column; align-items:center;
   }
   .wrap{width:100%; max-width:620px;}
-  .wordmark{font-family:'Anton',sans-serif; font-size:20px; letter-spacing:.06em; margin-bottom:6px;}
-  .wordmark em{font-style:normal; color:var(--accent);}
+  .page-head{ width:100%; max-width:640px; padding:22px 0 8px; display:flex; align-items:center; justify-content:center; margin:0 auto; }
+  .wordmark{ display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--fg); }
+  .wordmark .tomato-ic{ width:22px; height:22px; flex:0 0 auto; }
+  .wordmark .name{ font-family:'Anton', sans-serif; font-size:19px; letter-spacing:.02em; line-height:1; }
   h1{font-family:'Anton',sans-serif; font-weight:400; font-size:32px; letter-spacing:.01em; margin:18px 0 6px;}
   .updated{color:var(--muted); font-size:12.5px; margin-bottom:28px;}
   h2{font-family:'Anton',sans-serif; font-weight:400; font-size:17px; letter-spacing:.03em; margin:28px 0 8px;}
@@ -102,11 +115,45 @@
   }
   footer a{ color:var(--muted); text-decoration:underline; text-decoration-color:var(--line); }
   .footer-sep{ opacity:.5; margin:0 7px; }
+  /* cookie consent bar — same design as the main app */
+  .cookie-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:1600;
+    display:none; padding:16px; box-sizing:border-box;
+  }
+  .cookie-bar.show{ display:flex; }
+  .cookie-bar-inner{
+    width:100%; max-width:640px; margin:0 auto;
+    background:var(--bg2); color:var(--fg);
+    border:1px solid var(--line); border-radius:16px;
+    padding:18px 20px; box-sizing:border-box;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    box-shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  .cookie-bar-text{ flex:1 1 220px; font-size:13.5px; line-height:1.5; color:var(--muted); }
+  .cookie-bar-text a{ color:var(--fg); text-decoration:underline; }
+  .cookie-bar-btns{ display:flex; gap:8px; flex:0 0 auto; }
+  .cookie-bar-btns button{
+    border:none; border-radius:10px; padding:10px 16px; font-size:13.5px; font-weight:700;
+    cursor:pointer; white-space:nowrap;
+  }
+  .cookie-accept{ background:var(--accent); color:var(--accent-ink); }
+  .cookie-decline{ background:transparent; color:var(--fg); border:1px solid var(--line) !important; }
 </style>
 </head>
 <body>
+<div class="page-head">
+  <a class="wordmark" href="index.html">
+    <svg class="tomato-ic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+      <line x1="16" y1="8" x2="16" y2="6" stroke="#4A8C38" stroke-width="1.5" stroke-linecap="round"/>
+      <ellipse cx="14" cy="6" rx="3" ry="1.5" fill="#4A8C38" transform="rotate(-30 14 6)"/>
+      <ellipse cx="18" cy="5.5" rx="2.5" ry="1.2" fill="#5AAA44" transform="rotate(20 18 5.5)"/>
+      <circle cx="16" cy="19" r="10" fill="#E8452A"/>
+      <ellipse cx="12.5" cy="14" rx="2.5" ry="1.8" fill="rgba(255,255,255,.25)" transform="rotate(-20 12.5 14)"/>
+    </svg>
+    <span class="name">PomoEase</span>
+  </a>
+</div>
 <div class="wrap">
-  <div class="wordmark">POMO<em>EASE</em></div>
   <h1>Privacy Policy</h1>
   <p class="updated">Last updated: July 2026</p>
 
@@ -151,7 +198,44 @@
 </div>
 
 <footer>
-  <a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a><span class="footer-sep">·</span><a href="about.html">About</a>
+  <a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a><span class="footer-sep">·</span><a href="about.html">About</a><span class="footer-sep">·</span><a href="why-it-works.html">Our Philosophy</a>
+  <div style="margin-top:10px; opacity:.7;">© <span id="yr"></span> PomoEase</div>
 </footer>
+
+<div class="cookie-bar" id="cookieConsentBar" role="dialog" aria-label="Cookie consent">
+  <div class="cookie-bar-inner">
+    <div class="cookie-bar-text">
+      We use cookies for analytics and to support ads that keep PomoEase free. See our <a href="privacy.html">Privacy Policy</a> above.
+    </div>
+    <div class="cookie-bar-btns">
+      <button type="button" class="cookie-decline" id="cookieDeclineBtn">Decline</button>
+      <button type="button" class="cookie-accept" id="cookieAcceptBtn">Accept</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+  function grantConsent(){
+    if(typeof gtag==='function') gtag('consent','update',{
+      ad_storage:'granted', ad_user_data:'granted', ad_personalization:'granted', analytics_storage:'granted'
+    });
+  }
+  (function(){
+    const bar=document.getElementById('cookieConsentBar');
+    const saved = (()=>{ try{ return localStorage.getItem('pomofit:cookieConsent'); }catch(e){ return null; } })();
+    if(saved==='granted') grantConsent();
+    else if(saved!=='denied') bar.classList.add('show');
+    document.getElementById('cookieAcceptBtn').onclick=()=>{
+      try{ localStorage.setItem('pomofit:cookieConsent','granted'); }catch(e){}
+      grantConsent();
+      bar.classList.remove('show');
+    };
+    document.getElementById('cookieDeclineBtn').onclick=()=>{
+      try{ localStorage.setItem('pomofit:cookieConsent','denied'); }catch(e){}
+      bar.classList.remove('show');
+    };
+  })();
+</script>
 </body>
 </html>
