@@ -199,6 +199,33 @@
     --accent:#2C3A2C; --accent-ink:#E4EDE4; --line:rgba(44,58,44,.14); --chip:#CCDACC;
   }
 
+  /* ---------- THEME: Cherry — DARK (bright pink-red, white text) ---------- */
+  body[data-theme="cherry"][data-appearance="dark"][data-mode="focus"]{
+    --bg:#D6295A; --bg2:#E23F6F; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
+    --accent:#FFFFFF; --accent-ink:#3A0A1E; --line:rgba(255,255,255,.20); --chip:#BE2451;
+  }
+  body[data-theme="cherry"][data-appearance="dark"][data-mode="sweat"]{
+    --bg:#B81F4A; --bg2:#C93459; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
+    --accent:#FFFFFF; --accent-ink:#3A0A1E; --line:rgba(255,255,255,.20); --chip:#A11B3F;
+  }
+  body[data-theme="cherry"][data-appearance="dark"][data-mode="rest"]{
+    --bg:#D33862; --bg2:#DE4C74; --fg:#FFFFFF; --muted:rgba(255,255,255,.75);
+    --accent:#FFFFFF; --accent-ink:#3A0A1E; --line:rgba(255,255,255,.20); --chip:#BB2F55;
+  }
+  /* ---------- THEME: Cherry — LIGHT ---------- */
+  body[data-theme="cherry"][data-appearance="light"][data-mode="focus"]{
+    --bg:#FBD9E4; --bg2:#F5C2D3; --fg:#8F1740; --muted:rgba(143,23,64,.72);
+    --accent:#8F1740; --accent-ink:#FBD9E4; --line:rgba(143,23,64,.14); --chip:#F0B9CB;
+  }
+  body[data-theme="cherry"][data-appearance="light"][data-mode="sweat"]{
+    --bg:#F6C6D6; --bg2:#EFAFC4; --fg:#8F1740; --muted:rgba(143,23,64,.72);
+    --accent:#8F1740; --accent-ink:#F6C6D6; --line:rgba(143,23,64,.14); --chip:#E9A2B9;
+  }
+  body[data-theme="cherry"][data-appearance="light"][data-mode="rest"]{
+    --bg:#FCE3EC; --bg2:#F6D0DE; --fg:#8F1740; --muted:rgba(143,23,64,.72);
+    --accent:#8F1740; --accent-ink:#FCE3EC; --line:rgba(143,23,64,.14); --chip:#F2C3D5;
+  }
+
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   button{touch-action:manipulation; user-select:none;}
   /* prevent iOS Safari auto-zoom on input focus */
@@ -980,6 +1007,26 @@
   @keyframes signinPulse{ 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
   .signin-splash-check{ color:var(--accent); display:inline-flex; }
   @media (prefers-reduced-motion: reduce){ .signin-splash-avatar{ animation:none; } .signin-splash-dot{ animation:none; } }
+  .signin-splash-stats{
+    display:flex; gap:10px; margin-top:6px; opacity:0; transform:translateY(6px);
+    transition:opacity .3s ease .15s, transform .3s ease .15s;
+  }
+  .signin-splash.show .signin-splash-stats{ opacity:1; transform:none; }
+  .splash-stat{
+    background:var(--bg2); border:1px solid var(--line); border-radius:14px;
+    padding:12px 16px; min-width:78px; text-align:center;
+  }
+  .splash-stat-num{ font-family:'Anton',sans-serif; font-size:22px; line-height:1; color:var(--fg); }
+  .splash-stat-lab{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .signin-splash-actions{
+    display:flex; gap:10px; margin-top:8px; opacity:0; transform:translateY(6px);
+    transition:opacity .3s ease .25s, transform .3s ease .25s;
+  }
+  .signin-splash.show .signin-splash-actions{ opacity:1; transform:none; }
+  .signin-splash-actions .btn{ font-size:12.5px; padding:11px 18px; }
+  @media (prefers-reduced-motion: reduce){
+    .signin-splash-stats, .signin-splash-actions{ transition:none; }
+  }
 
   /* co-work lobby — shown to a guest while waiting for the host to approve them */
   .lobby-bg{
@@ -2239,6 +2286,24 @@
   <div class="signin-splash-avatar" id="signinSplashAvatar"></div>
   <div class="signin-splash-name" id="signinSplashName"></div>
   <div class="signin-splash-msg" id="signinSplashMsg"></div>
+  <div class="signin-splash-stats" id="signinSplashStats">
+    <div class="splash-stat">
+      <div class="splash-stat-num" id="splashStatStreak">0</div>
+      <div class="splash-stat-lab">Day streak 🔥</div>
+    </div>
+    <div class="splash-stat">
+      <div class="splash-stat-num" id="splashStatToday">0m</div>
+      <div class="splash-stat-lab">Focus today</div>
+    </div>
+    <div class="splash-stat">
+      <div class="splash-stat-num" id="splashStatWeek">0m</div>
+      <div class="splash-stat-lab">This week</div>
+    </div>
+  </div>
+  <div class="signin-splash-actions" id="signinSplashActions">
+    <button type="button" class="btn ghost" id="splashFullStatsBtn">View full stats</button>
+    <button type="button" class="btn" id="splashContinueBtn">Continue</button>
+  </div>
 </div>
 
 <div class="welcome-bg" id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
@@ -6982,6 +7047,13 @@ const FIREBASE_READY = !!FIREBASE_CONFIG.apiKey && !!FIREBASE_CONFIG.databaseURL
 // Shown right after an explicit sign-in: the account's avatar + name appear
 // centre-screen with a warm "Welcome back" greeting, then fade away. It's a
 // deliberate, momentary touch — not shown on ordinary reopens.
+let splashDismissTimer=null;
+function dismissSplash(){
+  const el=$('signinSplash'); if(!el) return;
+  clearTimeout(splashDismissTimer); splashDismissTimer=null;
+  el.classList.add('fade');
+  setTimeout(()=>{ el.classList.remove('show','fade'); }, 340);
+}
 function greetSignedIn(){
   const el=$('signinSplash'); if(!el) return;
   const av=$('signinSplashAvatar'), nm=$('signinSplashName'), msg=$('signinSplashMsg');
@@ -6995,13 +7067,26 @@ function greetSignedIn(){
     else if(a) av.innerHTML = '<img src="'+a+'" alt="'+esc(name)+'">';
     else av.textContent = (name[0]||'🍅').toUpperCase();
   }
+  // quick three-stat summary — reuses the same computation the full dashboard
+  // uses (renderDashboard fills the hidden profile-sheet elements; we just
+  // read the numbers back out rather than duplicating the streak/week maths)
+  try{
+    renderDashboard();
+    const sStreak=$('splashStatStreak'), sToday=$('splashStatToday'), sWeek=$('splashStatWeek');
+    if(sStreak) sStreak.textContent = $('dashStreak').textContent;
+    if(sToday) sToday.textContent = $('dashToday').textContent;
+    if(sWeek) sWeek.textContent = $('dashWeekTotal').textContent;
+  }catch(e){}
   el.classList.remove('fade');
   el.classList.add('show');
-  // hold the greeting, then fade it away
-  setTimeout(()=>{
-    el.classList.add('fade');
-    setTimeout(()=>{ el.classList.remove('show','fade'); }, 340);
-  }, 1600);
+  // hold the greeting so there's time to read the stats or tap a button, then fade it away
+  clearTimeout(splashDismissTimer);
+  splashDismissTimer = setTimeout(dismissSplash, 7000);
+}
+{
+  const fsb=$('splashFullStatsBtn'), cb=$('splashContinueBtn');
+  if(fsb) fsb.onclick=()=>{ dismissSplash(); openSheet('profileSheet'); };
+  if(cb) cb.onclick=dismissSplash;
 }
 
 let fb = null;          // { app, auth, db, uid }
@@ -8996,15 +9081,15 @@ sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
 /* themes: cycles between Ember and Mono */
-const THEME_ORDER=['midnight','wine','sage'];
-const THEME_ICON={midnight:'◐', wine:'◑', sage:'◒'};
-const THEME_DISPLAY_NAMES={midnight:'Navy', wine:'Purple', sage:'Sage'};
+const THEME_ORDER=['midnight','wine','sage','cherry'];
+const THEME_ICON={midnight:'◐', wine:'◑', sage:'◒', cherry:'◓'};
+const THEME_DISPLAY_NAMES={midnight:'Navy', wine:'Purple', sage:'Sage', cherry:'Cherry'};
 // each colour has its own OUT-OF-THE-BOX default — Sage starts light (it always
-// read as a paler colour), Navy/Purple start dark. But the moment you touch the
-// light bulb, that becomes a sticky global choice: it applies no matter which
+// read as a paler colour), Navy/Purple/Cherry start dark. But the moment you touch
+// the light bulb, that becomes a sticky global choice: it applies no matter which
 // colour you switch to afterward, and only changes when you press the bulb
 // again — switching colour alone never flips it.
-const THEME_DEFAULT_APPEARANCE={midnight:'dark', wine:'dark', sage:'light'};
+const THEME_DEFAULT_APPEARANCE={midnight:'dark', wine:'dark', sage:'light', cherry:'dark'};
 let appearanceOverride = null; // null = follow each colour's own default
 
 function appearanceFor(themeKey){
