@@ -1,7 +1,52 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background:#0F1E33; color-scheme:dark;">
 <head>
 <meta charset="utf-8">
+<script>
+  // Match whatever theme the visitor chose in the app (saved under
+  // 'pomofit:settings'). Read before first paint so this page mirrors the app.
+  (function(){
+    var THEMES = {
+      'midnight-dark':  { bg:'#0F1E33', bg2:'#17293F', fg:'#E8EEF7', muted:'#7E92AD',                 accentInk:'#0F1E33', line:'rgba(232,238,247,.12)', chip:'#1E3350', grad:false, light:false },
+      'midnight-light': { bg:'#E4EAF2', bg2:'#D9E1EC', fg:'#1C2E44', muted:'rgba(28,46,68,.72)',       accentInk:'#E4EAF2', line:'rgba(28,46,68,.14)',    chip:'#CBD6E4', grad:true,  light:true },
+      'wine-dark':      { bg:'#3A1220', bg2:'#35101D', fg:'#F5E4EA', muted:'#B07E90',                  accentInk:'#220A13', line:'rgba(245,228,234,.16)', chip:'#330F1C', grad:false, light:false },
+      'wine-light':     { bg:'#F1E3E8', bg2:'#E7D4DB', fg:'#4A1B29', muted:'rgba(74,27,41,.72)',       accentInk:'#F1E3E8', line:'rgba(74,27,41,.14)',    chip:'#DFC3CD', grad:true,  light:true },
+      'sage-dark':      { bg:'#5C7A5C', bg2:'#4F6A4F', fg:'#FFFFFF', muted:'rgba(255,255,255,.75)',    accentInk:'#2E3D2E', line:'rgba(255,255,255,.16)', chip:'#516D51', grad:false, light:false },
+      'sage-light':     { bg:'#DCE6DC', bg2:'#D0DCD0', fg:'#2C3A2C', muted:'rgba(44,58,44,.72)',       accentInk:'#DCE6DC', line:'rgba(44,58,44,.14)',    chip:'#C4D2C4', grad:true,  light:true }
+    };
+    // each colour has its own default appearance — Sage defaults light,
+    // Navy/Purple default dark — UNLESS the visitor explicitly toggled the
+    // light bulb in the app, in which case that sticky choice applies no
+    // matter which colour is active (matches the app's own logic)
+    var DEFAULT_APPEARANCE = { midnight:'dark', wine:'dark', sage:'light' };
+    var fam = 'midnight';
+    var override = null;
+    try{
+      var s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
+      if(s && ['midnight','wine','sage'].indexOf(s.theme) >= 0) fam = s.theme;
+      if(s && (s.appearanceOverride==='light' || s.appearanceOverride==='dark')){
+        override = s.appearanceOverride;
+      } else if(s && s.themeAppearance && (s.themeAppearance[fam]==='light' || s.themeAppearance[fam]==='dark')){
+        override = s.themeAppearance[fam];
+      }
+    }catch(e){}
+    var appr = override || DEFAULT_APPEARANCE[fam] || 'dark';
+    var key = fam + '-' + appr;
+    var t = THEMES[key] || THEMES['midnight-dark'];
+    var r = document.documentElement;
+    r.style.setProperty('--bg', t.bg);
+    r.style.setProperty('--bg2', t.bg2);
+    r.style.setProperty('--fg', t.fg);
+    r.style.setProperty('--muted', t.muted);
+    r.style.setProperty('--accent', t.fg);
+    r.style.setProperty('--accent-ink', t.accentInk);
+    r.style.setProperty('--line', t.line);
+    r.style.setProperty('--chip', t.chip);
+    r.setAttribute('data-grad', t.grad ? '1' : '0');
+    r.style.background = t.bg;
+    r.style.colorScheme = t.light ? 'light' : 'dark';
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Why The PomoEase Method Works — PomoEase</title>
 <meta name="description" content="The research behind PomoEase: why timed focus rounds fight the attention dip, and why light movement during breaks gives your brain a measurable boost.">
@@ -20,25 +65,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0F1E33; --bg2:#17293F; --bg3:#132234; --fg:#E8EEF7; --muted:#8DA0BC;
-    --line:rgba(232,238,247,.12); --tomato:#E8452A; --leaf:#5AAA44; --leaf-soft:#7FB88A;
+    --bg:#0F1E33; --bg2:#17293F; --fg:#E8EEF7; --muted:#7E92AD;
+    --accent:#E8EEF7; --accent-ink:#0F1E33; --line:rgba(232,238,247,.12); --chip:#1E3350;
+    --tomato:#E8452A; --leaf:#5AAA44; --leaf-soft:#7FB88A; --ease: cubic-bezier(.22,.9,.3,1);
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
+  html[data-grad="1"] body{
+    background:
+      color-mix(in srgb, var(--bg) 82%, #FFFFFF)
+      linear-gradient(to bottom, var(--bg) 0%, var(--bg) 38%, color-mix(in srgb, var(--bg) 82%, #FFFFFF) 100%) no-repeat;
+    background-size:100% 100%;
+  }
+  html[data-grad="0"] body{ background:var(--bg); }
   body{
-    margin:0; background:var(--bg); color:var(--fg);
+    margin:0; color:var(--fg);
     font-family:'Space Grotesk', system-ui, sans-serif;
     line-height:1.6; -webkit-font-smoothing:antialiased;
+    transition:background .6s var(--ease), color .6s var(--ease);
   }
+  @media (prefers-reduced-motion: reduce){ body{ transition:none; } }
   a{color:inherit;}
   .wrap{max-width:760px; margin:0 auto; padding:0 24px;}
 
-  /* nav */
-  header.site{ padding:22px 0; border-bottom:1px solid var(--line); }
-  header.site .wrap{ display:flex; align-items:center; justify-content:space-between; }
-  .brand{ display:flex; align-items:center; gap:10px; text-decoration:none; }
-  .brand svg{ width:26px; height:26px; }
-  .brand span{ font-family:'Anton',sans-serif; font-size:18px; letter-spacing:.04em; }
+  /* header — identical across every page on the site */
+  .page-head{ width:100%; max-width:640px; padding:22px 0 8px; display:flex; align-items:center; justify-content:center; margin:0 auto; }
+  .wordmark{ display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--fg); }
+  .wordmark .tomato-ic{ width:22px; height:22px; flex:0 0 auto; }
+  .wordmark .name{ font-family:'Anton', sans-serif; font-size:19px; letter-spacing:.02em; line-height:1; }
 
   /* hero */
   .hero{ padding:64px 0 20px; position:relative; overflow:hidden; }
@@ -89,10 +143,9 @@
   .sources li{ font-size:14px; color:var(--muted); margin-bottom:14px; line-height:1.6; }
   .sources li a{ color:var(--leaf-soft); text-decoration:underline; }
 
-  footer.site{ border-top:1px solid var(--line); padding:26px 0; text-align:center; }
-  footer.site .footer-links{ font-size:11.5px; letter-spacing:.05em; color:var(--muted); margin:0; }
-  footer.site .footer-links a{ color:var(--muted); text-decoration:underline; text-decoration-color:rgba(128,128,128,.4); }
-  footer.site .footer-sep{ color:var(--muted); opacity:.5; margin:0 7px; }
+  footer{ width:100%; max-width:640px; margin:40px auto 0; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); text-align:center; }
+  footer a{ color:var(--muted); text-decoration:underline; text-decoration-color:rgba(128,128,128,.4); }
+  .footer-sep{ opacity:.5; margin:0 7px; }
 
   @media (max-width:520px){
     .stat{ flex-direction:column; gap:6px; align-items:flex-start; }
@@ -101,21 +154,18 @@
 </style>
 </head>
 <body>
-
-<header class="site">
-  <div class="wrap" style="justify-content:center;">
-    <a class="brand" href="/">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-        <line x1="16" y1="8" x2="16" y2="6" stroke="#4A8C38" stroke-width="1.5" stroke-linecap="round"/>
-        <ellipse cx="14" cy="6" rx="3" ry="1.5" fill="#4A8C38" transform="rotate(-30 14 6)"/>
-        <ellipse cx="18" cy="5.5" rx="2.5" ry="1.2" fill="#5AAA44" transform="rotate(20 18 5.5)"/>
-        <circle cx="16" cy="19" r="10" fill="#E8452A"/>
-        <ellipse cx="12.5" cy="14" rx="2.5" ry="1.8" fill="rgba(255,255,255,.25)" transform="rotate(-20 12.5 14)"/>
-      </svg>
-      <span>PomoEase</span>
-    </a>
-  </div>
-</header>
+<div class="page-head">
+  <a class="wordmark" href="index.html">
+    <svg class="tomato-ic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+      <line x1="16" y1="8" x2="16" y2="6" stroke="#4A8C38" stroke-width="1.5" stroke-linecap="round"/>
+      <ellipse cx="14" cy="6" rx="3" ry="1.5" fill="#4A8C38" transform="rotate(-30 14 6)"/>
+      <ellipse cx="18" cy="5.5" rx="2.5" ry="1.2" fill="#5AAA44" transform="rotate(20 18 5.5)"/>
+      <circle cx="16" cy="19" r="10" fill="#E8452A"/>
+      <ellipse cx="12.5" cy="14" rx="2.5" ry="1.8" fill="rgba(255,255,255,.25)" transform="rotate(-20 12.5 14)"/>
+    </svg>
+    <span class="name">PomoEase</span>
+  </a>
+</div>
 
 <main>
   <div class="hero wrap">
@@ -198,17 +248,11 @@
   </div>
 </main>
 
-<footer class="site">
-  <div class="wrap footer-links">
-    <a href="contact.html" target="_blank" rel="noopener noreferrer">Contact</a>
-    <span class="footer-sep">·</span>
-    <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-    <span class="footer-sep">·</span>
-    <a href="about.html" target="_blank" rel="noopener noreferrer">About</a>
-    <span class="footer-sep">·</span>
-    <a href="why-it-works.html" target="_blank" rel="noopener noreferrer">Our Philosophy</a>
-  </div>
+<footer>
+  <a href="contact.html">Contact</a><span class="footer-sep">·</span><a href="privacy.html">Privacy Policy</a><span class="footer-sep">·</span><a href="about.html">About</a><span class="footer-sep">·</span><a href="why-it-works.html">Our Philosophy</a>
+  <div style="margin-top:10px; opacity:.7;">© <span id="yr"></span> PomoEase</div>
 </footer>
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
 
 </body>
 </html>
