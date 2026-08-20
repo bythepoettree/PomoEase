@@ -565,6 +565,20 @@
     max-height:1000px;
     transition:max-height .3s ease, opacity .25s ease, margin .3s ease;
   }
+  /* Keep long task lists usable without letting the whole page grow forever.
+     Only the task rows scroll, so the Add Task button/form remains reachable. */
+  #taskListMain{
+    max-height:min(56vh, 560px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    padding-right:4px;
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+  }
+  #taskListMain::-webkit-scrollbar{ width:6px; }
+  #taskListMain::-webkit-scrollbar-thumb{ background:var(--line); border-radius:999px; }
+  #taskListMain::-webkit-scrollbar-track{ background:transparent; }
   .tp-head[aria-expanded="false"] + .tp-body{
     max-height:0; opacity:0; margin-top:0;
   }
@@ -3738,17 +3752,25 @@ async function cloudSignOut(){
 }
 
 async function cloudSendReset(){
-  const email=$('userInput').value.trim();
+  const email=$('userInput').value.trim().toLowerCase();
   if(!validEmail(email)) return authMsg('Enter your account email above first, then tap reset.');
+  const resetLink=$('forgotLink');
+  if(resetLink){ resetLink.style.pointerEvents='none'; resetLink.style.opacity='.55'; }
   try{
     await ensureFirebase();
-    // NOTE: the link's domain (pomoease.com vs the default *.firebaseapp.com
-    // page) is controlled by the "Action URL" setting in the Firebase Console
-    // (Authentication > Templates), not by actionCodeSettings here — that's a
-    // web-app-wide setting, not something the client SDK can override per call.
+    // Firebase sends the email. The reset handler/domain is configured in
+    // Firebase Console > Authentication > Templates. Email delivery itself
+    // (sender reputation, spam filtering, quotas) is also controlled upstream.
     await fb.auth.sendPasswordResetEmail(email);
-    authMsg('Password reset email sent — check your inbox.');
-  }catch(e){ authMsg(cloudAuthError(e)); }
+    authMsg('If an account exists for that email, a reset link has been sent. Check spam/junk too — it may come from the Firebase sender address.');
+  }catch(e){
+    console.error('password reset email failed', e);
+    authMsg(cloudAuthError(e));
+  }finally{
+    // Brief cooldown prevents accidental rapid-fire requests while still making
+    // it easy to retry if the first message never arrives.
+    if(resetLink) setTimeout(()=>{ resetLink.style.pointerEvents=''; resetLink.style.opacity=''; }, 8000);
+  }
 }
 
 function cloudAuthError(e){
@@ -3763,6 +3785,9 @@ function cloudAuthError(e){
   if(c==='auth/account-exists-with-different-credential') return 'You already have an account with this email — sign in with your password instead.';
   if(c==='auth/unauthorized-domain') return 'This site isn\'t authorised for Google sign-in yet.';
   if(c==='auth/operation-not-allowed') return 'Google sign-in isn\'t enabled for this project.';
+  if(c==='auth/invalid-recipient-email') return 'Firebase could not send to that email address. Check the address and try again.';
+  if(c==='auth/invalid-sender') return 'Password-reset email sender is misconfigured in Firebase. Please contact support.';
+  if(c==='auth/invalid-message-payload') return 'Password-reset email template is misconfigured in Firebase. Please contact support.';
   if(c==='auth/expired-action-code') return 'This reset link has expired — request a new one.';
   if(c==='auth/invalid-action-code') return 'This reset link is invalid or has already been used — request a new one.';
   if(c==='auth/user-disabled') return 'This account has been disabled.';
@@ -8854,8 +8879,8 @@ document.addEventListener('keydown', e=>{
 
 // ---- password reset link handler ----
 // Reached when the user taps the reset-password link in their email, which
-// (via cloudSendReset's actionCodeSettings) now points straight back at our
-// own domain instead of Firebase's hosted *.firebaseapp.com page.
+// points back at our own domain once the Firebase Authentication email-template
+// Action URL is configured to https://www.pomoease.com/.
 async function handlePasswordResetLink(oobCode){
   const overlay=$('resetPwOverlay'), sub=$('resetPwSub'), form=$('resetPwForm'),
         doneBox=$('resetPwDone'), errBox=$('resetPwError'), errMsg=$('resetPwErrorMsg'),
