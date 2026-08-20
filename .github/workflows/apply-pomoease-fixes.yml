@@ -1,0 +1,64 @@
+name: Apply PomoEase fixes
+
+on:
+  push:
+    branches:
+      - fix/password-reset-and-task-scroll
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch docs/index.html
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/index.html')
+          text = path.read_text()
+
+          replacements = [
+              (
+                  """  .tp-body{\n    overflow:hidden;\n    max-height:1000px;\n    transition:max-height .3s ease, opacity .25s ease, margin .3s ease;\n  }\n  .tp-head[aria-expanded=\"false\"] + .tp-body{""",
+                  """  .tp-body{\n    overflow:hidden;\n    max-height:1000px;\n    transition:max-height .3s ease, opacity .25s ease, margin .3s ease;\n  }\n  /* Keep long task lists usable without letting the whole page grow forever.\n     Only the task rows scroll, so the Add Task button/form remains reachable. */\n  #taskListMain{\n    max-height:min(56vh, 560px);\n    overflow-y:auto;\n    overscroll-behavior:contain;\n    -webkit-overflow-scrolling:touch;\n    padding-right:4px;\n    scrollbar-width:thin;\n    scrollbar-color:var(--line) transparent;\n  }\n  #taskListMain::-webkit-scrollbar{ width:6px; }\n  #taskListMain::-webkit-scrollbar-thumb{ background:var(--line); border-radius:999px; }\n  #taskListMain::-webkit-scrollbar-track{ background:transparent; }\n  .tp-head[aria-expanded=\"false\"] + .tp-body{"""
+              ),
+              (
+                  """async function cloudSendReset(){\n  const email=$('userInput').value.trim();\n  if(!validEmail(email)) return authMsg('Enter your account email above first, then tap reset.');\n  try{\n    await ensureFirebase();\n    // NOTE: the link's domain (pomoease.com vs the default *.firebaseapp.com\n    // page) is controlled by the \"Action URL\" setting in the Firebase Console\n    // (Authentication > Templates), not by actionCodeSettings here — that's a\n    // web-app-wide setting, not something the client SDK can override per call.\n    await fb.auth.sendPasswordResetEmail(email);\n    authMsg('Password reset email sent — check your inbox.');\n  }catch(e){ authMsg(cloudAuthError(e)); }\n}""",
+                  """async function cloudSendReset(){\n  const email=$('userInput').value.trim().toLowerCase();\n  if(!validEmail(email)) return authMsg('Enter your account email above first, then tap reset.');\n  const resetLink=$('forgotLink');\n  if(resetLink){ resetLink.style.pointerEvents='none'; resetLink.style.opacity='.55'; }\n  try{\n    await ensureFirebase();\n    // Firebase sends the email. The reset handler/domain is configured in\n    // Firebase Console > Authentication > Templates. Email delivery itself\n    // (sender reputation, spam filtering, quotas) is also controlled upstream.\n    await fb.auth.sendPasswordResetEmail(email);\n    authMsg('If an account exists for that email, a reset link has been sent. Check spam/junk too — it may come from the Firebase sender address.');\n  }catch(e){\n    console.error('password reset email failed', e);\n    authMsg(cloudAuthError(e));\n  }finally{\n    // Brief cooldown prevents accidental rapid-fire requests while still making\n    // it easy to retry if the first message never arrives.\n    if(resetLink) setTimeout(()=>{ resetLink.style.pointerEvents=''; resetLink.style.opacity=''; }, 8000);\n  }\n}"""
+              ),
+              (
+                  """  if(c==='auth/operation-not-allowed') return 'Google sign-in isn\\'t enabled for this project.';\n  if(c==='auth/expired-action-code') return 'This reset link has expired — request a new one.';""",
+                  """  if(c==='auth/operation-not-allowed') return 'Google sign-in isn\\'t enabled for this project.';\n  if(c==='auth/invalid-recipient-email') return 'Firebase could not send to that email address. Check the address and try again.';\n  if(c==='auth/invalid-sender') return 'Password-reset email sender is misconfigured in Firebase. Please contact support.';\n  if(c==='auth/invalid-message-payload') return 'Password-reset email template is misconfigured in Firebase. Please contact support.';\n  if(c==='auth/expired-action-code') return 'This reset link has expired — request a new one.';"""
+              ),
+              (
+                  """// Reached when the user taps the reset-password link in their email, which\n// (via cloudSendReset's actionCodeSettings) now points straight back at our\n// own domain instead of Firebase's hosted *.firebaseapp.com page.""",
+                  """// Reached when the user taps the reset-password link in their email, which\n// points back at our own domain once the Firebase Authentication email-template\n// Action URL is configured to https://www.pomoease.com/."""
+              ),
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one match, found {count}: {old[:80]!r}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+          git diff --check
+
+      - name: Commit patched file and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/index.html
+          git rm -- .github/workflows/apply-pomoease-fixes.yml
+          git commit -m "Fix password reset feedback and task list overflow"
+          git push origin HEAD:fix/password-reset-and-task-scroll
