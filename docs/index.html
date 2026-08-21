@@ -548,18 +548,22 @@
   /* ---------- tasks (Pomofocus style) ---------- */
   .tp-head{
     display:flex; justify-content:space-between; align-items:center;
-    width:100%; background:none; border:none; cursor:pointer;
+    width:100%;
     border-bottom:1px solid var(--line); padding:0 2px 10px;
     font-family:inherit; font-weight:600; font-size:13px;
     letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
-    transition:color .15s ease;
   }
-  .tp-head:hover{ color:var(--fg); }
+  .tp-head-actions{ display:flex; align-items:center; gap:10px; }
+  .tp-collapse-btn{
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    padding:0 2px; display:inline-flex; align-items:center; justify-content:center;
+  }
+  .tp-collapse-btn:hover{ color:var(--fg); }
   .tp-chevron{
     font-size:16px; line-height:1; transition:transform .25s ease;
     display:inline-block;
   }
-  .tp-head[aria-expanded="false"] .tp-chevron{ transform:rotate(-90deg); }
+  .tp-collapse-btn[aria-expanded="false"] .tp-chevron{ transform:rotate(-90deg); }
   .tp-body{
     overflow:hidden;
     max-height:1000px;
@@ -568,8 +572,8 @@
   /* Keep long task lists usable without letting the whole page grow forever.
      Only the task rows scroll, so the Add Task button/form remains reachable. */
   #taskListMain{
-    /* Show about 3 task rows, then scroll. */
-    max-height:210px;
+    /* JS sets an exact 3-row viewport after tasks render. */
+    max-height:none;
     overflow-y:auto;
     overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch;
@@ -580,7 +584,7 @@
   #taskListMain::-webkit-scrollbar{ width:6px; }
   #taskListMain::-webkit-scrollbar-thumb{ background:var(--line); border-radius:999px; }
   #taskListMain::-webkit-scrollbar-track{ background:transparent; }
-  .tp-head[aria-expanded="false"] + .tp-body{
+  .tp-body.collapsed{
     max-height:0; opacity:0; margin-top:0;
   }
   .task-item{
@@ -648,6 +652,76 @@
     border-radius:14px; font-family:inherit; font-size:15px; font-weight:500; cursor:pointer;
   }
   .add-task:hover{color:var(--fg);}
+  .task-complete-pref{
+    display:flex; align-items:center; gap:0;
+    background:transparent; border:none; border-radius:0;
+    padding:0; color:var(--muted);
+    font-family:inherit; font-size:11px; font-weight:500;
+    letter-spacing:.02em; text-transform:none;
+    cursor:pointer;
+  }
+  .task-complete-pref #autoRemoveTasksLabel{
+    display:inline-block;
+    max-width:0;
+    opacity:0;
+    overflow:hidden;
+    white-space:nowrap;
+    transform:translateX(7px);
+    transition:max-width .24s ease, opacity .18s ease, transform .24s ease, color .16s ease;
+  }
+  .task-complete-pref:hover,
+  .task-complete-pref:focus-visible{ gap:7px; }
+  .task-complete-pref:hover #autoRemoveTasksLabel,
+  .task-complete-pref:focus-visible #autoRemoveTasksLabel{
+    max-width:150px;
+    opacity:.68;
+    transform:translateX(0);
+    color:var(--fg);
+  }
+  .task-complete-pref[aria-pressed="true"] #autoRemoveTasksLabel{
+    max-width:0;
+    opacity:0;
+  }
+  .task-complete-pref[aria-pressed="true"]:hover #autoRemoveTasksLabel,
+  .task-complete-pref[aria-pressed="true"]:focus-visible #autoRemoveTasksLabel{
+    max-width:150px;
+    opacity:.72;
+    transform:translateX(0);
+  }
+  .task-complete-switch{
+    width:25px; height:14px; border-radius:999px; position:relative; flex:none;
+    opacity:.88;
+    background:color-mix(in srgb, var(--fg) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--line) 88%, var(--fg) 12%);
+    transition:background .18s ease, border-color .18s ease;
+  }
+  .task-complete-switch::after{
+    content:''; position:absolute; width:8px; height:8px; border-radius:50%;
+    top:2px; left:2px; background:var(--muted);
+    opacity:.95;
+    transition:transform .18s ease, background .18s ease;
+  }
+  .task-complete-pref[aria-pressed="true"] .task-complete-switch{
+    background:color-mix(in srgb, var(--accent) 18%, transparent);
+    border-color:color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  .task-complete-pref[aria-pressed="true"] .task-complete-switch::after{
+    transform:translateX(11px); background:var(--accent);
+  }
+  .task-item.task-poof{
+    pointer-events:none;
+    animation:taskPoof .48s cubic-bezier(.22,.61,.36,1) forwards;
+    transform-origin:center;
+  }
+  @keyframes taskPoof{
+    0%{opacity:1; transform:scale(1); filter:blur(0);}
+    35%{opacity:.8; transform:scale(1.015); filter:blur(0);}
+    100%{opacity:0; transform:scale(.93); filter:blur(5px);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .task-item.task-poof{ animation:taskPoofReduced .18s linear forwards; }
+    @keyframes taskPoofReduced{ to{opacity:0;} }
+  }
   .task-form{display:none; background:var(--bg2); border-radius:12px; padding:14px; margin-top:10px;}
   .task-form.show{display:block;}
   .task-form input{
@@ -2368,6 +2442,7 @@
     <h2 style="text-align:center;">Keyboard shortcuts</h2>
     <div class="shortcut-row"><span>Start / pause</span><kbd>Space</kbd></div>
     <div class="shortcut-row"><span>Reset round</span><kbd>R</kbd></div>
+    <div class="shortcut-row"><span>Add a task</span><kbd>N</kbd></div>
     <div class="shortcut-row"><span>Workout / back to timer</span><kbd>S</kbd></div>
     <div class="shortcut-row"><span>Timer-only view</span><kbd>Z</kbd></div>
     <div class="shortcut-row"><span>Co-work</span><kbd>C</kbd></div>
@@ -2416,10 +2491,18 @@
   </div>
 
   <div class="tasks-panel" id="tasksPanel">
-    <button class="tp-head" id="tasksToggle" aria-expanded="true">
+    <div class="tp-head" id="tasksHeadRow">
       <span id="tasksHeading">Tasks</span>
-      <span class="tp-chevron" aria-hidden="true">⌄</span>
-    </button>
+      <span class="tp-head-actions">
+        <button class="task-complete-pref" id="autoRemoveTasksToggle" type="button" aria-pressed="false" title="Remove tasks automatically when their Pomodoro target is reached">
+          <span id="autoRemoveTasksLabel">REMOVE WHEN COMPLETE</span>
+          <span class="task-complete-switch" aria-hidden="true"></span>
+        </button>
+        <button class="tp-collapse-btn" id="tasksToggle" type="button" aria-expanded="true" aria-label="Collapse tasks">
+          <span class="tp-chevron" aria-hidden="true">⌄</span>
+        </button>
+      </span>
+    </div>
     <div class="tp-body" id="tasksBody">
       <div id="taskListMain"></div>
       <button class="add-task" id="addTaskOpen">＋ Add Task</button>
@@ -3150,7 +3233,7 @@ const S = {
   focusMin: 25, breakMin: 5, longMin: 15, longBreakEvery: 4,
 
   autoBreak: true, autoFocus: false, sound: true, reminders: false, remindersMin: 45,
-  landOnWorkout: false,
+  landOnWorkout: false, autoRemoveCompletedTasks: false,
   phase: 'focus', running: false,
   endAt: 0, remaining: 25*60*1000,
   session: 1, completed: 0,
@@ -3269,7 +3352,7 @@ function buildSettingsSnapshot(){
 
     longBreakEvery: S.longBreakEvery,
     reminders: S.reminders, remindersMin: S.remindersMin, sound: S.sound, autoBreak: S.autoBreak, autoFocus: S.autoFocus,
-    landOnWorkout: S.landOnWorkout,
+    landOnWorkout: S.landOnWorkout, autoRemoveCompletedTasks: S.autoRemoveCompletedTasks,
   };
 }
 function saveSettings(){
@@ -3315,7 +3398,9 @@ async function loadSettings(){
   if(typeof saved.autoBreak==='boolean') S.autoBreak = saved.autoBreak;
   if(typeof saved.autoFocus==='boolean') S.autoFocus = saved.autoFocus;
   if(typeof saved.landOnWorkout==='boolean') S.landOnWorkout = saved.landOnWorkout;
+  if(typeof saved.autoRemoveCompletedTasks==='boolean') S.autoRemoveCompletedTasks = saved.autoRemoveCompletedTasks;
   syncSettingsUI();
+  syncAutoRemoveTasksUI();
   if(typeof restartHydrateInterval==='function') restartHydrateInterval();
   if(!S.running){ S.remaining=phaseDuration(); render(S.remaining); }
   // "Start with a workout": only ever applies to a genuinely fresh arrival —
@@ -5921,6 +6006,32 @@ function broadcastMyTask(){
 const taskListMain=$('taskListMain'), taskForm=$('taskForm'), newTaskInput=$('newTaskInput');
 let editingTask=null;
 let estCount=1;
+
+function syncAutoRemoveTasksUI(){
+  const btn=$('autoRemoveTasksToggle');
+  if(!btn) return;
+  btn.setAttribute('aria-pressed', S.autoRemoveCompletedTasks ? 'true' : 'false');
+}
+$('autoRemoveTasksToggle').onclick=(e)=>{
+  e.stopPropagation();
+  S.autoRemoveCompletedTasks = !S.autoRemoveCompletedTasks;
+  syncAutoRemoveTasksUI();
+  saveSettings();
+};
+
+function openNewTaskForm(){
+  const toggle=$('tasksToggle');
+  if(toggle && toggle.getAttribute('aria-expanded')!=='true'){
+    toggle.setAttribute('aria-expanded','true');
+    $('tasksBody').classList.remove('collapsed');
+    try{ localStorage.setItem('pomofit:tasksCollapsed','0'); }catch(e){}
+  }
+  $('addTaskOpen').style.display='none';
+  taskForm.classList.add('show');
+  setEst(1);
+  requestAnimationFrame(()=>newTaskInput.focus());
+}
+
 function setEst(v){ estCount=Math.max(1,Math.min(20,v)); $('estVal').textContent=estCount; }
 ['estMinus','estPlus'].forEach(id=>{
   $(id).addEventListener('click', e=>{
@@ -5928,17 +6039,13 @@ function setEst(v){ estCount=Math.max(1,Math.min(20,v)); $('estVal').textContent
     setEst(estCount + (id==='estPlus'?1:-1));
   });
 });
-$('addTaskOpen').onclick=()=>{
-  $('addTaskOpen').style.display='none';
-  taskForm.classList.add('show');
-  setEst(1);
-  newTaskInput.focus();
-};
+$('addTaskOpen').onclick=openNewTaskForm;
 // collapsible tasks panel
 $('tasksToggle').onclick=()=>{
   const t = $('tasksToggle');
   const expanded = t.getAttribute('aria-expanded') === 'true';
   t.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  $('tasksBody').classList.toggle('collapsed', expanded);
   try{ localStorage.setItem('pomofit:tasksCollapsed', expanded ? '1' : '0'); }catch(e){}
 };
 // tasks panel defaults to collapsed (minimalist); respects a saved preference
@@ -5947,9 +6054,11 @@ try{
   // collapsed unless the user has explicitly expanded it before
   if(pref === null || pref === '1'){
     $('tasksToggle').setAttribute('aria-expanded', 'false');
+    $('tasksBody').classList.add('collapsed');
   }
 }catch(e){
   $('tasksToggle').setAttribute('aria-expanded', 'false');
+  $('tasksBody').classList.add('collapsed');
 }
 $('cancelTaskBtn').onclick=()=>{
   taskForm.classList.remove('show');
@@ -5969,6 +6078,7 @@ function saveTask(){
 }
 $('saveTaskBtn').onclick=saveTask;
 newTaskInput.addEventListener('keydown',e=>{ if(e.key==='Enter') saveTask(); });
+syncAutoRemoveTasksUI();
 
 function renderTasks(){
   taskListMain.innerHTML='';
@@ -5977,6 +6087,7 @@ function renderTasks(){
     const isDone = t.est ? (t.sessions>=t.est) : !!t.done;
     const isEditing = editingTask===t.id;
     row.className='task-item'+(isDone?' done':'')+(S.activeTask===t.id?' selected':'')+(isEditing?' editing':'');
+    row.dataset.taskId=t.id;
 
     const pct = t.est ? Math.min(100, Math.round((t.sessions/t.est)*100)) : (isDone?100:0);
 
@@ -6031,7 +6142,10 @@ function renderTasks(){
       row.querySelector('.t-done-plus').onclick=e=>{
         e.stopPropagation();
         t.sessions=Math.min(t.est, t.sessions+1);
+        if(t.est && t.sessions>=t.est) t.done=true;
+        const shouldPoof = S.autoRemoveCompletedTasks && t.sessions>=t.est;
         saveData(); renderTasks();
+        if(shouldPoof) requestAnimationFrame(()=>poofCompletedTask(t.id));
       };
       row.querySelector('.t-est-minus').onclick=e=>{
         e.stopPropagation();
@@ -6070,7 +6184,53 @@ function renderTasks(){
   // The selected task is already indicated by the task pill and the highlighted
   // task row, so we no longer repeat its name/rounds above the timer.
   $('currentTaskLabel').textContent='';
+
+  // Keep exactly three complete task cards visible; scroll for task 4+.
+  requestAnimationFrame(syncTaskListViewport);
 }
+
+function syncTaskListViewport(){
+  const rows=[...taskListMain.querySelectorAll('.task-item')];
+  if(rows.length <= 3){
+    taskListMain.style.height='auto';
+    taskListMain.style.maxHeight='none';
+    taskListMain.style.overflowY='visible';
+    return;
+  }
+  const third=rows[2];
+  // Measure from the list container itself rather than using offsetTop.
+  // Safari can resolve offsetTop against a different offset parent, which
+  // previously made this viewport too tall and allowed task 4 to remain visible.
+  const listTop=taskListMain.getBoundingClientRect().top;
+  const thirdBottom=third.getBoundingClientRect().bottom;
+  // Show the third card completely, then stop the viewport immediately
+  // below it so no part of task 4 peeks through before scrolling.
+  const exactHeight=Math.ceil(thirdBottom - listTop + 10);
+  taskListMain.style.height=exactHeight+'px';
+  taskListMain.style.maxHeight=exactHeight+'px';
+  taskListMain.style.overflowY='auto';
+}
+
+window.addEventListener('resize', ()=>{
+  if(typeof taskListMain!=='undefined' && taskListMain) syncTaskListViewport();
+});
+
+function poofCompletedTask(taskId){
+  const task=DATA.tasks.find(x=>x.id===taskId);
+  if(!task || !task.est || task.sessions<task.est || !S.autoRemoveCompletedTasks) return;
+  const row=taskListMain.querySelector(`.task-item[data-task-id="${taskId}"]`);
+  if(!row) return;
+  row.classList.add('task-poof');
+  setTimeout(()=>{
+    const stillComplete=DATA.tasks.find(x=>x.id===taskId);
+    if(!stillComplete || !stillComplete.est || stillComplete.sessions<stillComplete.est || !S.autoRemoveCompletedTasks) return;
+    DATA.tasks=DATA.tasks.filter(x=>x.id!==taskId);
+    if(S.activeTask===taskId){ S.activeTask=null; broadcastMyTask(); }
+    if(editingTask===taskId) editingTask=null;
+    saveData(); renderTasks();
+  }, 500);
+}
+
 
 /* ---------- profile & history ---------- */
 function logEntry(e){
@@ -6110,12 +6270,16 @@ function logFocus(minutes, completed){
   const delta = takeFocusMinutesDelta(minutes);
   DATA.totals.minutes += delta;
   const t=DATA.tasks.find(x=>x.id===S.activeTask);
+  let completedTaskId=null;
   if(completed){
     // a pomodoro only counts when the full focus timer elapses
     DATA.totals.sessions++;
     if(t){
       t.sessions++; t.minutes+=delta;
-      if(t.est && t.sessions>=t.est) t.done=true;   // auto cross-out at estimate
+      if(t.est && t.sessions>=t.est){
+        t.done=true;   // auto cross-out at estimate
+        if(S.autoRemoveCompletedTasks) completedTaskId=t.id;
+      }
     }
     logEntry({type:'focus', min:minutes, task:t?t.title:null});
     if(typeof maybeNudgeGuestBackup==='function') maybeNudgeGuestBackup();
@@ -6126,6 +6290,7 @@ function logFocus(minutes, completed){
   if(delta>=1 && typeof addGoalProgress==='function') addGoalProgress(delta);
   focusMinutesFlushedThisRound = 0; // this round is concluded — next one starts fresh
   saveData(); renderTasks();
+  if(completedTaskId) requestAnimationFrame(()=>poofCompletedTask(completedTaskId));
 }
 // safety net: studied time used to only get recorded when a round was
 // explicitly completed or skipped — closing the tab, backgrounding the app,
@@ -6985,6 +7150,9 @@ document.addEventListener('keydown',e=>{
   if(document.querySelector('.welcome-bg.show, .lobby-bg.show, .signin-splash.show')) return;
 
   switch(e.key){
+    case 'n': case 'N': // add a new task
+      if(S.phase!=='focus' || (workoutBlock && workoutBlock.classList.contains('show'))) return;
+      e.preventDefault(); openNewTaskForm(); break;
     case ' ': // start / pause — the timer's, or the workout's, depending on which screen is showing
       if(workoutBlock && workoutBlock.classList.contains('show')){
         if(typeof PROG!=='undefined' && PROG && typeof workoutTogglePlayPause==='function'){
@@ -8166,7 +8334,7 @@ const LANGS = {
     autoBreaksDesc:'Starts break timer automatically', autoFocus:'Auto focus',
     autoFocusDesc:'Restarts focus after each break', language:'Language',
     landOnWorkout:'Start with workout', landOnWorkoutDesc:'Opens the workout screen first, before you study',
-    tasks:'Tasks', addTask:'+ Add Task', startBtn:'START', pauseBtn:'PAUSE',
+    tasks:'Tasks', addTask:'+ Add Task', removeWhenComplete:'Remove when complete', startBtn:'START', pauseBtn:'PAUSE',
     resumeBtn:'RESUME', skipBtn:'Workout →', support:'Support',
     cowork:'Co-work', signIn:'Sign in', done:'DONE',
     studyTogether:'Study Together', focusLabel:'', sweatLabel:'Sweat Break', restLabel:'Long Break',
@@ -8213,7 +8381,7 @@ const LANGS = {
     autoBreaksDesc:'Molayı otomatik başlatır', autoFocus:'Otomatik odak',
     autoFocusDesc:'Moladan sonra odağı yeniden başlatır', language:'Dil',
     landOnWorkout:'Antrenmanla başla', landOnWorkoutDesc:'Çalışmadan önce antrenman ekranını açar',
-    tasks:'Görevler', addTask:'+ Görev Ekle', startBtn:'BAŞLAT', pauseBtn:'DURAKLAT',
+    tasks:'Görevler', addTask:'+ Görev Ekle', removeWhenComplete:'Tamamlanınca kaldır', startBtn:'BAŞLAT', pauseBtn:'DURAKLAT',
     resumeBtn:'DEVAM', skipBtn:'Egzersiz →', support:'Destek',
     cowork:'Birlikte', signIn:'Giriş yap', done:'TAMAM',
     studyTogether:'Birlikte Çalış', focusLabel:'', sweatLabel:'Ter Molası', restLabel:'Uzun Mola',
@@ -8259,7 +8427,7 @@ const LANGS = {
     autoBreaksDesc:'Startet die Pause automatisch', autoFocus:'Auto Fokus',
     autoFocusDesc:'Startet den Fokus nach der Pause', language:'Sprache',
     landOnWorkout:'Mit Workout starten', landOnWorkoutDesc:'Öffnet zuerst den Workout-Bildschirm, bevor du lernst',
-    tasks:'Aufgaben', addTask:'+ Aufgabe', startBtn:'START', pauseBtn:'PAUSE',
+    tasks:'Aufgaben', addTask:'+ Aufgabe', removeWhenComplete:'Nach Abschluss entfernen', startBtn:'START', pauseBtn:'PAUSE',
     resumeBtn:'WEITER', skipBtn:'Training →', support:'Unterstützen',
     cowork:'Zusammen', signIn:'Anmelden', done:'FERTIG',
     studyTogether:'Zusammen Lernen', focusLabel:'', sweatLabel:'Sport-Pause', restLabel:'Lange Pause',
@@ -8305,7 +8473,7 @@ const LANGS = {
     autoBreaksDesc:'يبدأ الاستراحة تلقائياً', autoFocus:'بدء تلقائي للتركيز',
     autoFocusDesc:'يعيد التركيز بعد الاستراحة', language:'اللغة',
     landOnWorkout:'ابدأ بتمرين', landOnWorkoutDesc:'يفتح شاشة التمرين أولاً، قبل الدراسة',
-    tasks:'المهام', addTask:'+ إضافة مهمة', startBtn:'ابدأ', pauseBtn:'إيقاف',
+    tasks:'المهام', addTask:'+ إضافة مهمة', removeWhenComplete:'إزالة عند الاكتمال', startBtn:'ابدأ', pauseBtn:'إيقاف',
     resumeBtn:'استمر', skipBtn:'تمرين →', support:'دعم',
     cowork:'معاً', signIn:'تسجيل الدخول', done:'تم',
     studyTogether:'الدراسة معاً', focusLabel:'', sweatLabel:'استراحة رياضية', restLabel:'استراحة طويلة',
@@ -8351,7 +8519,7 @@ const LANGS = {
     autoBreaksDesc:'自动开始休息计时', autoFocus:'自动专注',
     autoFocusDesc:'休息后自动重新专注', language:'语言',
     landOnWorkout:'从锻炼开始', landOnWorkoutDesc:'先打开锻炼界面，再开始学习',
-    tasks:'任务', addTask:'+ 添加任务', startBtn:'开始', pauseBtn:'暂停',
+    tasks:'任务', addTask:'+ 添加任务', removeWhenComplete:'完成后移除', startBtn:'开始', pauseBtn:'暂停',
     resumeBtn:'继续', skipBtn:'训练 →', support:'支持',
     cowork:'协作', signIn:'登录', done:'完成',
     studyTogether:'一起学习', focusLabel:'', sweatLabel:'运动休息', restLabel:'长休息',
@@ -8436,6 +8604,8 @@ function applyLang(lang){
   if(tasksHeading) tasksHeading.textContent=t.tasks;
   const addTaskEl2=$('addTaskOpen');
   if(addTaskEl2) addTaskEl2.textContent = t.addTask;
+  const autoRemoveLabel=$('autoRemoveTasksLabel');
+  if(autoRemoveLabel) autoRemoveLabel.textContent=(t.removeWhenComplete || LANGS.en.removeWhenComplete).toUpperCase();
   // tasks heading
   const tasksHeadingEl=$('tasksHeading');
   if(tasksHeadingEl) tasksHeadingEl.textContent=t.tasks;
