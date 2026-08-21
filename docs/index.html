@@ -363,7 +363,10 @@
   }
 
   /* A restrained glass-and-glow treatment only for Aurora. */
-  body[data-theme="aurora"] .tasks-panel,
+  body[data-theme="aurora"] .tasks-panel{
+    border-color:color-mix(in srgb, var(--accent) 14%, var(--line));
+    box-shadow:0 10px 30px rgba(0,0,0,.05);
+  }
   body[data-theme="aurora"] .current-task{
     border-color:color-mix(in srgb, var(--accent) 14%, var(--line));
     box-shadow:
