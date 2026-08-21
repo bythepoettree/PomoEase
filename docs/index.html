@@ -5240,8 +5240,19 @@ function syncTasksForCurrentView(){
   const workoutShowing = __workoutDemoActive ||
     (workoutBlock && workoutBlock.classList.contains('show')) ||
     S.phase!=='focus';
-  // Explicitly clear stale inline display:none when returning to Focus.
+
   tp.style.display = workoutShowing ? 'none' : '';
+
+  if(!workoutShowing){
+    // Discard any zero-height measurement that may have been created while
+    // hidden, then let Safari paint the Focus layout before measuring again.
+    taskListMain.style.height='auto';
+    taskListMain.style.maxHeight='none';
+    taskListMain.style.overflowY='visible';
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(syncTaskListViewport);
+    });
+  }
 }
 
 function startWorkoutDemo(){
@@ -6340,22 +6351,37 @@ function renderTasks(){
 }
 
 function syncTaskListViewport(){
+  // Never measure while the Tasks panel is hidden (e.g. during a workout).
+  // iOS Safari reports zero-sized DOMRects for hidden descendants, which can
+  // otherwise leave the task list stuck at ~1px tall when Focus returns.
+  const panel=$('tasksPanel');
+  if(!panel || getComputedStyle(panel).display==='none' || panel.offsetParent===null){
+    return;
+  }
+
   const rows=[...taskListMain.querySelectorAll('.task-item')];
+
+  // Clear any stale inline dimensions before taking a fresh measurement.
+  taskListMain.style.height='auto';
+  taskListMain.style.maxHeight='none';
+
   if(rows.length <= 3){
-    taskListMain.style.height='auto';
-    taskListMain.style.maxHeight='none';
     taskListMain.style.overflowY='visible';
     return;
   }
+
   const third=rows[2];
-  // Measure from the list container itself rather than using offsetTop.
-  // Safari can resolve offsetTop against a different offset parent, which
-  // previously made this viewport too tall and allowed task 4 to remain visible.
-  const listTop=taskListMain.getBoundingClientRect().top;
-  const thirdBottom=third.getBoundingClientRect().bottom;
-  // Show the third card completely, then stop the viewport immediately
-  // below it so no part of task 4 peeks through before scrolling.
-  const exactHeight=Math.ceil(thirdBottom - listTop + 10);
+  const listRect=taskListMain.getBoundingClientRect();
+  const thirdRect=third.getBoundingClientRect();
+
+  // If Safari still hasn't laid the list out yet, wait one more frame.
+  if(listRect.height===0 || thirdRect.height===0){
+    requestAnimationFrame(syncTaskListViewport);
+    return;
+  }
+
+  // Show three complete cards, but none of card four.
+  const exactHeight=Math.ceil(thirdRect.bottom - listRect.top + 10);
   taskListMain.style.height=exactHeight+'px';
   taskListMain.style.maxHeight=exactHeight+'px';
   taskListMain.style.overflowY='auto';
