@@ -12,17 +12,20 @@
   (function(){
     try{
       const s = JSON.parse(localStorage.getItem('pomofit:settings') || 'null');
-      // { midnight/wine/sage } x { dark/light }
+      // Theme family x appearance. Keep this tiny map in sync with runtime themes
+      // so a saved theme paints correctly before the main stylesheet/script loads.
       const bgMap = {
         midnight:{dark:'#0F1E33', light:'#E4EAF2'},
         wine:{dark:'#3A1220', light:'#F1E3E8'},
-        sage:{dark:'#5C7A5C', light:'#DCE6DC'}
+        sage:{dark:'#5C7A5C', light:'#DCE6DC'},
+        cherry:{dark:'#D6295A', light:'#FBD9E4'},
+        aurora:{dark:'#071922', light:'#E8F8F6'}
       };
       // each colour has its own default appearance — Sage defaults light,
       // Navy/Purple default dark — UNLESS the visitor has explicitly toggled
       // the light bulb before, in which case that sticky choice wins for
       // whichever colour is active (matches the runtime logic in applyTheme)
-      const DEFAULT_APPEARANCE = {midnight:'dark', wine:'dark', sage:'light'};
+      const DEFAULT_APPEARANCE = {midnight:'dark', wine:'dark', sage:'light', cherry:'dark', aurora:'dark'};
       // anyone with a theme saved from before the palette was trimmed (ocean,
       // slate, ember, pink, etc. no longer exist) falls back to the new default
       const t = (s && bgMap[s.theme]) ? s.theme : 'midnight';
@@ -226,6 +229,42 @@
     --accent:#8F1740; --accent-ink:#FCE3EC; --line:rgba(143,23,64,.14); --chip:#F2C3D5;
   }
 
+  /* ---------- THEME: Aurora — DARK ----------
+     Focus = mint/cyan northern lights, Sweat = rose/violet energy,
+     Rest = blue/violet dusk. */
+  body[data-theme="aurora"][data-appearance="dark"][data-mode="focus"]{
+    --bg:#071922; --bg2:#0D2B32; --fg:#F1FFFC; --muted:#8FC9C2;
+    --accent:#72F5DC; --accent-ink:#05201F; --line:rgba(114,245,220,.18); --chip:#10383C;
+    --aurora-a:rgba(73,255,213,.24); --aurora-b:rgba(118,103,255,.18); --aurora-c:rgba(255,105,180,.10);
+  }
+  body[data-theme="aurora"][data-appearance="dark"][data-mode="sweat"]{
+    --bg:#1B0C24; --bg2:#31152F; --fg:#FFF7FC; --muted:#D8A7C7;
+    --accent:#FF91B8; --accent-ink:#2A091B; --line:rgba(255,145,184,.20); --chip:#401C3A;
+    --aurora-a:rgba(255,83,148,.24); --aurora-b:rgba(151,91,255,.24); --aurora-c:rgba(255,180,83,.12);
+  }
+  body[data-theme="aurora"][data-appearance="dark"][data-mode="rest"]{
+    --bg:#091827; --bg2:#102C40; --fg:#F4FAFF; --muted:#9ABBD0;
+    --accent:#9CCBFF; --accent-ink:#08192A; --line:rgba(156,203,255,.18); --chip:#15384E;
+    --aurora-a:rgba(83,195,255,.20); --aurora-b:rgba(130,104,255,.20); --aurora-c:rgba(91,255,222,.09);
+  }
+
+  /* ---------- THEME: Aurora — LIGHT ---------- */
+  body[data-theme="aurora"][data-appearance="light"][data-mode="focus"]{
+    --bg:#E8F8F6; --bg2:#D5EFEB; --fg:#133E3C; --muted:rgba(19,62,60,.68);
+    --accent:#176D67; --accent-ink:#EEFFFC; --line:rgba(23,109,103,.16); --chip:#CAE8E4;
+    --aurora-a:rgba(45,207,180,.18); --aurora-b:rgba(121,111,240,.10); --aurora-c:rgba(255,124,177,.08);
+  }
+  body[data-theme="aurora"][data-appearance="light"][data-mode="sweat"]{
+    --bg:#F9EAF2; --bg2:#F0D7E5; --fg:#622342; --muted:rgba(98,35,66,.66);
+    --accent:#9B315E; --accent-ink:#FFF5FA; --line:rgba(155,49,94,.16); --chip:#EBCDDD;
+    --aurora-a:rgba(239,83,146,.13); --aurora-b:rgba(151,91,255,.10); --aurora-c:rgba(255,181,91,.10);
+  }
+  body[data-theme="aurora"][data-appearance="light"][data-mode="rest"]{
+    --bg:#EDF4FD; --bg2:#DAE8F7; --fg:#203D5B; --muted:rgba(32,61,91,.66);
+    --accent:#315F8E; --accent-ink:#F5FAFF; --line:rgba(49,95,142,.16); --chip:#CFDFF0;
+    --aurora-a:rgba(76,172,232,.13); --aurora-b:rgba(124,105,234,.10); --aurora-c:rgba(57,210,180,.08);
+  }
+
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   button{touch-action:manipulation; user-select:none;}
   /* prevent iOS Safari auto-zoom on input focus */
@@ -275,6 +314,82 @@
     background-size:100% 100%;
   }
   body[data-theme]{ background:transparent; }
+
+  /* Aurora's atmosphere lives above the ordinary page gradient but beneath every
+     piece of UI. It is intentionally slow and low-contrast so it feels alive
+     without stealing attention from the timer. */
+  body[data-theme="aurora"]{
+    isolation:isolate;
+  }
+  body[data-theme="aurora"]::before,
+  body[data-theme="aurora"]::after{
+    content:'';
+    position:fixed;
+    pointer-events:none;
+    z-index:-1;
+    inset:-18vmax;
+  }
+  body[data-theme="aurora"]::before{
+    background:
+      radial-gradient(ellipse at 18% 12%, var(--aurora-a) 0%, transparent 38%),
+      radial-gradient(ellipse at 82% 24%, var(--aurora-b) 0%, transparent 40%),
+      radial-gradient(ellipse at 55% 78%, var(--aurora-c) 0%, transparent 43%);
+    filter:blur(18px) saturate(118%);
+    opacity:.92;
+    transform:translate3d(0,0,0) rotate(-3deg);
+    animation:auroraDrift 18s ease-in-out infinite alternate;
+  }
+  body[data-theme="aurora"]::after{
+    background:
+      linear-gradient(112deg,
+        transparent 18%,
+        color-mix(in srgb, var(--accent) 10%, transparent) 39%,
+        transparent 56%,
+        color-mix(in srgb, var(--aurora-b) 62%, transparent) 72%,
+        transparent 88%);
+    filter:blur(34px);
+    opacity:.42;
+    transform:translateX(-9%) skewX(-10deg);
+    animation:auroraRibbon 24s ease-in-out infinite alternate;
+  }
+  @keyframes auroraDrift{
+    0%{transform:translate3d(-2%,1%,0) rotate(-4deg) scale(1);}
+    50%{transform:translate3d(3%,-2%,0) rotate(1deg) scale(1.05);}
+    100%{transform:translate3d(-1%,3%,0) rotate(4deg) scale(1.02);}
+  }
+  @keyframes auroraRibbon{
+    from{transform:translateX(-11%) translateY(-2%) skewX(-10deg) rotate(-2deg);}
+    to{transform:translateX(9%) translateY(3%) skewX(-6deg) rotate(2deg);}
+  }
+
+  /* A restrained glass-and-glow treatment only for Aurora. */
+  body[data-theme="aurora"] .tasks-panel,
+  body[data-theme="aurora"] .task-item,
+  body[data-theme="aurora"] .current-task{
+    border-color:color-mix(in srgb, var(--accent) 20%, var(--line));
+    box-shadow:
+      0 12px 38px rgba(0,0,0,.08),
+      inset 0 1px 0 color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  body[data-theme="aurora"][data-appearance="dark"] .tasks-panel,
+  body[data-theme="aurora"][data-appearance="dark"] .current-task{
+    backdrop-filter:blur(10px) saturate(120%);
+    -webkit-backdrop-filter:blur(10px) saturate(120%);
+  }
+  body[data-theme="aurora"] .timer{
+    text-shadow:
+      0 0 28px color-mix(in srgb, var(--accent) 17%, transparent),
+      0 8px 34px rgba(0,0,0,.10);
+  }
+  body[data-theme="aurora"] .phase-dot.active,
+  body[data-theme="aurora"] .task-item.selected{
+    filter:drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 36%, transparent));
+  }
+  @media (prefers-reduced-motion: reduce){
+    body[data-theme="aurora"]::before,
+    body[data-theme="aurora"]::after{ animation:none; }
+  }
+
   /* during boot nothing may animate its colour — prevents the theme fading in
      from the markup default on refresh */
   html.boot body{ transition:none !important; }
@@ -702,11 +817,15 @@
     transition:transform .18s ease, background .18s ease;
   }
   .task-complete-pref[aria-pressed="true"] .task-complete-switch{
-    background:color-mix(in srgb, var(--accent) 18%, transparent);
-    border-color:color-mix(in srgb, var(--accent) 45%, transparent);
+    /* Subtle mint-green confirmation so ON is readable at a glance,
+       without turning the control into a loud status badge. */
+    background:rgba(89, 214, 160, .26);
+    border-color:rgba(116, 230, 180, .58);
+    box-shadow:0 0 0 1px rgba(116,230,180,.08), 0 0 8px rgba(89,214,160,.12);
   }
   .task-complete-pref[aria-pressed="true"] .task-complete-switch::after{
-    transform:translateX(11px); background:var(--accent);
+    transform:translateX(11px);
+    background:#8DE5BC;
   }
   .task-item.task-poof{
     pointer-events:none;
@@ -9277,15 +9396,15 @@ sheetBg.onclick=closeSheets;
 document.querySelectorAll('.close-sheet').forEach(b=>b.onclick=closeSheets);
 
 /* themes: cycles between Ember and Mono */
-const THEME_ORDER=['midnight','wine','sage','cherry'];
-const THEME_ICON={midnight:'◐', wine:'◑', sage:'◒', cherry:'◓'};
-const THEME_DISPLAY_NAMES={midnight:'Navy', wine:'Purple', sage:'Sage', cherry:'Cherry'};
+const THEME_ORDER=['midnight','wine','sage','cherry','aurora'];
+const THEME_ICON={midnight:'◐', wine:'◑', sage:'◒', cherry:'◓', aurora:'✦'};
+const THEME_DISPLAY_NAMES={midnight:'Navy', wine:'Purple', sage:'Sage', cherry:'Cherry', aurora:'Aurora'};
 // each colour has its own OUT-OF-THE-BOX default — Sage starts light (it always
 // read as a paler colour), Navy/Purple/Cherry start dark. But the moment you touch
 // the light bulb, that becomes a sticky global choice: it applies no matter which
 // colour you switch to afterward, and only changes when you press the bulb
 // again — switching colour alone never flips it.
-const THEME_DEFAULT_APPEARANCE={midnight:'dark', wine:'dark', sage:'light', cherry:'dark'};
+const THEME_DEFAULT_APPEARANCE={midnight:'dark', wine:'dark', sage:'light', cherry:'dark', aurora:'dark'};
 let appearanceOverride = null; // null = follow each colour's own default
 
 function appearanceFor(themeKey){
