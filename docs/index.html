@@ -376,6 +376,14 @@
   body[data-theme="aurora"] .task-item{
     box-shadow:none;
   }
+
+  /* Aurora light mode: keep the Tasks area open and airy rather than
+     rendering it as a pale rectangular card against the page. */
+  body[data-theme="aurora"][data-appearance="light"] .tasks-panel{
+    background:transparent !important;
+    box-shadow:none !important;
+    border-color:transparent !important;
+  }
   body[data-theme="aurora"][data-appearance="dark"] .tasks-panel,
   body[data-theme="aurora"][data-appearance="dark"] .current-task{
     backdrop-filter:blur(10px) saturate(120%);
