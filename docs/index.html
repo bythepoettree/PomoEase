@@ -962,6 +962,17 @@
     width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .prog-card:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+  .mental-quiz{width:100%;max-width:530px;margin:10px auto 0;display:none;flex-direction:column;gap:11px;text-align:left}
+  .mental-quiz.show{display:flex}.mental-top{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted)}
+  .mental-category{font-weight:700;letter-spacing:.14em;text-transform:uppercase}.mental-progress{font-variant-numeric:tabular-nums}
+  .mental-question{font-size:20px;line-height:1.3;font-weight:650;min-height:52px}.mental-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .mental-option{min-height:56px;border:1px solid var(--line);border-radius:13px;padding:10px 12px;background:var(--chip);color:var(--fg);font:inherit;font-size:14px;font-weight:550;text-align:left;cursor:pointer}
+  .mental-option.correct{background:rgba(126,211,167,.20);border-color:rgba(126,211,167,.62)}.mental-option.wrong{background:rgba(231,128,128,.15);border-color:rgba(231,128,128,.48)}
+  .mental-option:disabled{cursor:default}.mental-feedback{min-height:18px;font-size:12.5px;color:var(--muted)}.mental-actions{display:flex;justify-content:flex-end}
+  .mental-skip{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:5px 0}
+  .mental-result{text-align:center;padding:18px 8px}.mental-score{font-family:'Anton',sans-serif;font-size:52px;line-height:1}.mental-result-note{font-size:13px;color:var(--muted);margin-top:8px}
+  @media(max-width:560px){.mental-options{grid-template-columns:1fr}.mental-question{font-size:18px}.mental-option{min-height:49px}}
+
   .split-btn-row{
     display:flex; width:100%; max-width:530px; height:64px; box-sizing:border-box;
     background:var(--chip); border-radius:14px; overflow:hidden; margin-top:10px;
@@ -2676,6 +2687,11 @@
     <div class="ex-name" id="exName">Pick a programme</div>
     <div class="ex-note" id="exNote">Each programme is sized to fill your whole break.</div>
     <canvas id="cv" width="340" height="250"></canvas>
+    <div class="mental-quiz" id="mentalQuiz" aria-live="polite">
+      <div class="mental-top"><span class="mental-category" id="mentalCategory"></span><span class="mental-progress" id="mentalProgress"></span></div>
+      <div class="mental-question" id="mentalQuestion"></div><div class="mental-options" id="mentalOptions"></div>
+      <div class="mental-feedback" id="mentalFeedback"></div><div class="mental-actions"><button class="mental-skip" id="mentalSkip" type="button">Skip</button></div>
+    </div>
     <div class="counter" id="counterRow" style="visibility:hidden;">
       <div class="big" id="repNum">0</div>
       <div class="of" id="repOf">/ 20 reps</div>
@@ -5096,11 +5112,13 @@ const PROGRAMMES = {
   core:    {name:'🧘 Core & Hold',      steps:['plank','pushups','knees']},
   full:    {name:'🔥 Full Body',        steps:['jacks','squats','pushups','knees']},
   stretch: {name:'🤸 Stretch It Out',   steps:['neck','shoulders','hamstring']},
+  mental:  {name:'🧠 Mental Workout',      steps:[], mental:true},
 };
 let PROG=null; // {name, steps:[{key,target,unit}], idx, mode:'ex'|'rest'|'done', tStart, rest}
 
 function buildProgramme(pkey, keys){
   const leftSec = Math.max(60, (S.running ? S.endAt-Date.now() : S.remaining)/1000);
+  if(pkey==='mental') return {name:PROGRAMMES.mental.name,steps:[],idx:0,mode:'ready',mental:true,tStart:performance.now(),rest:0};
   const ks = keys || PROGRAMMES[pkey].steps;
   const n = ks.length, rest = 10;
   const per = Math.max(20, (leftSec - 12 - rest*(n-1)) / n);
@@ -5118,11 +5136,19 @@ function selectProgramme(pkey, keys){
   PROG._pkey=pkey||null; PROG._keys=keys||null;
   document.querySelectorAll('#progList .prog-card').forEach(c=>c.classList.toggle('active', c.dataset.key===pkey));
   exName.textContent=stripLeadingEmoji(PROG.name);
-  exNote.textContent=PROG.steps.length+(LANGS[currentLang]||LANGS.en).sizednote;
   counterRow.style.visibility='hidden';
-  $('workoutControls').style.display='flex';
   $('progStartBtn').classList.remove('wk-running');
-  renderTraj();
+  if(PROG.mental){
+    exName.textContent=mentalText().name;
+    exNote.textContent=mentalText().note;
+    $('workoutControls').style.display='none';
+    startMentalQuiz();
+  }else{
+    stopMentalQuiz();
+    exNote.textContent=PROG.steps.length+(LANGS[currentLang]||LANGS.en).sizednote;
+    $('workoutControls').style.display='flex';
+    renderTraj();
+  }
   beep(880,.08,.05);
   // broadcast card selection (not start) so others see the same card highlighted
   if(typeof broadcastWorkout==='function' && !suppressWorkoutBroadcast)
@@ -7111,6 +7137,7 @@ function setPhase(p){
   S.remaining=phaseDuration();
   S.endAt=Date.now()+S.remaining;
   PROG=null; S.reps=0;
+  if(typeof stopMentalQuiz==='function') stopMentalQuiz();
   counterRow.style.visibility='hidden';
   $('workoutControls').style.display='none';
   renderTraj();
@@ -7376,16 +7403,112 @@ function renderProgList(){
     const prog = PROGRAMMES[k];
     const metaEl = card.querySelector('.prog-meta');
     if(!prog || !metaEl) return;
-    metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
+    if(prog.mental) metaEl.textContent='12 fresh questions · Maths, English, Geography, Seerah';
+    else metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
   });
 }
 renderProgList();
+
+/* Mental Workout: lazy and isolated. No quiz logic is required by normal startup. */
+function mentalLang(){
+  var l=(document.documentElement.getAttribute('lang')||'en').toLowerCase();
+  return /^(tr|de|ar|zh)/.test(l)?l.slice(0,2):'en';
+}
+function mentalText(){
+  var x={
+    en:{name:'Mental Workout',note:'12 fresh questions for your break.',meta:'12 fresh questions · Maths, English, Geography, Seerah',skip:'Skip',again:'Another round',yes:'Nice — correct.',no:'Not quite — the answer is highlighted.',done:'Mental workout complete',result:'A quick brain reset — focus is up next.',cats:['Mathematics','English','Geography','Seerah']},
+    tr:{name:'Zihin Antrenmanı',note:'Molan için 12 yeni soru.',meta:'12 yeni soru · Matematik, İngilizce, Coğrafya, Siyer',skip:'Atla',again:'Bir tur daha',yes:'Güzel — doğru.',no:'Tam değil — doğru cevap vurgulandı.',done:'Zihin antrenmanı tamamlandı',result:'Kısa bir zihin molası — sırada odak var.',cats:['Matematik','İngilizce','Coğrafya','Siyer']},
+    de:{name:'Mental-Workout',note:'12 neue Fragen für deine Pause.',meta:'12 neue Fragen · Mathematik, Englisch, Geografie, Sira',skip:'Überspringen',again:'Noch eine Runde',yes:'Gut — richtig.',no:'Nicht ganz — die richtige Antwort ist markiert.',done:'Mental-Workout abgeschlossen',result:'Kurzer Neustart fürs Gehirn — als Nächstes Fokus.',cats:['Mathematik','Englisch','Geografie','Sira']},
+    ar:{name:'تمرين ذهني',note:'12 سؤالاً متجدداً لاستراحتك.',meta:'12 سؤالاً متجدداً · رياضيات، إنجليزية، جغرافيا، السيرة',skip:'تخطَّ',again:'جولة أخرى',yes:'رائع — إجابة صحيحة.',no:'ليست تماماً — تم تمييز الإجابة الصحيحة.',done:'اكتمل التمرين الذهني',result:'تنشيط سريع للذهن — التركيز هو التالي.',cats:['الرياضيات','الإنجليزية','الجغرافيا','السيرة النبوية']},
+    zh:{name:'脑力训练',note:'休息时完成 12 道新题。',meta:'12 道新题 · 数学、英语、地理、先知生平',skip:'跳过',again:'再来一轮',yes:'很好，答对了。',no:'还差一点——正确答案已标出。',done:'脑力训练完成',result:'快速刷新大脑——接下来继续专注。',cats:['数学','英语','地理','先知生平']}
+  };
+  return x[mentalLang()]||x.en;
+}
+function mentalLocal(v){var l=mentalLang();return (v&&(v[l]||v.en))||'';}
+function mentalShuffle(a){var x=a.slice();for(var i=x.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=x[i];x[i]=x[j];x[j]=t;}return x;}
+function mentalRecent(){try{var a=JSON.parse(localStorage.getItem('pomofit:mentalRecentV3')||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function mentalRemember(ids){try{var old=mentalRecent().filter(function(id){return ids.indexOf(id)<0;});localStorage.setItem('pomofit:mentalRecentV3',JSON.stringify(old.concat(ids).slice(-120)));}catch(e){}}
+function mentalNumericOptions(ans,near){var a=[ans].concat(near).filter(function(v,i,arr){return arr.indexOf(v)===i;});while(a.length<4)a.push(ans+a.length+2);return mentalShuffle(a.slice(0,4));}
+function mentalMathQuestion(){
+  var type=Math.floor(Math.random()*6),ans,q,id,opts,x,y,n,d,p,b,add,total;
+  if(type===0){x=2+Math.floor(Math.random()*11);y=2+Math.floor(Math.random()*11);ans=x*y;q=x+' × '+y+' = ?';id='mul-'+x+'-'+y;opts=mentalNumericOptions(ans,[ans+x,ans-y,ans+2]);}
+  else if(type===1){b=20+Math.floor(Math.random()*21)*5;p=[10,20,25,50][Math.floor(Math.random()*4)];ans=b*p/100;q=p+'% × '+b+' = ?';id='pct-'+p+'-'+b;opts=mentalNumericOptions(ans,[ans+5,Math.max(1,ans-5),b]);}
+  else if(type===2){x=3+Math.floor(Math.random()*18);add=2+Math.floor(Math.random()*15);total=x+add;ans=x;q='x + '+add+' = '+total+'   x = ?';id='alg-'+add+'-'+total;opts=mentalNumericOptions(ans,[x+2,Math.max(1,x-2),total]);}
+  else if(type===3){x=12+Math.floor(Math.random()*39);y=5+Math.floor(Math.random()*25);ans=x+y;q=x+' + '+y+' = ?';id='add-'+x+'-'+y;opts=mentalNumericOptions(ans,[ans+10,ans-5,ans+1]);}
+  else if(type===4){d=2+Math.floor(Math.random()*8);n=d*(2+Math.floor(Math.random()*9));ans=n/d;q=n+' ÷ '+d+' = ?';id='div-'+n+'-'+d;opts=mentalNumericOptions(ans,[ans+2,Math.max(1,ans-1),d]);}
+  else{n=2+Math.floor(Math.random()*12);ans=n*n;q=n+'² = ?';id='sq-'+n;opts=mentalNumericOptions(ans,[n*2,ans+n,Math.max(1,ans-n)]);}
+  return {id:'math-'+id,c:0,q:q,o:opts.map(String),a:opts.indexOf(ans)};
+}
+function mentalCuratedBank(){
+  function Q(id,c,q,o,a){return{id:id,c:c,q:mentalLocal(q),o:o.map(mentalLocal),a:a};}
+  return [
+    Q('eng1',1,{en:'Which word is the adverb in “She spoke quietly”?',tr:'“She spoke quietly” cümlesinde zarf hangisidir?',de:'Welches Wort ist in „She spoke quietly“ das Adverb?',ar:'ما الظرف في الجملة “She spoke quietly”؟',zh:'在“She spoke quietly”中，哪个词是副词？'},[{en:'She'},{en:'spoke'},{en:'quietly'},{en:'none',tr:'hiçbiri',de:'keines',ar:'لا شيء',zh:'都不是'}],2),
+    Q('eng2',1,{en:'Who wrote “Pride and Prejudice”?',tr:'“Pride and Prejudice” eserini kim yazdı?',de:'Wer schrieb „Pride and Prejudice“?',ar:'من كتبت “Pride and Prejudice”؟',zh:'谁写了《Pride and Prejudice》？'},[{en:'Charlotte Brontë'},{en:'Jane Austen'},{en:'George Eliot'},{en:'Mary Shelley'}],1),
+    Q('eng3',1,{en:'Which is a synonym of “brief”?',tr:'“brief” kelimesinin eş anlamlısı hangisidir?',de:'Welches Wort ist ein Synonym für „brief“?',ar:'أي كلمة مرادفة لـ “brief”؟',zh:'哪个词是“brief”的近义词？'},[{en:'lengthy'},{en:'concise'},{en:'distant'},{en:'uncertain'}],1),
+    Q('eng4',1,{en:'Which sentence is grammatically correct?',tr:'Hangi İngilizce cümle dilbilgisi açısından doğrudur?',de:'Welcher englische Satz ist grammatikalisch korrekt?',ar:'أي جملة إنجليزية صحيحة نحوياً؟',zh:'哪个英语句子语法正确？'},[{en:'She don’t like tea.'},{en:'She doesn’t likes tea.'},{en:'She doesn’t like tea.'},{en:'She not like tea.'}],2),
+    Q('eng5',1,{en:'Who wrote “1984”?',tr:'“1984” romanını kim yazdı?',de:'Wer schrieb „1984“?',ar:'من كتب رواية “1984”؟',zh:'谁写了《1984》？'},[{en:'Aldous Huxley'},{en:'George Orwell'},{en:'J.R.R. Tolkien'},{en:'Ernest Hemingway'}],1),
+    Q('eng6',1,{en:'Which is the past tense of “teach”?',tr:'“teach” fiilinin geçmiş zamanı hangisidir?',de:'Was ist die Vergangenheitsform von „teach“?',ar:'ما صيغة الماضي من “teach”؟',zh:'“teach”的过去式是什么？'},[{en:'teached'},{en:'taught'},{en:'teaching'},{en:'teaches'}],1),
+
+    Q('geo1',2,{en:'What is the capital of Canada?',tr:'Kanada’nın başkenti neresidir?',de:'Was ist die Hauptstadt von Kanada?',ar:'ما عاصمة كندا؟',zh:'加拿大的首都是哪里？'},[{en:'Toronto'},{en:'Vancouver'},{en:'Ottawa'},{en:'Montreal'}],2),
+    Q('geo2',2,{en:'Which river flows through Egypt?',tr:'Mısır’dan geçen nehir hangisidir?',de:'Welcher Fluss fließt durch Ägypten?',ar:'أي نهر يمر عبر مصر؟',zh:'哪条河流经埃及？'},[{en:'Amazon',de:'Amazonas',ar:'الأمازون',zh:'亚马孙河'},{en:'Danube',tr:'Tuna',de:'Donau',ar:'الدانوب',zh:'多瑙河'},{en:'Nile',tr:'Nil',ar:'النيل',zh:'尼罗河'},{en:'Rhine',tr:'Ren',de:'Rhein',ar:'الراين',zh:'莱茵河'}],2),
+    Q('geo3',2,{en:'Mount Kilimanjaro is in which country?',tr:'Kilimanjaro Dağı hangi ülkededir?',de:'In welchem Land liegt der Kilimandscharo?',ar:'في أي دولة يقع جبل كليمنجارو؟',zh:'乞力马扎罗山位于哪个国家？'},[{en:'Kenya',de:'Kenia',ar:'كينيا',zh:'肯尼亚'},{en:'Tanzania',tr:'Tanzanya',de:'Tansania',ar:'تنزانيا',zh:'坦桑尼亚'},{en:'Uganda',ar:'أوغندا',zh:'乌干达'},{en:'Ethiopia',tr:'Etiyopya',de:'Äthiopien',ar:'إثيوبيا',zh:'埃塞俄比亚'}],1),
+    Q('geo4',2,{en:'Which is the largest ocean?',tr:'En büyük okyanus hangisidir?',de:'Welcher ist der größte Ozean?',ar:'ما أكبر محيط؟',zh:'最大的海洋是哪一个？'},[{en:'Atlantic',tr:'Atlas',de:'Atlantik',ar:'الأطلسي',zh:'大西洋'},{en:'Indian',tr:'Hint',de:'Indischer Ozean',ar:'الهندي',zh:'印度洋'},{en:'Arctic',tr:'Arktik',de:'Arktischer Ozean',ar:'المتجمد الشمالي',zh:'北冰洋'},{en:'Pacific',tr:'Pasifik',de:'Pazifik',ar:'الهادئ',zh:'太平洋'}],3),
+    Q('geo5',2,{en:'Which continent contains the Sahara Desert?',tr:'Sahra Çölü hangi kıtadadır?',de:'Auf welchem Kontinent liegt die Sahara?',ar:'في أي قارة تقع الصحراء الكبرى؟',zh:'撒哈拉沙漠位于哪个洲？'},[{en:'Asia',tr:'Asya',de:'Asien',ar:'آسيا',zh:'亚洲'},{en:'Africa',tr:'Afrika',de:'Afrika',ar:'أفريقيا',zh:'非洲'},{en:'South America',tr:'Güney Amerika',de:'Südamerika',ar:'أمريكا الجنوبية',zh:'南美洲'},{en:'Australia',tr:'Avustralya',de:'Australien',ar:'أستراليا',zh:'澳大利亚'}],1),
+    Q('geo6',2,{en:'What is the capital of Japan?',tr:'Japonya’nın başkenti neresidir?',de:'Was ist die Hauptstadt von Japan?',ar:'ما عاصمة اليابان؟',zh:'日本的首都是哪里？'},[{en:'Osaka'},{en:'Kyoto'},{en:'Tokyo',de:'Tokio',ar:'طوكيو',zh:'东京'},{en:'Sapporo'}],2),
+
+    Q('see1',3,{en:'In which city was Prophet Muhammad ﷺ born?',tr:'Hz. Muhammed ﷺ hangi şehirde doğdu?',de:'In welcher Stadt wurde der Prophet Muhammad ﷺ geboren?',ar:'في أي مدينة وُلد النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 出生于哪座城市？'},[{en:'Madinah',tr:'Medine',de:'Medina',ar:'المدينة',zh:'麦地那'},{en:'Makkah',tr:'Mekke',de:'Mekka',ar:'مكة',zh:'麦加'},{en:'Jerusalem',tr:'Kudüs',ar:'القدس',zh:'耶路撒冷'},{en:'Ta’if',tr:'Taif',de:'Taif',ar:'الطائف',zh:'塔伊夫'}],1),
+    Q('see2',3,{en:'What is the migration from Makkah to Madinah known as?',tr:'Mekke’den Medine’ye göçe ne ad verilir?',de:'Wie heißt die Auswanderung von Mekka nach Medina?',ar:'ماذا تسمى الهجرة من مكة إلى المدينة؟',zh:'从麦加迁往麦地那的迁徙称为什么？'},[{en:'Isra',tr:'İsra',ar:'الإسراء',zh:'夜行'},{en:'Hijrah',tr:'Hicret',de:'Hidschra',ar:'الهجرة',zh:'希吉拉'},{en:'Umrah',tr:'Umre',de:'Umra',ar:'العمرة',zh:'副朝'},{en:'Mi’raj',tr:'Miraç',de:'Miradsch',ar:'المعراج',zh:'登霄'}],1),
+    Q('see3',3,{en:'Who was the first wife of Prophet Muhammad ﷺ?',tr:'Hz. Muhammed’in ﷺ ilk eşi kimdi?',de:'Wer war die erste Ehefrau des Propheten Muhammad ﷺ?',ar:'من كانت أول زوجات النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 的第一位妻子是谁？'},[{en:'Aishah',tr:'Aişe',de:'Aischa',ar:'عائشة',zh:'阿伊莎'},{en:'Hafsah',tr:'Hafsa',ar:'حفصة',zh:'哈夫萨'},{en:'Khadijah',tr:'Hatice',de:'Chadidscha',ar:'خديجة',zh:'赫蒂彻'},{en:'Sawda',tr:'Sevde',de:'Sauda',ar:'سودة',zh:'索达'}],2),
+    Q('see4',3,{en:'In which cave did Prophet Muhammad ﷺ receive the first revelation?',tr:'Hz. Muhammed ﷺ ilk vahyi hangi mağarada aldı?',de:'In welcher Höhle empfing der Prophet Muhammad ﷺ die erste Offenbarung?',ar:'في أي غار تلقى النبي محمد ﷺ الوحي الأول؟',zh:'先知穆罕默德 ﷺ 在哪个山洞首次接受启示？'},[{en:'Thawr',tr:'Sevr',de:'Thaur',ar:'ثور',zh:'扫尔洞'},{en:'Hira',ar:'حراء',zh:'希拉洞'},{en:'Uhud',ar:'أحد',zh:'吴侯德'},{en:'Safa',ar:'الصفا',zh:'萨法'}],1),
+    Q('see5',3,{en:'Which angel brought the first revelation to Prophet Muhammad ﷺ?',tr:'İlk vahyi Hz. Muhammed’e ﷺ hangi melek getirdi?',de:'Welcher Engel brachte dem Propheten Muhammad ﷺ die erste Offenbarung?',ar:'أي مَلَك جاء بالوحي الأول إلى النبي محمد ﷺ؟',zh:'哪位天使向先知穆罕默德 ﷺ 带来了第一次启示？'},[{en:'Mikail',ar:'ميكائيل',zh:'米卡伊勒'},{en:'Israfil',tr:'İsrafil',ar:'إسرافيل',zh:'伊斯拉菲勒'},{en:'Jibril',tr:'Cebrail',de:'Dschibril',ar:'جبريل',zh:'吉卜利勒'},{en:'Malik',ar:'مالك',zh:'马立克'}],2),
+    Q('see6',3,{en:'To which city did Prophet Muhammad ﷺ make the Hijrah?',tr:'Hz. Muhammed ﷺ Hicret sırasında hangi şehre gitti?',de:'In welche Stadt führte die Hidschra des Propheten Muhammad ﷺ?',ar:'إلى أي مدينة هاجر النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 希吉拉迁往哪座城市？'},[{en:'Damascus',tr:'Şam',de:'Damaskus',ar:'دمشق',zh:'大马士革'},{en:'Madinah',tr:'Medine',de:'Medina',ar:'المدينة',zh:'麦地那'},{en:'Cairo',tr:'Kahire',de:'Kairo',ar:'القاهرة',zh:'开罗'},{en:'Jerusalem',tr:'Kudüs',ar:'القدس',zh:'耶路撒冷'}],1)
+  ];
+}
+function mentalPickFresh(pool,count,recent){
+  var unseen=mentalShuffle(pool.filter(function(q){return recent.indexOf(q.id)<0;})),chosen=unseen.slice(0,count);
+  if(chosen.length<count){var seen=pool.filter(function(q){return recent.indexOf(q.id)>=0;});seen.sort(function(a,b){return recent.indexOf(a.id)-recent.indexOf(b.id);});chosen=chosen.concat(seen.slice(0,count-chosen.length));}
+  return chosen;
+}
+function mentalBuildSession(){
+  var recent=mentalRecent(),math=[],used={},guard=0,q;
+  while(math.length<3&&guard++<80){q=mentalMathQuestion();if(!used[q.id]&&recent.indexOf(q.id)<0){used[q.id]=1;math.push(q);}}
+  while(math.length<3){q=mentalMathQuestion();if(!used[q.id]){used[q.id]=1;math.push(q);}}
+  var bank=mentalCuratedBank(),all=math;
+  [1,2,3].forEach(function(c){all=all.concat(mentalPickFresh(bank.filter(function(q){return q.c===c;}),3,recent));});
+  all=mentalShuffle(all);mentalRemember(all.map(function(q){return q.id;}));return all;
+}
+function startMentalQuiz(){
+  var qz=$('mentalQuiz');if(!qz)return;
+  if(window.__mentalQuizTimer){clearTimeout(window.__mentalQuizTimer);window.__mentalQuizTimer=null;}
+  window.__mentalQuizState={qs:mentalBuildSession(),i:0,score:0,lock:false};
+  var c=$('cv'),cr=$('counterRow'),tr=$('traj');if(c)c.style.display='none';if(cr)cr.style.display='none';if(tr)tr.style.display='none';
+  qz.classList.add('show');renderMentalQuestion();
+}
+function stopMentalQuiz(){
+  if(window.__mentalQuizTimer){clearTimeout(window.__mentalQuizTimer);window.__mentalQuizTimer=null;}
+  window.__mentalQuizState=null;
+  var qz=$('mentalQuiz'),c=$('cv'),cr=$('counterRow'),tr=$('traj');if(qz)qz.classList.remove('show');if(c)c.style.display='';if(cr)cr.style.display='';if(tr)tr.style.display='';
+}
+function renderMentalQuestion(){
+  var s=window.__mentalQuizState,qz=$('mentalQuiz');if(!s||!qz)return;var t=mentalText();
+  if(s.i>=s.qs.length){$('mentalCategory').textContent=t.done;$('mentalProgress').textContent='';$('mentalQuestion').innerHTML='<div class="mental-result"><div class="mental-score">'+s.score+'/'+s.qs.length+'</div><div class="mental-result-note">'+t.result+'</div></div>';$('mentalOptions').innerHTML='';$('mentalFeedback').textContent='';$('mentalSkip').textContent=t.again;$('mentalSkip').onclick=startMentalQuiz;return;}
+  var q=s.qs[s.i];s.lock=false;$('mentalCategory').textContent=t.cats[q.c];$('mentalProgress').textContent=(s.i+1)+' / '+s.qs.length;$('mentalQuestion').textContent=q.q;$('mentalFeedback').textContent='';$('mentalOptions').innerHTML='';
+  q.o.forEach(function(label,i){var b=document.createElement('button');b.type='button';b.className='mental-option';b.textContent=label;b.onclick=function(){answerMentalQuestion(i,b);};$('mentalOptions').appendChild(b);});
+  $('mentalSkip').textContent=t.skip;$('mentalSkip').onclick=function(){if(!s.lock){s.i++;renderMentalQuestion();}};
+}
+function answerMentalQuestion(i,b){
+  var s=window.__mentalQuizState;if(!s||s.lock)return;s.lock=true;var q=s.qs[s.i],bs=[].slice.call($('mentalOptions').children),t=mentalText();bs.forEach(function(x){x.disabled=true;});
+  if(i===q.a){s.score++;b.classList.add('correct');$('mentalFeedback').textContent=t.yes;}else{b.classList.add('wrong');if(bs[q.a])bs[q.a].classList.add('correct');$('mentalFeedback').textContent=t.no;}
+  window.__mentalQuizTimer=setTimeout(function(){if(window.__mentalQuizState){s.i++;renderMentalQuestion();}},850);
+}
+
 $('shuffleBtn').onclick=()=>{
   const keys=Object.keys(EX).sort(()=>Math.random()-0.5).slice(0,3);
   selectProgramme(null, keys);
   if(typeof broadcastWorkout==='function') broadcastWorkout({action:'start', key:null, keys});
 };
 $('restBtn').onclick=()=>{
+  stopMentalQuiz();
   PROG=null; S.reps=0;
   counterRow.style.visibility='hidden';
   $('workoutControls').style.display='none';
@@ -8886,12 +9009,17 @@ function applyLang(lang){
     progList.querySelectorAll('.prog-card').forEach(card=>{
       const k=card.dataset.key;
       if(k){
-        if(t.prog[k]) card.querySelector('.prog-name').textContent=t.prog[k];
-        // rebuild meta with translated exercise names
         const prog=PROGRAMMES[k];
-        if(prog){
-          const n=prog.steps.length;
-          card.querySelector('.prog-meta').textContent=n+' · '+prog.steps.map(s=>(t.ex[s]||EX[s].name)).join(', ');
+        if(prog && prog.mental){
+          card.querySelector('.prog-name').textContent='🧠 '+mentalText().name;
+          card.querySelector('.prog-meta').textContent=mentalText().meta;
+        }else{
+          if(t.prog[k]) card.querySelector('.prog-name').textContent=t.prog[k];
+          // rebuild meta with translated exercise names
+          if(prog){
+            const n=prog.steps.length;
+            card.querySelector('.prog-meta').textContent=n+' · '+prog.steps.map(s=>(t.ex[s]||EX[s].name)).join(', ');
+          }
         }
       }
     });
