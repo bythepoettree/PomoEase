@@ -7403,77 +7403,175 @@ function renderProgList(){
     const prog = PROGRAMMES[k];
     const metaEl = card.querySelector('.prog-meta');
     if(!prog || !metaEl) return;
-    if(prog.mental) metaEl.textContent='12 fresh questions · Maths, English, Geography, Seerah';
+    if(prog.mental) metaEl.textContent='12 A-level questions · Maths, English, Geography, Seerah';
     else metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
   });
 }
 renderProgList();
 
 /* Mental Workout: lazy and isolated. No quiz logic is required by normal startup. */
-function mentalLang(){
-  var l=(document.documentElement.getAttribute('lang')||'en').toLowerCase();
-  return /^(tr|de|ar|zh)/.test(l)?l.slice(0,2):'en';
-}
 function mentalText(){
-  var x={
-    en:{name:'Mental Workout',note:'12 fresh questions for your break.',meta:'12 fresh questions · Maths, English, Geography, Seerah',skip:'Skip',again:'Another round',yes:'Nice — correct.',no:'Not quite — the answer is highlighted.',done:'Mental workout complete',result:'A quick brain reset — focus is up next.',cats:['Mathematics','English','Geography','Seerah']},
-    tr:{name:'Zihin Antrenmanı',note:'Molan için 12 yeni soru.',meta:'12 yeni soru · Matematik, İngilizce, Coğrafya, Siyer',skip:'Atla',again:'Bir tur daha',yes:'Güzel — doğru.',no:'Tam değil — doğru cevap vurgulandı.',done:'Zihin antrenmanı tamamlandı',result:'Kısa bir zihin molası — sırada odak var.',cats:['Matematik','İngilizce','Coğrafya','Siyer']},
-    de:{name:'Mental-Workout',note:'12 neue Fragen für deine Pause.',meta:'12 neue Fragen · Mathematik, Englisch, Geografie, Sira',skip:'Überspringen',again:'Noch eine Runde',yes:'Gut — richtig.',no:'Nicht ganz — die richtige Antwort ist markiert.',done:'Mental-Workout abgeschlossen',result:'Kurzer Neustart fürs Gehirn — als Nächstes Fokus.',cats:['Mathematik','Englisch','Geografie','Sira']},
-    ar:{name:'تمرين ذهني',note:'12 سؤالاً متجدداً لاستراحتك.',meta:'12 سؤالاً متجدداً · رياضيات، إنجليزية، جغرافيا، السيرة',skip:'تخطَّ',again:'جولة أخرى',yes:'رائع — إجابة صحيحة.',no:'ليست تماماً — تم تمييز الإجابة الصحيحة.',done:'اكتمل التمرين الذهني',result:'تنشيط سريع للذهن — التركيز هو التالي.',cats:['الرياضيات','الإنجليزية','الجغرافيا','السيرة النبوية']},
-    zh:{name:'脑力训练',note:'休息时完成 12 道新题。',meta:'12 道新题 · 数学、英语、地理、先知生平',skip:'跳过',again:'再来一轮',yes:'很好，答对了。',no:'还差一点——正确答案已标出。',done:'脑力训练完成',result:'快速刷新大脑——接下来继续专注。',cats:['数学','英语','地理','先知生平']}
+  return {
+    name:'Mental Workout',
+    note:'12 Year 12 / A-level questions for your break.',
+    meta:'12 A-level questions · Maths, English, Geography, Seerah',
+    skip:'Skip',
+    again:'Another round',
+    yes:'Nice — correct.',
+    no:'Not quite — the answer is highlighted.',
+    done:'Mental workout complete',
+    result:'A quick brain reset — focus is up next.',
+    cats:['Mathematics','English','Geography','Seerah']
   };
-  return x[mentalLang()]||x.en;
 }
-function mentalLocal(v){var l=mentalLang();return (v&&(v[l]||v.en))||'';}
+function mentalLocal(v){
+  return (v && v.en) || '';
+}
 function mentalShuffle(a){var x=a.slice();for(var i=x.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=x[i];x[i]=x[j];x[j]=t;}return x;}
 function mentalRecent(){try{var a=JSON.parse(localStorage.getItem('pomofit:mentalRecentV3')||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
 function mentalRemember(ids){try{var old=mentalRecent().filter(function(id){return ids.indexOf(id)<0;});localStorage.setItem('pomofit:mentalRecentV3',JSON.stringify(old.concat(ids).slice(-120)));}catch(e){}}
 function mentalNumericOptions(ans,near){var a=[ans].concat(near).filter(function(v,i,arr){return arr.indexOf(v)===i;});while(a.length<4)a.push(ans+a.length+2);return mentalShuffle(a.slice(0,4));}
 function mentalMathQuestion(){
-  var type=Math.floor(Math.random()*6),ans,q,id,opts,x,y,n,d,p,b,add,total;
-  if(type===0){x=2+Math.floor(Math.random()*11);y=2+Math.floor(Math.random()*11);ans=x*y;q=x+' × '+y+' = ?';id='mul-'+x+'-'+y;opts=mentalNumericOptions(ans,[ans+x,ans-y,ans+2]);}
-  else if(type===1){
-    b=20+Math.floor(Math.random()*21)*5;
-    p=[10,20,25,50][Math.floor(Math.random()*4)];
-    ans=b*p/100;
-    var ml=mentalLang();
-    if(ml==='tr') q=b+' sayısının %'+p+'\'i kaçtır?';
-    else if(ml==='de') q='Wie viel sind '+p+' % von '+b+'?';
-    else if(ml==='ar') q='ما '+p+'٪ من '+b+'؟';
-    else if(ml==='zh') q=b+' 的 '+p+'% 是多少？';
-    else q='What is '+p+'% of '+b+'?';
-    id='pct-'+p+'-'+b;
-    opts=mentalNumericOptions(ans,[ans+5,Math.max(1,ans-5),b]);
+  var type=Math.floor(Math.random()*8),ans,q,id,opts,a,b,c,n,p,r,x1,x2,disc,base,k,m;
+  if(type===0){
+    /* linear equation with coefficients */
+    a=[2,3,4,5][Math.floor(Math.random()*4)];
+    n=2+Math.floor(Math.random()*10);
+    b=3+Math.floor(Math.random()*12);
+    c=a*n+b;
+    ans=n;
+    q=a+'n + '+b+' = '+c+'\nWhat is n?';
+    id='lin-'+a+'-'+b+'-'+c;
+    opts=mentalNumericOptions(ans,[ans+1,ans-1,Math.max(1,ans+2)]);
+  }else if(type===1){
+    /* quadratic roots, one positive root selected */
+    x1=1+Math.floor(Math.random()*6);
+    x2=1+Math.floor(Math.random()*6);
+    if(x2===x1) x2+=1;
+    b=-(x1+x2);
+    c=x1*x2;
+    ans=Math.max(x1,x2);
+    q='Solve x² '+(b<0?'− ':'+ ')+Math.abs(b)+'x + '+c+' = 0.\nWhat is the larger root?';
+    id='quad-'+x1+'-'+x2;
+    opts=mentalNumericOptions(ans,[Math.min(x1,x2),ans+1,Math.max(1,ans-2)]);
+  }else if(type===2){
+    /* arithmetic sequence nth term */
+    a=2+Math.floor(Math.random()*8);
+    d=[2,3,4,5][Math.floor(Math.random()*4)];
+    n=8+Math.floor(Math.random()*8);
+    ans=a+(n-1)*d;
+    q='An arithmetic sequence starts '+a+', '+(a+d)+', '+(a+2*d)+', ...\nWhat is the '+n+'th term?';
+    id='arithseq-'+a+'-'+d+'-'+n;
+    opts=mentalNumericOptions(ans,[ans-d,ans+d,a+n*d]);
+  }else if(type===3){
+    /* geometric sequence */
+    a=[2,3,4][Math.floor(Math.random()*3)];
+    r=[2,3][Math.floor(Math.random()*2)];
+    n=4+Math.floor(Math.random()*3);
+    ans=a*Math.pow(r,n-1);
+    q='A geometric sequence has first term '+a+' and common ratio '+r+'.\nWhat is the '+n+'th term?';
+    id='geoseq-'+a+'-'+r+'-'+n;
+    opts=mentalNumericOptions(ans,[a*Math.pow(r,n-2),a*Math.pow(r,n),ans+r]);
+  }else if(type===4){
+    /* logarithm */
+    base=[2,3,5][Math.floor(Math.random()*3)];
+    k=2+Math.floor(Math.random()*4);
+    ans=k;
+    q='If log'+base+'('+Math.pow(base,k)+') = x, what is x?';
+    id='log-'+base+'-'+k;
+    opts=mentalNumericOptions(ans,[k+1,k-1,base*k]);
+  }else if(type===5){
+    /* function composition */
+    a=2+Math.floor(Math.random()*4);
+    b=1+Math.floor(Math.random()*5);
+    c=2+Math.floor(Math.random()*5);
+    n=1+Math.floor(Math.random()*5);
+    /* f(x)=ax+b, g(x)=x+c; find f(g(n)) */
+    ans=a*(n+c)+b;
+    q='f(x) = '+a+'x + '+b+' and g(x) = x + '+c+'.\nWhat is f(g('+n+'))?';
+    id='func-'+a+'-'+b+'-'+c+'-'+n;
+    opts=mentalNumericOptions(ans,[a*n+b+c,a*(n+c),ans+a]);
+  }else if(type===6){
+    /* trig exact value */
+    var trigSet=[
+      {q:'sin 30°',a:'1/2',o:['1/2','√2/2','√3/2','1']},
+      {q:'cos 60°',a:'1/2',o:['1/2','√2/2','√3/2','0']},
+      {q:'tan 45°',a:'1',o:['1','1/2','√2','√3']},
+      {q:'cos 45°',a:'√2/2',o:['√2/2','1/2','√3/2','1']}
+    ];
+    var t=trigSet[Math.floor(Math.random()*trigSet.length)];
+    q='What is the exact value of '+t.q+'?';
+    ans=t.a;
+    opts=mentalShuffle(t.o);
+    id='trig-'+t.q.replace(/\s+/g,'-');
+  }else{
+    /* conditional probability style, without ambiguity */
+    var red=3+Math.floor(Math.random()*4);
+    var blue=2+Math.floor(Math.random()*4);
+    var total=red+blue;
+    q='A bag contains '+red+' red and '+blue+' blue counters. One counter is drawn at random.\nWhat is P(red)?';
+    ans=red+'/'+total;
+    opts=mentalShuffle([ans,blue+'/'+total,red+'/'+blue,'1/'+total]);
+    id='prob-'+red+'-'+blue;
   }
-  else if(type===2){x=3+Math.floor(Math.random()*18);add=2+Math.floor(Math.random()*15);total=x+add;ans=x;q='n + '+add+' = '+total+'\nWhat is n?';id='alg-'+add+'-'+total;opts=mentalNumericOptions(ans,[x+2,Math.max(1,x-2),total]);}
-  else if(type===3){x=12+Math.floor(Math.random()*39);y=5+Math.floor(Math.random()*25);ans=x+y;q=x+' + '+y+' = ?';id='add-'+x+'-'+y;opts=mentalNumericOptions(ans,[ans+10,ans-5,ans+1]);}
-  else if(type===4){d=2+Math.floor(Math.random()*8);n=d*(2+Math.floor(Math.random()*9));ans=n/d;q=n+' ÷ '+d+' = ?';id='div-'+n+'-'+d;opts=mentalNumericOptions(ans,[ans+2,Math.max(1,ans-1),d]);}
-  else{n=2+Math.floor(Math.random()*12);ans=n*n;q=n+'² = ?';id='sq-'+n;opts=mentalNumericOptions(ans,[n*2,ans+n,Math.max(1,ans-n)]);}
   return {id:'math-'+id,c:0,q:q,o:opts.map(String),a:opts.indexOf(ans)};
 }
 function mentalCuratedBank(){
   function Q(id,c,q,o,a){return{id:id,c:c,q:mentalLocal(q),o:o.map(mentalLocal),a:a};}
   return [
-    Q('eng1',1,{en:'Which word is the adverb in “She spoke quietly”?',tr:'“She spoke quietly” cümlesinde zarf hangisidir?',de:'Welches Wort ist in „She spoke quietly“ das Adverb?',ar:'ما الظرف في الجملة “She spoke quietly”؟',zh:'在“She spoke quietly”中，哪个词是副词？'},[{en:'She'},{en:'spoke'},{en:'quietly'},{en:'none',tr:'hiçbiri',de:'keines',ar:'لا شيء',zh:'都不是'}],2),
-    Q('eng2',1,{en:'Who wrote “Pride and Prejudice”?',tr:'“Pride and Prejudice” eserini kim yazdı?',de:'Wer schrieb „Pride and Prejudice“?',ar:'من كتبت “Pride and Prejudice”؟',zh:'谁写了《Pride and Prejudice》？'},[{en:'Charlotte Brontë'},{en:'Jane Austen'},{en:'George Eliot'},{en:'Mary Shelley'}],1),
-    Q('eng3',1,{en:'Which is a synonym of “brief”?',tr:'“brief” kelimesinin eş anlamlısı hangisidir?',de:'Welches Wort ist ein Synonym für „brief“?',ar:'أي كلمة مرادفة لـ “brief”؟',zh:'哪个词是“brief”的近义词？'},[{en:'lengthy'},{en:'concise'},{en:'distant'},{en:'uncertain'}],1),
-    Q('eng4',1,{en:'Which sentence is grammatically correct?',tr:'Hangi İngilizce cümle dilbilgisi açısından doğrudur?',de:'Welcher englische Satz ist grammatikalisch korrekt?',ar:'أي جملة إنجليزية صحيحة نحوياً؟',zh:'哪个英语句子语法正确？'},[{en:'She don’t like tea.'},{en:'She doesn’t likes tea.'},{en:'She doesn’t like tea.'},{en:'She not like tea.'}],2),
-    Q('eng5',1,{en:'Who wrote “1984”?',tr:'“1984” romanını kim yazdı?',de:'Wer schrieb „1984“?',ar:'من كتب رواية “1984”؟',zh:'谁写了《1984》？'},[{en:'Aldous Huxley'},{en:'George Orwell'},{en:'J.R.R. Tolkien'},{en:'Ernest Hemingway'}],1),
-    Q('eng6',1,{en:'Which is the past tense of “teach”?',tr:'“teach” fiilinin geçmiş zamanı hangisidir?',de:'Was ist die Vergangenheitsform von „teach“?',ar:'ما صيغة الماضي من “teach”؟',zh:'“teach”的过去式是什么？'},[{en:'teached'},{en:'taught'},{en:'teaching'},{en:'teaches'}],1),
+    /* ENGLISH — Year 12 / A-level style concepts */
+    Q('eng1',1,{en:'Which term best describes a narrator whose account cannot be fully trusted?',tr:'Anlatımına tamamen güvenilemeyen anlatıcı için en uygun terim hangisidir?',de:'Welcher Begriff bezeichnet am besten einen Erzähler, dessen Bericht nicht vollständig vertrauenswürdig ist?',ar:'ما المصطلح الأدق لراوٍ لا يمكن الوثوق بروايته تماماً؟',zh:'哪一个术语最准确地描述叙述不完全可信的叙述者？'},[
+      {en:'Unreliable narrator',tr:'Güvenilmez anlatıcı',de:'Unzuverlässiger Erzähler',ar:'راوٍ غير موثوق',zh:'不可靠叙述者'},{en:'Omniscient narrator',tr:'Hâkim anlatıcı',de:'Allwissender Erzähler',ar:'راوٍ عليم',zh:'全知叙述者'},{en:'Objective narrator',tr:'Nesnel anlatıcı',de:'Objektiver Erzähler',ar:'راوٍ موضوعي',zh:'客观叙述者'},{en:'Choric narrator',tr:'Koro anlatıcı',de:'Chorischer Erzähler',ar:'راوٍ جماعي',zh:'合唱式叙述者'}],0),
+    Q('eng2',1,{en:'Which rhetorical device repeats a word or phrase at the beginning of successive clauses?',tr:'Ardışık cümleciklerin başında aynı kelime ya da ifadenin tekrarlanmasına ne denir?',de:'Welches rhetorische Mittel wiederholt ein Wort oder eine Wendung am Anfang aufeinanderfolgender Satzteile?',ar:'ما الأسلوب البلاغي الذي يكرر كلمة أو عبارة في بداية عبارات متتالية؟',zh:'哪种修辞手法是在连续分句开头重复同一词语或短语？'},[
+      {en:'Anaphora',tr:'Anafora',de:'Anapher',ar:'التكرار الاستهلالي',zh:'首语重复'},{en:'Chiasmus',tr:'Kiyazm',de:'Chiasmus',ar:'التقابل العكسي',zh:'交错配列'},{en:'Litotes',tr:'Litot',de:'Litotes',ar:'التقليل البلاغي',zh:'曲言'},{en:'Caesura',tr:'Durak',de:'Zäsur',ar:'وقفة عروضية',zh:'诗行停顿'}],0),
+    Q('eng3',1,{en:'In the sentence “Had I known, I would have acted differently,” which conditional form is used?',tr:'“Had I known, I would have acted differently” cümlesinde hangi koşul yapısı kullanılmıştır?',de:'Welche Konditionalform wird in „Had I known, I would have acted differently“ verwendet?',ar:'ما نوع الشرط في الجملة “Had I known, I would have acted differently”؟',zh:'“Had I known, I would have acted differently”使用的是哪种条件句？'},[
+      {en:'Third conditional'},{en:'First conditional'},{en:'Second conditional'},{en:'Zero conditional'}],0),
+    Q('eng4',1,{en:'Which term describes a contrast between what a character says and what the audience knows to be true?',tr:'Bir karakterin söylediği ile seyircinin doğru olduğunu bildiği şey arasındaki karşıtlığı hangi terim ifade eder?',de:'Welcher Begriff bezeichnet den Gegensatz zwischen dem, was eine Figur sagt, und dem, was das Publikum als wahr erkennt?',ar:'ما المصطلح الذي يصف التباين بين ما تقوله الشخصية وما يعرف الجمهور أنه صحيح؟',zh:'哪一个术语描述角色所说内容与观众所知事实之间的反差？'},[
+      {en:'Dramatic irony',tr:'Dramatik ironi',de:'Dramatische Ironie',ar:'المفارقة الدرامية',zh:'戏剧性反讽'},{en:'Pathetic fallacy',tr:'Duygusal doğa aktarımı',de:'Pathetic Fallacy',ar:'إسقاط المشاعر على الطبيعة',zh:'感情谬误'},{en:'Bathos',tr:'Batos',de:'Bathos',ar:'الهبوط البلاغي',zh:'突降法'},{en:'Paradox',tr:'Paradoks',de:'Paradox',ar:'مفارقة منطقية',zh:'悖论'}],0),
+    Q('eng5',1,{en:'Who wrote “A Streetcar Named Desire”?',tr:'“A Streetcar Named Desire” eserini kim yazdı?',de:'Wer schrieb „A Streetcar Named Desire“?',ar:'من كتب “A Streetcar Named Desire”؟',zh:'谁写了《欲望号街车》？'},[
+      {en:'Tennessee Williams'},{en:'Arthur Miller'},{en:'Eugene O’Neill'},{en:'Edward Albee'}],0),
+    Q('eng6',1,{en:'Which sentence contains a non-finite subordinate clause?',tr:'Hangi İngilizce cümlede çekimsiz yan cümlecik vardır?',de:'Welcher englische Satz enthält einen infiniten Nebensatz?',ar:'أي جملة إنجليزية تحتوي على جملة فرعية غير محددة بزمن؟',zh:'哪个英语句子包含非限定从句？'},[
+      {en:'To finish on time, she worked through lunch.'},{en:'She worked because the deadline was close.'},{en:'She worked while everyone else rested.'},{en:'She worked after the meeting ended.'}],0),
+    Q('eng7',1,{en:'Which critical approach focuses most directly on class, labour and economic power?',tr:'Hangi eleştirel yaklaşım sınıf, emek ve ekonomik güç üzerinde en doğrudan şekilde durur?',de:'Welcher literaturkritische Ansatz konzentriert sich am stärksten auf Klasse, Arbeit und ökonomische Macht?',ar:'أي منهج نقدي يركز بصورة مباشرة على الطبقة والعمل والقوة الاقتصادية؟',zh:'哪一种文学批评方法最直接关注阶级、劳动和经济权力？'},[
+      {en:'Marxist criticism',tr:'Marksist eleştiri',de:'Marxistische Kritik',ar:'النقد الماركسي',zh:'马克思主义批评'},{en:'Formalist criticism',tr:'Biçimci eleştiri',de:'Formalistische Kritik',ar:'النقد الشكلي',zh:'形式主义批评'},{en:'Psychoanalytic criticism',tr:'Psikanalitik eleştiri',de:'Psychoanalytische Kritik',ar:'النقد النفسي',zh:'精神分析批评'},{en:'Ecocriticism',tr:'Ekoeleştiri',de:'Ökokritik',ar:'النقد البيئي',zh:'生态批评'}],0),
+    Q('eng8',1,{en:'In poetry, what is enjambment?',tr:'Şiirde enjambment nedir?',de:'Was bedeutet Enjambement in der Lyrik?',ar:'ما المقصود بـ enjambment في الشعر؟',zh:'诗歌中的“跨行”指什么？'},[
+      {en:'A sentence continuing beyond the end of a line',tr:'Bir cümlenin dize sonunu aşarak devam etmesi',de:'Ein Satz läuft über das Versende hinaus weiter',ar:'استمرار الجملة بعد نهاية السطر الشعري',zh:'句子跨越诗行末尾继续'},{en:'A pause in the middle of a line',tr:'Dizenin ortasında durak',de:'Eine Pause in der Versmitte',ar:'وقفة في منتصف السطر',zh:'诗行中间的停顿'},{en:'A repeated final rhyme',tr:'Tekrarlanan son kafiye',de:'Ein wiederholter Endreim',ar:'قافية نهائية متكررة',zh:'重复尾韵'},{en:'A poem without metre',tr:'Ölçüsüz şiir',de:'Ein Gedicht ohne Metrum',ar:'قصيدة بلا وزن',zh:'无格律诗'}],0),
 
-    Q('geo1',2,{en:'What is the capital of Canada?',tr:'Kanada’nın başkenti neresidir?',de:'Was ist die Hauptstadt von Kanada?',ar:'ما عاصمة كندا؟',zh:'加拿大的首都是哪里？'},[{en:'Toronto'},{en:'Vancouver'},{en:'Ottawa'},{en:'Montreal'}],2),
-    Q('geo2',2,{en:'Which river flows through Egypt?',tr:'Mısır’dan geçen nehir hangisidir?',de:'Welcher Fluss fließt durch Ägypten?',ar:'أي نهر يمر عبر مصر؟',zh:'哪条河流经埃及？'},[{en:'Amazon',de:'Amazonas',ar:'الأمازون',zh:'亚马孙河'},{en:'Danube',tr:'Tuna',de:'Donau',ar:'الدانوب',zh:'多瑙河'},{en:'Nile',tr:'Nil',ar:'النيل',zh:'尼罗河'},{en:'Rhine',tr:'Ren',de:'Rhein',ar:'الراين',zh:'莱茵河'}],2),
-    Q('geo3',2,{en:'Mount Kilimanjaro is in which country?',tr:'Kilimanjaro Dağı hangi ülkededir?',de:'In welchem Land liegt der Kilimandscharo?',ar:'في أي دولة يقع جبل كليمنجارو؟',zh:'乞力马扎罗山位于哪个国家？'},[{en:'Kenya',de:'Kenia',ar:'كينيا',zh:'肯尼亚'},{en:'Tanzania',tr:'Tanzanya',de:'Tansania',ar:'تنزانيا',zh:'坦桑尼亚'},{en:'Uganda',ar:'أوغندا',zh:'乌干达'},{en:'Ethiopia',tr:'Etiyopya',de:'Äthiopien',ar:'إثيوبيا',zh:'埃塞俄比亚'}],1),
-    Q('geo4',2,{en:'Which is the largest ocean?',tr:'En büyük okyanus hangisidir?',de:'Welcher ist der größte Ozean?',ar:'ما أكبر محيط؟',zh:'最大的海洋是哪一个？'},[{en:'Atlantic',tr:'Atlas',de:'Atlantik',ar:'الأطلسي',zh:'大西洋'},{en:'Indian',tr:'Hint',de:'Indischer Ozean',ar:'الهندي',zh:'印度洋'},{en:'Arctic',tr:'Arktik',de:'Arktischer Ozean',ar:'المتجمد الشمالي',zh:'北冰洋'},{en:'Pacific',tr:'Pasifik',de:'Pazifik',ar:'الهادئ',zh:'太平洋'}],3),
-    Q('geo5',2,{en:'Which continent contains the Sahara Desert?',tr:'Sahra Çölü hangi kıtadadır?',de:'Auf welchem Kontinent liegt die Sahara?',ar:'في أي قارة تقع الصحراء الكبرى؟',zh:'撒哈拉沙漠位于哪个洲？'},[{en:'Asia',tr:'Asya',de:'Asien',ar:'آسيا',zh:'亚洲'},{en:'Africa',tr:'Afrika',de:'Afrika',ar:'أفريقيا',zh:'非洲'},{en:'South America',tr:'Güney Amerika',de:'Südamerika',ar:'أمريكا الجنوبية',zh:'南美洲'},{en:'Australia',tr:'Avustralya',de:'Australien',ar:'أستراليا',zh:'澳大利亚'}],1),
-    Q('geo6',2,{en:'What is the capital of Japan?',tr:'Japonya’nın başkenti neresidir?',de:'Was ist die Hauptstadt von Japan?',ar:'ما عاصمة اليابان؟',zh:'日本的首都是哪里？'},[{en:'Osaka'},{en:'Kyoto'},{en:'Tokyo',de:'Tokio',ar:'طوكيو',zh:'东京'},{en:'Sapporo'}],2),
+    /* GEOGRAPHY — A-level style physical and human geography */
+    Q('geo1',2,{en:'Which process is primarily responsible for the formation of a river meander?',tr:'Bir nehir menderesinin oluşumundan esas olarak hangi süreç sorumludur?',de:'Welcher Prozess ist hauptsächlich für die Bildung eines Flussmäanders verantwortlich?',ar:'ما العملية المسؤولة أساساً عن تكوّن تعرجات النهر؟',zh:'河流曲流形成的主要过程是什么？'},[
+      {en:'Lateral erosion and deposition',tr:'Yanal aşındırma ve biriktirme',de:'Seitenerosion und Ablagerung',ar:'التعرية الجانبية والترسيب',zh:'侧蚀与沉积'},{en:'Freeze-thaw weathering',tr:'Donma-çözülme ayrışması',de:'Frostsprengung',ar:'التجمد والذوبان',zh:'冻融风化'},{en:'Hydraulic uplift',tr:'Hidrolik yükselme',de:'Hydraulischer Auftrieb',ar:'الرفع الهيدروليكي',zh:'水力抬升'},{en:'Aeolian deflation',tr:'Rüzgâr deflasyonu',de:'Äolische Deflation',ar:'التذرية الريحية',zh:'风蚀吹蚀'}],0),
+    Q('geo2',2,{en:'At a destructive plate margin, which combination is most typical?',tr:'Yıkıcı levha sınırında en tipik birleşim hangisidir?',de:'Welche Kombination ist an einer destruktiven Plattengrenze am typischsten?',ar:'أي مجموعة هي الأكثر شيوعاً عند حدود الصفائح الهدامة؟',zh:'在汇聚型板块边界，哪种组合最典型？'},[
+      {en:'Subduction, earthquakes and volcanic activity',tr:'Dalma-batma, depremler ve volkanizma',de:'Subduktion, Erdbeben und Vulkanismus',ar:'اندساس وزلازل ونشاط بركاني',zh:'俯冲、地震和火山活动'},{en:'Rifting and mid-ocean ridges',tr:'Riftleşme ve okyanus ortası sırtları',de:'Rifting und mittelozeanische Rücken',ar:'تصدع وحيد وسط المحيط',zh:'裂谷和洋中脊'},{en:'Only folding, with no seismicity',tr:'Sadece kıvrımlanma, sismisite yok',de:'Nur Faltung ohne Seismizität',ar:'طي فقط دون زلازل',zh:'只有褶皱，没有地震'},{en:'Deposition of loess',tr:'Lös birikimi',de:'Lössablagerung',ar:'ترسيب اللوس',zh:'黄土沉积'}],0),
+    Q('geo3',2,{en:'Which atmospheric cell is most closely associated with the subtropical high-pressure belts near 30° latitude?',tr:'30° enlemleri civarındaki subtropikal yüksek basınç kuşaklarıyla en yakından ilişkili atmosferik hücre hangisidir?',de:'Welche atmosphärische Zelle ist am engsten mit den subtropischen Hochdruckgürteln um 30° Breite verbunden?',ar:'أي خلية جوية ترتبط أكثر بأحزمة الضغط المرتفع شبه المدارية قرب خط عرض 30°؟',zh:'约30°纬度的副热带高压带最主要与哪一个大气环流圈相关？'},[
+      {en:'Hadley cell',tr:'Hadley hücresi',de:'Hadley-Zelle',ar:'خلية هادلي',zh:'哈德莱环流'},{en:'Ferrel cell',tr:'Ferrel hücresi',de:'Ferrel-Zelle',ar:'خلية فيريل',zh:'费雷尔环流'},{en:'Polar cell',tr:'Kutup hücresi',de:'Polarzelle',ar:'الخلية القطبية',zh:'极地环流'},{en:'Walker circulation',tr:'Walker dolaşımı',de:'Walker-Zirkulation',ar:'دوران ووكر',zh:'沃克环流'}],0),
+    Q('geo4',2,{en:'What is meant by demographic transition?',tr:'Demografik geçiş ne anlama gelir?',de:'Was versteht man unter dem demografischen Übergang?',ar:'ما المقصود بالتحول الديموغرافي؟',zh:'什么是人口转变？'},[
+      {en:'A shift from high birth and death rates to low birth and death rates',tr:'Yüksek doğum ve ölüm oranlarından düşük oranlara geçiş',de:'Der Übergang von hohen Geburten- und Sterberaten zu niedrigen',ar:'الانتقال من معدلات ولادة ووفيات مرتفعة إلى منخفضة',zh:'从高出生率和高死亡率转向低出生率和低死亡率'},{en:'A move from rural to urban employment only',tr:'Yalnızca kırsaldan kentsel istihdama geçiş',de:'Nur der Wechsel von ländlicher zu städtischer Beschäftigung',ar:'الانتقال من العمل الريفي إلى الحضري فقط',zh:'仅从农村就业转向城市就业'},{en:'A sudden fall in migration',tr:'Göçte ani düşüş',de:'Ein plötzlicher Rückgang der Migration',ar:'انخفاض مفاجئ في الهجرة',zh:'迁移突然下降'},{en:'A permanent increase in fertility',tr:'Doğurganlıkta kalıcı artış',de:'Ein dauerhafter Anstieg der Fertilität',ar:'ارتفاع دائم في الخصوبة',zh:'生育率永久上升'}],0),
+    Q('geo5',2,{en:'Which measure combines life expectancy, education and income?',tr:'Yaşam beklentisi, eğitim ve geliri birleştiren ölçüt hangisidir?',de:'Welcher Index kombiniert Lebenserwartung, Bildung und Einkommen?',ar:'أي مقياس يجمع بين متوسط العمر والتعليم والدخل؟',zh:'哪一项指标综合了预期寿命、教育和收入？'},[
+      {en:'Human Development Index',tr:'İnsani Gelişme Endeksi',de:'Index der menschlichen Entwicklung',ar:'مؤشر التنمية البشرية',zh:'人类发展指数'},{en:'Gini coefficient',tr:'Gini katsayısı',de:'Gini-Koeffizient',ar:'معامل جيني',zh:'基尼系数'},{en:'GDP deflator',tr:'GSYİH deflatörü',de:'BIP-Deflator',ar:'مخفض الناتج المحلي',zh:'GDP平减指数'},{en:'Dependency ratio',tr:'Bağımlılık oranı',de:'Abhängigkeitsquote',ar:'نسبة الإعالة',zh:'抚养比'}],0),
+    Q('geo6',2,{en:'Which drainage-basin store usually has the slowest transfer time?',tr:'Bir drenaj havzasındaki hangi depo genellikle en yavaş aktarım süresine sahiptir?',de:'Welcher Speicher in einem Einzugsgebiet hat normalerweise die langsamste Transferzeit?',ar:'أي مخزن في حوض التصريف عادة ما تكون له أبطأ مدة انتقال؟',zh:'在流域系统中，哪一种储存通常具有最慢的传输时间？'},[
+      {en:'Groundwater',tr:'Yeraltı suyu',de:'Grundwasser',ar:'المياه الجوفية',zh:'地下水'},{en:'Surface runoff',tr:'Yüzey akışı',de:'Oberflächenabfluss',ar:'الجريان السطحي',zh:'地表径流'},{en:'Channel flow',tr:'Kanal akışı',de:'Gerinneabfluss',ar:'جريان القناة',zh:'河道流'},{en:'Interception',tr:'Tutulma',de:'Interzeption',ar:'الاعتراض النباتي',zh:'截留'}],0),
+    Q('geo7',2,{en:'What is the main reason tropical rainforests have nutrient-poor soils despite high biomass?',tr:'Tropikal yağmur ormanlarının yüksek biyokütleye rağmen besince fakir topraklara sahip olmasının temel nedeni nedir?',de:'Warum sind die Böden tropischer Regenwälder trotz hoher Biomasse oft nährstoffarm?',ar:'ما السبب الرئيسي لفقر تربة الغابات المطيرة الاستوائية بالعناصر الغذائية رغم ارتفاع الكتلة الحيوية؟',zh:'热带雨林生物量很高，但土壤却贫瘠，主要原因是什么？'},[
+      {en:'Rapid nutrient cycling and intense leaching',tr:'Hızlı besin döngüsü ve güçlü yıkanma',de:'Schneller Nährstoffkreislauf und starke Auswaschung',ar:'دورة مغذيات سريعة وغسل شديد للتربة',zh:'养分循环快且淋溶强烈'},{en:'Very low rainfall',tr:'Çok düşük yağış',de:'Sehr geringe Niederschläge',ar:'أمطار قليلة جداً',zh:'降雨极少'},{en:'Permanent permafrost',tr:'Kalıcı permafrost',de:'Dauerhafter Permafrost',ar:'تربة صقيعية دائمة',zh:'永久冻土'},{en:'Lack of decomposition',tr:'Ayrışma eksikliği',de:'Fehlende Zersetzung',ar:'غياب التحلل',zh:'缺乏分解作用'}],0),
+    Q('geo8',2,{en:'Which urban process describes wealthier residents moving into and renovating a previously lower-income inner-city area?',tr:'Daha varlıklı sakinlerin daha önce düşük gelirli bir kent içi bölgeye taşınıp yenilemesi hangi kentsel süreci ifade eder?',de:'Welcher städtische Prozess beschreibt den Zuzug wohlhabenderer Bewohner in ein zuvor einkommensschwächeres innerstädtisches Gebiet und dessen Aufwertung?',ar:'ما العملية الحضرية التي تصف انتقال سكان أكثر ثراءً إلى منطقة داخلية منخفضة الدخل وتجديدها؟',zh:'较富裕居民迁入并改造原本低收入的内城区，这种城市过程叫什么？'},[
+      {en:'Gentrification',tr:'Soylulaştırma',de:'Gentrifizierung',ar:'التحسين الحضري',zh:'绅士化'},{en:'Suburbanisation',tr:'Banliyöleşme',de:'Suburbanisierung',ar:'الضواحي',zh:'郊区化'},{en:'Counter-urbanisation',tr:'Tersine kentleşme',de:'Gegenurbanisierung',ar:'التحضر العكسي',zh:'逆城市化'},{en:'Urban sprawl',tr:'Kentsel yayılma',de:'Zersiedelung',ar:'التمدد الحضري',zh:'城市蔓延'}],0),
 
-    Q('see1',3,{en:'In which city was Prophet Muhammad ﷺ born?',tr:'Hz. Muhammed ﷺ hangi şehirde doğdu?',de:'In welcher Stadt wurde der Prophet Muhammad ﷺ geboren?',ar:'في أي مدينة وُلد النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 出生于哪座城市？'},[{en:'Madinah',tr:'Medine',de:'Medina',ar:'المدينة',zh:'麦地那'},{en:'Makkah',tr:'Mekke',de:'Mekka',ar:'مكة',zh:'麦加'},{en:'Jerusalem',tr:'Kudüs',ar:'القدس',zh:'耶路撒冷'},{en:'Ta’if',tr:'Taif',de:'Taif',ar:'الطائف',zh:'塔伊夫'}],1),
-    Q('see2',3,{en:'What is the migration from Makkah to Madinah known as?',tr:'Mekke’den Medine’ye göçe ne ad verilir?',de:'Wie heißt die Auswanderung von Mekka nach Medina?',ar:'ماذا تسمى الهجرة من مكة إلى المدينة؟',zh:'从麦加迁往麦地那的迁徙称为什么？'},[{en:'Isra',tr:'İsra',ar:'الإسراء',zh:'夜行'},{en:'Hijrah',tr:'Hicret',de:'Hidschra',ar:'الهجرة',zh:'希吉拉'},{en:'Umrah',tr:'Umre',de:'Umra',ar:'العمرة',zh:'副朝'},{en:'Mi’raj',tr:'Miraç',de:'Miradsch',ar:'المعراج',zh:'登霄'}],1),
-    Q('see3',3,{en:'Who was the first wife of Prophet Muhammad ﷺ?',tr:'Hz. Muhammed’in ﷺ ilk eşi kimdi?',de:'Wer war die erste Ehefrau des Propheten Muhammad ﷺ?',ar:'من كانت أول زوجات النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 的第一位妻子是谁？'},[{en:'Aishah',tr:'Aişe',de:'Aischa',ar:'عائشة',zh:'阿伊莎'},{en:'Hafsah',tr:'Hafsa',ar:'حفصة',zh:'哈夫萨'},{en:'Khadijah',tr:'Hatice',de:'Chadidscha',ar:'خديجة',zh:'赫蒂彻'},{en:'Sawda',tr:'Sevde',de:'Sauda',ar:'سودة',zh:'索达'}],2),
-    Q('see4',3,{en:'In which cave did Prophet Muhammad ﷺ receive the first revelation?',tr:'Hz. Muhammed ﷺ ilk vahyi hangi mağarada aldı?',de:'In welcher Höhle empfing der Prophet Muhammad ﷺ die erste Offenbarung?',ar:'في أي غار تلقى النبي محمد ﷺ الوحي الأول؟',zh:'先知穆罕默德 ﷺ 在哪个山洞首次接受启示？'},[{en:'Thawr',tr:'Sevr',de:'Thaur',ar:'ثور',zh:'扫尔洞'},{en:'Hira',ar:'حراء',zh:'希拉洞'},{en:'Uhud',ar:'أحد',zh:'吴侯德'},{en:'Safa',ar:'الصفا',zh:'萨法'}],1),
-    Q('see5',3,{en:'Which angel brought the first revelation to Prophet Muhammad ﷺ?',tr:'İlk vahyi Hz. Muhammed’e ﷺ hangi melek getirdi?',de:'Welcher Engel brachte dem Propheten Muhammad ﷺ die erste Offenbarung?',ar:'أي مَلَك جاء بالوحي الأول إلى النبي محمد ﷺ؟',zh:'哪位天使向先知穆罕默德 ﷺ 带来了第一次启示？'},[{en:'Mikail',ar:'ميكائيل',zh:'米卡伊勒'},{en:'Israfil',tr:'İsrafil',ar:'إسرافيل',zh:'伊斯拉菲勒'},{en:'Jibril',tr:'Cebrail',de:'Dschibril',ar:'جبريل',zh:'吉卜利勒'},{en:'Malik',ar:'مالك',zh:'马立克'}],2),
-    Q('see6',3,{en:'To which city did Prophet Muhammad ﷺ make the Hijrah?',tr:'Hz. Muhammed ﷺ Hicret sırasında hangi şehre gitti?',de:'In welche Stadt führte die Hidschra des Propheten Muhammad ﷺ?',ar:'إلى أي مدينة هاجر النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 希吉拉迁往哪座城市？'},[{en:'Damascus',tr:'Şam',de:'Damaskus',ar:'دمشق',zh:'大马士革'},{en:'Madinah',tr:'Medine',de:'Medina',ar:'المدينة',zh:'麦地那'},{en:'Cairo',tr:'Kahire',de:'Kairo',ar:'القاهرة',zh:'开罗'},{en:'Jerusalem',tr:'Kudüs',ar:'القدس',zh:'耶路撒冷'}],1)
+    /* SEERAH — more advanced chronology/context, sticking to well-established material */
+    Q('see1',3,{en:'Which event came immediately before the Hijrah to Madinah in the broad chronology of the Makkan period?',tr:'Mekke döneminin genel kronolojisinde Medine’ye Hicret’ten hemen önce hangi olay gerçekleşti?',de:'Welches Ereignis lag in der groben Chronologie der mekkanischen Zeit unmittelbar vor der Hidschra nach Medina?',ar:'أي حدث جاء قبيل الهجرة إلى المدينة في التسلسل العام للفترة المكية؟',zh:'在麦加时期的大致时间顺序中，哪一事件紧接在迁徙麦地那之前？'},[
+      {en:'The pledges at Aqabah',tr:'Akabe biatları',de:'Die Gelöbnisse von Aqaba',ar:'بيعتا العقبة',zh:'阿卡巴誓约'},{en:'The Battle of Badr',tr:'Bedir Savaşı',de:'Schlacht von Badr',ar:'غزوة بدر',zh:'白德尔战役'},{en:'The Treaty of Hudaybiyyah',tr:'Hudeybiye Antlaşması',de:'Vertrag von Hudaibiya',ar:'صلح الحديبية',zh:'侯代比亚和约'},{en:'The conquest of Makkah',tr:'Mekke’nin fethi',de:'Eroberung Mekkas',ar:'فتح مكة',zh:'征服麦加'}],0),
+    Q('see2',3,{en:'What was a major strategic consequence of the Treaty of Hudaybiyyah?',tr:'Hudeybiye Antlaşması’nın önemli stratejik sonuçlarından biri neydi?',de:'Was war eine wichtige strategische Folge des Vertrags von Hudaibiya?',ar:'ما إحدى النتائج الاستراتيجية المهمة لصلح الحديبية؟',zh:'侯代比亚和约的一个重要战略结果是什么？'},[
+      {en:'A period of reduced conflict that allowed wider contact and da‘wah',tr:'Daha geniş temas ve davete imkân veren çatışmasızlık dönemi',de:'Eine Phase geringerer Konflikte, die mehr Kontakt und Daʿwa ermöglichte',ar:'فترة هدنة سمحت باتصال أوسع وانتشار الدعوة',zh:'冲突减少，为更广泛接触和宣教创造条件'},{en:'The immediate end of all Quraysh opposition',tr:'Kureyş muhalefetinin hemen tamamen sona ermesi',de:'Das sofortige Ende jeder quraischitischen Opposition',ar:'الانتهاء الفوري لكل معارضة من قريش',zh:'古莱什的反对立即完全结束'},{en:'The transfer of Makkah to Madinan rule that same day',tr:'Mekke’nin aynı gün Medine yönetimine geçmesi',de:'Die Übergabe Mekkas an Medina am selben Tag',ar:'انتقال مكة لحكم المدينة في اليوم نفسه',zh:'麦加当天就归麦地那统治'},{en:'The cancellation of the Hijrah',tr:'Hicretin iptal edilmesi',de:'Die Aufhebung der Hidschra',ar:'إلغاء الهجرة',zh:'取消希吉拉'}],0),
+    Q('see3',3,{en:'Which battle is associated with the defensive trench dug around part of Madinah?',tr:'Medine’nin bir bölümünün çevresine savunma hendeği kazılmasıyla ilişkilendirilen savaş hangisidir?',de:'Welche Schlacht ist mit dem Verteidigungsgraben um Teile Medinas verbunden?',ar:'أي غزوة ارتبطت بحفر الخندق الدفاعي حول جزء من المدينة؟',zh:'哪一场战役与在麦地那部分地区周围挖防御壕沟有关？'},[
+      {en:'Battle of the Trench',tr:'Hendek Savaşı',de:'Grabenschlacht',ar:'غزوة الخندق',zh:'壕沟战役'},{en:'Battle of Badr',tr:'Bedir Savaşı',de:'Schlacht von Badr',ar:'غزوة بدر',zh:'白德尔战役'},{en:'Battle of Uhud',tr:'Uhud Savaşı',de:'Schlacht von Uhud',ar:'غزوة أحد',zh:'吴侯德战役'},{en:'Battle of Hunayn',tr:'Huneyn Savaşı',de:'Schlacht von Hunain',ar:'غزوة حنين',zh:'侯奈因战役'}],0),
+    Q('see4',3,{en:'Which event occurred first?',tr:'Aşağıdaki olaylardan hangisi önce gerçekleşti?',de:'Welches Ereignis geschah zuerst?',ar:'أي حدث وقع أولاً؟',zh:'以下哪个事件最早发生？'},[
+      {en:'The migration to Abyssinia',tr:'Habeşistan’a hicret',de:'Die Auswanderung nach Abessinien',ar:'الهجرة إلى الحبشة',zh:'迁往阿比西尼亚'},{en:'The Hijrah to Madinah',tr:'Medine’ye Hicret',de:'Die Hidschra nach Medina',ar:'الهجرة إلى المدينة',zh:'迁往麦地那'},{en:'The Battle of Badr',tr:'Bedir Savaşı',de:'Schlacht von Badr',ar:'غزوة بدر',zh:'白德尔战役'},{en:'The Treaty of Hudaybiyyah',tr:'Hudeybiye Antlaşması',de:'Vertrag von Hudaibiya',ar:'صلح الحديبية',zh:'侯代比亚和约'}],0),
+    Q('see5',3,{en:'Which companion slept in Prophet Muhammad’s ﷺ bed on the night of the Hijrah departure from Makkah?',tr:'Hz. Muhammed’in ﷺ Mekke’den Hicret için ayrıldığı gece yatağında hangi sahabi yattı?',de:'Welcher Gefährte schlief in der Nacht des Hidschra-Aufbruchs aus Mekka im Bett des Propheten Muhammad ﷺ?',ar:'أي صحابي نام في فراش النبي محمد ﷺ ليلة خروجه للهجرة من مكة؟',zh:'先知穆罕默德 ﷺ 离开麦加进行希吉拉的那一夜，哪位圣门弟子睡在他的床上？'},[
+      {en:'Ali ibn Abi Talib',tr:'Ali bin Ebu Talib',de:'Ali ibn Abi Talib',ar:'علي بن أبي طالب',zh:'阿里·本·艾比·塔利卜'},{en:'Abu Bakr',tr:'Ebu Bekir',de:'Abu Bakr',ar:'أبو بكر',zh:'艾布·伯克尔'},{en:'Umar ibn al-Khattab',tr:'Ömer bin Hattab',de:'Umar ibn al-Chattab',ar:'عمر بن الخطاب',zh:'欧麦尔·本·哈塔卜'},{en:'Uthman ibn Affan',tr:'Osman bin Affan',de:'Uthman ibn Affan',ar:'عثمان بن عفان',zh:'奥斯曼·本·阿凡'}],0),
+    Q('see6',3,{en:'What was the primary purpose of the Constitution of Madinah?',tr:'Medine Sözleşmesi’nin temel amacı neydi?',de:'Was war der Hauptzweck der Verfassung von Medina?',ar:'ما الغرض الأساسي من صحيفة المدينة؟',zh:'《麦地那宪章》的主要目的是什么？'},[
+      {en:'To regulate relations and mutual obligations among the communities of Madinah',tr:'Medine’deki topluluklar arasındaki ilişkileri ve karşılıklı yükümlülükleri düzenlemek',de:'Die Beziehungen und gegenseitigen Verpflichtungen der Gemeinschaften Medinas zu regeln',ar:'تنظيم العلاقات والالتزامات المتبادلة بين جماعات المدينة',zh:'规范麦地那各社群之间的关系和共同义务'},{en:'To establish a trade monopoly with Byzantium',tr:'Bizans ile ticaret tekeli kurmak',de:'Ein Handelsmonopol mit Byzanz zu errichten',ar:'إنشاء احتكار تجاري مع بيزنطة',zh:'建立与拜占庭的贸易垄断'},{en:'To abolish all tribal identities immediately',tr:'Tüm kabile kimliklerini hemen ortadan kaldırmak',de:'Alle Stammesidentitäten sofort abzuschaffen',ar:'إلغاء كل الهويات القبلية فوراً',zh:'立即废除所有部落身份'},{en:'To organise the conquest of Persia',tr:'İran’ın fethini organize etmek',de:'Die Eroberung Persiens zu organisieren',ar:'تنظيم فتح فارس',zh:'组织征服波斯'}],0),
+    Q('see7',3,{en:'Which event directly preceded the conquest of Makkah in the sequence of major late-Madinan events?',tr:'Geç Medine dönemindeki büyük olaylar dizisinde Mekke’nin fethinden hemen önce hangisi gelir?',de:'Welches Ereignis ging in der Abfolge der großen spätmedinensischen Ereignisse der Eroberung Mekkas unmittelbar voraus?',ar:'أي حدث سبق فتح مكة مباشرة في تسلسل أبرز أحداث أواخر العهد المدني؟',zh:'在麦地那后期主要事件的顺序中，哪一事件紧接在征服麦加之前？'},[
+      {en:'The breakdown of the Hudaybiyyah truce',tr:'Hudeybiye ateşkesinin bozulması',de:'Der Bruch des Hudaibiya-Waffenstillstands',ar:'نقض هدنة الحديبية',zh:'侯代比亚停战协议被破坏'},{en:'The Battle of Badr',tr:'Bedir Savaşı',de:'Schlacht von Badr',ar:'غزوة بدر',zh:'白德尔战役'},{en:'The first migration to Abyssinia',tr:'Habeşistan’a ilk hicret',de:'Die erste Auswanderung nach Abessinien',ar:'الهجرة الأولى إلى الحبشة',zh:'第一次迁往阿比西尼亚'},{en:'The first revelation',tr:'İlk vahiy',de:'Die erste Offenbarung',ar:'الوحي الأول',zh:'第一次启示'}],0),
+    Q('see8',3,{en:'Which of these best describes the significance of the Hijrah?',tr:'Hicretin önemini aşağıdakilerden hangisi en iyi açıklar?',de:'Welche Aussage beschreibt die Bedeutung der Hidschra am besten?',ar:'أي عبارة تصف أهمية الهجرة بأفضل صورة؟',zh:'以下哪项最能概括希吉拉的重要意义？'},[
+      {en:'It marked the establishment of a Muslim community with political and social organisation in Madinah',tr:'Medine’de siyasi ve toplumsal olarak örgütlenmiş bir Müslüman toplumunun kuruluşunu işaret etti',de:'Sie markierte die Etablierung einer politisch und sozial organisierten muslimischen Gemeinschaft in Medina',ar:'مثّلت قيام مجتمع مسلم منظم سياسياً واجتماعياً في المدينة',zh:'它标志着麦地那建立了具有政治和社会组织的穆斯林共同体'},{en:'It was simply a private journey with no wider communal effect',tr:'Daha geniş toplumsal etkisi olmayan yalnızca özel bir yolculuktu',de:'Sie war lediglich eine private Reise ohne größere gemeinschaftliche Wirkung',ar:'كانت مجرد رحلة خاصة بلا أثر مجتمعي أوسع',zh:'它只是一次私人旅程，没有更广泛的共同体影响'},{en:'It ended all conflict in Arabia immediately',tr:'Arabistan’daki tüm çatışmaları hemen sona erdirdi',de:'Sie beendete sofort alle Konflikte auf der Arabischen Halbinsel',ar:'أنهت كل الصراعات في الجزيرة العربية فوراً',zh:'它立即结束了阿拉伯半岛上的所有冲突'},{en:'It took place after the conquest of Makkah',tr:'Mekke’nin fethinden sonra gerçekleşti',de:'Sie fand nach der Eroberung Mekkas statt',ar:'حدثت بعد فتح مكة',zh:'它发生在征服麦加之后'}],0)
   ];
 }
 function mentalPickFresh(pool,count,recent){
