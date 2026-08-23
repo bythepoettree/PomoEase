@@ -962,14 +962,6 @@
     width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .prog-card:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
-  .mental-quiz{width:100%;max-width:530px;margin:14px auto 0;display:none;flex-direction:column;gap:11px;text-align:left}
-  .mental-quiz.show{display:flex}.mental-top{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px}
-  .mental-category{font-weight:700;letter-spacing:.14em;text-transform:uppercase}.mental-question{font-size:20px;line-height:1.3;font-weight:650;min-height:52px}
-  .mental-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}.mental-option{min-height:56px;border:1px solid var(--line);border-radius:13px;padding:10px 12px;background:var(--chip);color:var(--fg);font:inherit;font-size:14px;font-weight:550;text-align:left;cursor:pointer}
-  .mental-option.correct{background:rgba(126,211,167,.2);border-color:rgba(126,211,167,.62)}.mental-option.wrong{background:rgba(231,128,128,.15);border-color:rgba(231,128,128,.48)}
-  .mental-option:disabled{cursor:default}.mental-feedback{min-height:18px;font-size:12px;color:var(--muted)}.mental-actions{display:flex;justify-content:flex-end}.mental-skip{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;cursor:pointer}
-  .mental-result{text-align:center;padding:20px 8px}.mental-score{font-family:'Anton',sans-serif;font-size:52px}.mental-result-note{font-size:13px;color:var(--muted)}
-  @media(max-width:560px){.mental-options{grid-template-columns:1fr}.mental-question{font-size:18px}.mental-option{min-height:48px}}
   .split-btn-row{
     display:flex; width:100%; max-width:530px; height:64px; box-sizing:border-box;
     background:var(--chip); border-radius:14px; overflow:hidden; margin-top:10px;
@@ -2684,11 +2676,6 @@
     <div class="ex-name" id="exName">Pick a programme</div>
     <div class="ex-note" id="exNote">Each programme is sized to fill your whole break.</div>
     <canvas id="cv" width="340" height="250"></canvas>
-    <div class="mental-quiz" id="mentalQuiz" aria-live="polite">
-      <div class="mental-top"><span class="mental-category" id="mentalCategory"></span><span id="mentalProgress"></span></div>
-      <div class="mental-question" id="mentalQuestion"></div><div class="mental-options" id="mentalOptions"></div>
-      <div class="mental-feedback" id="mentalFeedback"></div><div class="mental-actions"><button class="mental-skip" id="mentalSkip" type="button">Skip</button></div>
-    </div>
     <div class="counter" id="counterRow" style="visibility:hidden;">
       <div class="big" id="repNum">0</div>
       <div class="of" id="repOf">/ 20 reps</div>
@@ -5109,13 +5096,11 @@ const PROGRAMMES = {
   core:    {name:'🧘 Core & Hold',      steps:['plank','pushups','knees']},
   full:    {name:'🔥 Full Body',        steps:['jacks','squats','pushups','knees']},
   stretch: {name:'🤸 Stretch It Out',   steps:['neck','shoulders','hamstring']},
-  mental:  {name:'🧠 Mental Workout', mental:true, steps:[]},
 };
 let PROG=null; // {name, steps:[{key,target,unit}], idx, mode:'ex'|'rest'|'done', tStart, rest}
 
 function buildProgramme(pkey, keys){
   const leftSec = Math.max(60, (S.running ? S.endAt-Date.now() : S.remaining)/1000);
-  if(pkey==='mental') return {name:PROGRAMMES.mental.name,steps:[],idx:0,mode:'ready',mental:true,tStart:performance.now(),rest:0};
   const ks = keys || PROGRAMMES[pkey].steps;
   const n = ks.length, rest = 10;
   const per = Math.max(20, (leftSec - 12 - rest*(n-1)) / n);
@@ -5133,9 +5118,11 @@ function selectProgramme(pkey, keys){
   PROG._pkey=pkey||null; PROG._keys=keys||null;
   document.querySelectorAll('#progList .prog-card').forEach(c=>c.classList.toggle('active', c.dataset.key===pkey));
   exName.textContent=stripLeadingEmoji(PROG.name);
-  counterRow.style.visibility='hidden'; $('progStartBtn').classList.remove('wk-running');
-  if(PROG.mental){ exName.textContent=MQTXT[currentLang].name; exNote.textContent=MQTXT[currentLang].note; $('workoutControls').style.display='none'; startMentalQuiz(); }
-  else{ stopMentalQuiz(); exNote.textContent=PROG.steps.length+(LANGS[currentLang]||LANGS.en).sizednote; $('workoutControls').style.display='flex'; renderTraj(); }
+  exNote.textContent=PROG.steps.length+(LANGS[currentLang]||LANGS.en).sizednote;
+  counterRow.style.visibility='hidden';
+  $('workoutControls').style.display='flex';
+  $('progStartBtn').classList.remove('wk-running');
+  renderTraj();
   beep(880,.08,.05);
   // broadcast card selection (not start) so others see the same card highlighted
   if(typeof broadcastWorkout==='function' && !suppressWorkoutBroadcast)
@@ -7369,114 +7356,6 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-/* ---------- Mental Workout ---------- */
-var MQTXT={
- en:{name:'Mental Workout',note:'12 quick questions for your break.',meta:'12 fresh questions · Maths, English, Geography, Seerah',skip:'Skip',again:'Another round',yes:'Nice — correct.',no:'Not quite — the answer is highlighted.',done:'Mental workout complete',result:'Quick brain reset — focus is up next.',cats:['Mathematics','English','Geography','Seerah']},
- tr:{name:'Zihin Antrenmanı',note:'Molan için 12 hızlı soru.',meta:'12 yeni soru · Matematik, İngilizce, Coğrafya, Siyer',skip:'Atla',again:'Bir tur daha',yes:'Güzel — doğru.',no:'Tam değil — doğru cevap vurgulandı.',done:'Zihin antrenmanı tamamlandı',result:'Kısa bir zihin molası — sırada odak var.',cats:['Matematik','İngilizce','Coğrafya','Siyer']},
- de:{name:'Mental-Workout',note:'12 schnelle Fragen für deine Pause.',meta:'12 neue Fragen · Mathematik, Englisch, Geografie, Sira',skip:'Überspringen',again:'Noch eine Runde',yes:'Gut — richtig.',no:'Nicht ganz — die richtige Antwort ist markiert.',done:'Mental-Workout abgeschlossen',result:'Kurzer Neustart fürs Gehirn — als Nächstes Fokus.',cats:['Mathematik','Englisch','Geografie','Sira']},
- ar:{name:'تمرين ذهني',note:'12 سؤالاً سريعاً لاستراحتك.',meta:'12 سؤالاً متجدداً · رياضيات، إنجليزية، جغرافيا، السيرة',skip:'تخطَّ',again:'جولة أخرى',yes:'رائع — إجابة صحيحة.',no:'ليست تماماً — تم تمييز الإجابة الصحيحة.',done:'اكتمل التمرين الذهني',result:'تنشيط سريع للذهن — التركيز هو التالي.',cats:['الرياضيات','الإنجليزية','الجغرافيا','السيرة النبوية']},
- zh:{name:'脑力训练',note:'休息时完成 12 道快问快答。',meta:'12 道新题 · 数学、英语、地理、先知生平',skip:'跳过',again:'再来一轮',yes:'很好，答对了。',no:'还差一点——正确答案已标出。',done:'脑力训练完成',result:'快速刷新大脑——接下来继续专注。',cats:['数学','英语','地理','先知生平']}
-};
-const MQ=[
- {id:'mq001',c:0,a:2,q:{en:'What is 15% of 200?',tr:"200 sayısının %15’i kaçtır?",de:'Wie viel sind 15 % von 200?',ar:'ما 15٪ من 200؟',zh:'200 的 15% 是多少？'},o:['20','25','30','35']},
- {id:'mq002',c:0,a:0,q:{en:'Calculate: 7 × 8 − 12',tr:'Hesapla: 7 × 8 − 12',de:'Berechne: 7 × 8 − 12',ar:'احسب: 7 × 8 − 12',zh:'计算：7 × 8 − 12'},o:['44','46','52','56']},
- {id:'mq003',c:0,a:2,q:{en:'Which fraction equals 0.75?',tr:"Hangi kesir 0,75’e eşittir?",de:'Welcher Bruch entspricht 0,75?',ar:'أي كسر يساوي 0.75؟',zh:'哪个分数等于 0.75？'},o:['1/2','2/3','3/4','4/5']},
- {id:'mq004',c:1,a:2,q:{en:'Which word is the adverb in “She spoke quietly”?',tr:'“She spoke quietly” cümlesinde zarf hangisidir?',de:'Welches Wort ist in „She spoke quietly“ das Adverb?',ar:'ما الظرف في الجملة “She spoke quietly”؟',zh:'在“She spoke quietly”中，哪个词是副词？'},o:['She','spoke','quietly','none']},
- {id:'mq005',c:1,a:1,q:{en:'Who wrote “Pride and Prejudice”?',tr:'“Pride and Prejudice” eserini kim yazdı?',de:'Wer schrieb „Pride and Prejudice“?',ar:'من كتبت “Pride and Prejudice”؟',zh:'谁写了《Pride and Prejudice》？'},o:['Charlotte Brontë','Jane Austen','George Eliot','Mary Shelley']},
- {id:'mq006',c:1,a:1,q:{en:'Which is a synonym of “brief”?',tr:'“brief” kelimesinin eş anlamlısı hangisidir?',de:'Welches Wort ist ein Synonym für „brief“?',ar:'أي كلمة مرادفة لـ “brief”؟',zh:'哪个词是“brief”的近义词？'},o:['lengthy','concise','distant','uncertain']},
- {id:'mq007',c:2,a:2,q:{en:'What is the capital of Canada?',tr:"Kanada’nın başkenti neresidir?",de:'Was ist die Hauptstadt von Kanada?',ar:'ما عاصمة كندا؟',zh:'加拿大的首都是哪里？'},o:['Toronto','Vancouver','Ottawa','Montreal']},
- {id:'mq008',c:2,a:2,q:{en:'Which river flows through Egypt?',tr:"Mısır’dan geçen nehir hangisidir?",de:'Welcher Fluss fließt durch Ägypten?',ar:'أي نهر يمر عبر مصر؟',zh:'哪条河流经埃及？'},o:['Amazon','Danube','Nile','Rhine']},
- {id:'mq009',c:2,a:1,q:{en:'Mount Kilimanjaro is in which country?',tr:'Kilimanjaro Dağı hangi ülkededir?',de:'In welchem Land liegt der Kilimandscharo?',ar:'في أي دولة يقع جبل كليمنجارو؟',zh:'乞力马扎罗山位于哪个国家？'},o:['Kenya','Tanzania','Uganda','Ethiopia']},
- {id:'mq010',c:3,a:1,q:{en:'In which city was Prophet Muhammad ﷺ born?',tr:'Hz. Muhammed ﷺ hangi şehirde doğdu?',de:'In welcher Stadt wurde der Prophet Muhammad ﷺ geboren?',ar:'في أي مدينة وُلد النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 出生于哪座城市？'},o:['Madinah','Makkah','Jerusalem','Ta’if']},
- {id:'mq011',c:3,a:1,q:{en:'What is the migration from Makkah to Madinah known as?',tr:"Mekke’den Medine’ye göçe ne ad verilir?",de:'Wie heißt die Auswanderung von Mekka nach Medina?',ar:'ماذا تسمى الهجرة من مكة إلى المدينة؟',zh:'从麦加迁往麦地那的迁徙称为什么？'},o:['Isra','Hijrah','Umrah','Mi’raj']},
- {id:'mq012',c:3,a:2,q:{en:'Who was the first wife of Prophet Muhammad ﷺ?',tr:"Hz. Muhammed’in ﷺ ilk eşi kimdi?",de:'Wer war die erste Ehefrau des Propheten Muhammad ﷺ?',ar:'من كانت أول زوجات النبي محمد ﷺ؟',zh:'先知穆罕默德 ﷺ 的第一位妻子是谁？'},o:['Aishah','Hafsah','Khadijah','Sawda']}
-];
-const MQ_RECENT_KEY='pomofit:mentalRecent';
-const MQ_RECENT_LIMIT=120;
-
-function mqReadRecent(){
-  try{
-    const x=JSON.parse(localStorage.getItem(MQ_RECENT_KEY)||'[]');
-    return Array.isArray(x)?x:[];
-  }catch(e){ return []; }
-}
-function mqWriteRecent(ids){
-  try{ localStorage.setItem(MQ_RECENT_KEY,JSON.stringify(ids.slice(-MQ_RECENT_LIMIT))); }catch(e){}
-}
-function mqRemember(ids){
-  const next=mqReadRecent().filter(id=>!ids.includes(id)).concat(ids);
-  mqWriteRecent(next);
-}
-function mqShuffle(a){
-  const x=[...a];
-  for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}
-  return x;
-}
-function mqMathQuestion(){
-  const type=Math.floor(Math.random()*6);
-  let q,o,a,ans,id;
-  const uniqueOptions=(correct,candidates)=>{
-    const vals=[correct,...candidates].filter((v,i,arr)=>arr.indexOf(v)===i);
-    while(vals.length<4) vals.push(correct+vals.length+2);
-    return mqShuffle(vals.slice(0,4));
-  };
-  if(type===0){
-    const x=2+Math.floor(Math.random()*11), y=2+Math.floor(Math.random()*11); ans=x*y;
-    q=`${x} × ${y} = ?`; o=uniqueOptions(ans,[ans+x,ans-y,ans+2]); id=`mul-${x}-${y}`;
-  }else if(type===1){
-    const b=20+Math.floor(Math.random()*21)*5, p=[10,20,25,50][Math.floor(Math.random()*4)]; ans=b*p/100;
-    q=`What is ${p}% of ${b}?`; o=uniqueOptions(ans,[ans+5,Math.max(1,ans-5),b/p]); id=`pct-${p}-${b}`;
-  }else if(type===2){
-    const x=3+Math.floor(Math.random()*18), add=2+Math.floor(Math.random()*15), total=x+add; ans=x;
-    q=`If x + ${add} = ${total}, what is x?`; o=uniqueOptions(ans,[x+2,Math.max(1,x-2),total]); id=`alg-${add}-${total}`;
-  }else if(type===3){
-    const a1=10+Math.floor(Math.random()*40), b1=5+Math.floor(Math.random()*25); ans=a1+b1;
-    q=`${a1} + ${b1} = ?`; o=uniqueOptions(ans,[ans+10,ans-5,ans+1]); id=`add-${a1}-${b1}`;
-  }else if(type===4){
-    const d=2+Math.floor(Math.random()*8), n=d*(2+Math.floor(Math.random()*9)); ans=n/d;
-    q=`${n} ÷ ${d} = ?`; o=uniqueOptions(ans,[ans+2,Math.max(1,ans-1),d]); id=`div-${n}-${d}`;
-  }else{
-    const n=2+Math.floor(Math.random()*12); ans=n*n;
-    q=`What is ${n}²?`; o=uniqueOptions(ans,[n*2,ans+n,Math.max(1,ans-n)]); id=`sq-${n}`;
-  }
-  a=o.indexOf(ans);
-  return {id:'gen-'+id,c:0,a,q:{en:q,tr:q,de:q,ar:q,zh:q},o:o.map(String)};
-}
-function mqBuildSession(){
-  const recent=new Set(mqReadRecent());
-  const curatedFresh=mqShuffle(MQ.filter(x=>!recent.has(x.id)));
-  const curatedOld=mqShuffle(MQ.filter(x=>recent.has(x.id)));
-
-  // Three fresh dynamic maths questions + nine curated questions.
-  // Dynamic maths has many parameter combinations, so repeats are naturally rare.
-  const maths=[];
-  const mathIds=new Set();
-  let guard=0;
-  while(maths.length<3 && guard++<60){
-    const q=mqMathQuestion();
-    if(!recent.has(q.id) && !mathIds.has(q.id)){ maths.push(q); mathIds.add(q.id); }
-  }
-  while(maths.length<3){
-    const q=mqMathQuestion();
-    if(!mathIds.has(q.id)){ maths.push(q); mathIds.add(q.id); }
-  }
-
-  // Prefer unseen curated questions. Once exhausted, oldest/recent material can cycle back.
-  const nonMathFresh=curatedFresh.filter(x=>x.c!==0);
-  const nonMathOld=curatedOld.filter(x=>x.c!==0);
-  const chosen=mqShuffle(nonMathFresh).slice(0,9);
-  if(chosen.length<9) chosen.push(...mqShuffle(nonMathOld).slice(0,9-chosen.length));
-
-  const session=mqShuffle([...maths,...chosen]);
-  mqRemember(session.map(x=>x.id));
-  return session;
-}
-let mentalState=null,mentalTimer=null;
-function startMentalQuiz(){if(mentalTimer)clearTimeout(mentalTimer);mentalState={qs:mqBuildSession(),i:0,score:0,lock:false};$('cv').style.display='none';$('counterRow').style.display='none';$('traj').style.display='none';$('mentalQuiz').classList.add('show');renderMental();}
-function stopMentalQuiz(){if(mentalTimer)clearTimeout(mentalTimer);mentalState=null;$('mentalQuiz').classList.remove('show');$('cv').style.display='';$('counterRow').style.display='';$('traj').style.display='';}
-function renderMental(){if(!mentalState)return;const s=mentalState,t=MQTXT[currentLang]||MQTXT.en;if(s.i>=s.qs.length){$('mentalCategory').textContent=t.done;$('mentalProgress').textContent='';$('mentalQuestion').innerHTML='<div class="mental-result"><div class="mental-score">'+s.score+'/'+s.qs.length+'</div><div class="mental-result-note">'+t.result+'</div></div>';$('mentalOptions').innerHTML='';$('mentalFeedback').textContent='';$('mentalSkip').textContent=t.again;$('mentalSkip').onclick=startMentalQuiz;return}const q=s.qs[s.i];s.lock=false;$('mentalCategory').textContent=t.cats[q.c];$('mentalProgress').textContent=(s.i+1)+' / '+s.qs.length;$('mentalQuestion').textContent=q.q[currentLang]||q.q.en;$('mentalFeedback').textContent='';$('mentalOptions').innerHTML='';q.o.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.className='mental-option';b.textContent=x;b.onclick=()=>answerMental(i,b);$('mentalOptions').appendChild(b)});$('mentalSkip').textContent=t.skip;$('mentalSkip').onclick=()=>{if(!s.lock){s.i++;renderMental()}}}
-function answerMental(i,b){const s=mentalState;if(!s||s.lock)return;s.lock=true;const q=s.qs[s.i],bs=[...$('mentalOptions').children],t=MQTXT[currentLang]||MQTXT.en;bs.forEach(x=>x.disabled=true);if(i===q.a){s.score++;b.classList.add('correct');$('mentalFeedback').textContent=t.yes}else{b.classList.add('wrong');bs[q.a].classList.add('correct');$('mentalFeedback').textContent=t.no}mentalTimer=setTimeout(()=>{if(mentalState){s.i++;renderMental()}},850)}
-
 /* programme list */
 Object.keys(PROGRAMMES).forEach(k=>{
   const prog=PROGRAMMES[k];
@@ -7497,13 +7376,7 @@ function renderProgList(){
     const prog = PROGRAMMES[k];
     const metaEl = card.querySelector('.prog-meta');
     if(!prog || !metaEl) return;
-    if(prog.mental){
-      const mt=(typeof MQTXT!=='undefined' && MQTXT && (MQTXT[currentLang]||MQTXT.en))
-        ? (MQTXT[currentLang]||MQTXT.en)
-        : {name:'Mental Workout',meta:'12 fresh questions · Maths, English, Geography, Seerah'};
-      card.querySelector('.prog-name').textContent=mt.name;
-      metaEl.textContent=mt.meta;
-    } else metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
+    metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
   });
 }
 renderProgList();
