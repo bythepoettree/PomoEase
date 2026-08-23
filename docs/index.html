@@ -7403,7 +7403,7 @@ function renderProgList(){
     const prog = PROGRAMMES[k];
     const metaEl = card.querySelector('.prog-meta');
     if(!prog || !metaEl) return;
-    if(prog.mental) metaEl.textContent='12 A-level questions · Maths, English, Geography, Seerah';
+    if(prog.mental) metaEl.textContent='12 questions · Maths, English, Geography, Seerah';
     else metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
   });
 }
@@ -7413,8 +7413,8 @@ renderProgList();
 function mentalText(){
   return {
     name:'Mental Workout',
-    note:'12 Year 12 / A-level questions for your break.',
-    meta:'12 A-level questions · Maths, English, Geography, Seerah',
+    note:'12 fresh questions for your break.',
+    meta:'12 questions · Maths, English, Geography, Seerah',
     skip:'Skip',
     again:'Another round',
     yes:'Nice — correct.',
@@ -7432,67 +7432,71 @@ function mentalRecent(){try{var a=JSON.parse(localStorage.getItem('pomofit:menta
 function mentalRemember(ids){try{var old=mentalRecent().filter(function(id){return ids.indexOf(id)<0;});localStorage.setItem('pomofit:mentalRecentV3',JSON.stringify(old.concat(ids).slice(-120)));}catch(e){}}
 function mentalNumericOptions(ans,near){var a=[ans].concat(near).filter(function(v,i,arr){return arr.indexOf(v)===i;});while(a.length<4)a.push(ans+a.length+2);return mentalShuffle(a.slice(0,4));}
 function mentalMathQuestion(){
-  var type=Math.floor(Math.random()*8),ans,q,id,opts,a,b,c,n,p,r,x1,x2,disc,base,k,m;
+  var type=Math.floor(Math.random()*8),ans,q,id,opts,a,b,c,n,p,r,x1,x2,total,startVal,up,down,d,mean;
   if(type===0){
-    /* linear equation with coefficients */
-    a=[2,3,4,5][Math.floor(Math.random()*4)];
-    n=2+Math.floor(Math.random()*10);
-    b=3+Math.floor(Math.random()*12);
+    /* two-step linear equation */
+    a=[2,3,4][Math.floor(Math.random()*3)];
+    n=2+Math.floor(Math.random()*9);
+    b=2+Math.floor(Math.random()*10);
     c=a*n+b;
     ans=n;
     q=a+'n + '+b+' = '+c+'\nWhat is n?';
     id='lin-'+a+'-'+b+'-'+c;
-    opts=mentalNumericOptions(ans,[ans+1,ans-1,Math.max(1,ans+2)]);
+    opts=mentalNumericOptions(ans,[ans+1,Math.max(1,ans-1),ans+2]);
   }else if(type===1){
-    /* quadratic roots, one positive root selected */
-    x1=1+Math.floor(Math.random()*6);
-    x2=1+Math.floor(Math.random()*6);
+    /* straightforward factorisable quadratic */
+    x1=1+Math.floor(Math.random()*5);
+    x2=1+Math.floor(Math.random()*5);
     if(x2===x1) x2+=1;
     b=-(x1+x2);
     c=x1*x2;
     ans=Math.max(x1,x2);
     q='Solve x² '+(b<0?'− ':'+ ')+Math.abs(b)+'x + '+c+' = 0.\nWhat is the larger root?';
     id='quad-'+x1+'-'+x2;
-    opts=mentalNumericOptions(ans,[Math.min(x1,x2),ans+1,Math.max(1,ans-2)]);
+    opts=mentalNumericOptions(ans,[Math.min(x1,x2),ans+1,Math.max(1,ans-1)]);
   }else if(type===2){
-    /* arithmetic sequence nth term */
-    a=2+Math.floor(Math.random()*8);
-    d=[2,3,4,5][Math.floor(Math.random()*4)];
-    n=8+Math.floor(Math.random()*8);
+    /* arithmetic sequence */
+    a=2+Math.floor(Math.random()*7);
+    d=[2,3,4][Math.floor(Math.random()*3)];
+    n=6+Math.floor(Math.random()*6);
     ans=a+(n-1)*d;
-    q='An arithmetic sequence starts '+a+', '+(a+d)+', '+(a+2*d)+', ...\nWhat is the '+n+'th term?';
-    id='arithseq-'+a+'-'+d+'-'+n;
+    q='The sequence is '+a+', '+(a+d)+', '+(a+2*d)+', ...\nWhat is the '+n+'th term?';
+    id='seq-'+a+'-'+d+'-'+n;
     opts=mentalNumericOptions(ans,[ans-d,ans+d,a+n*d]);
   }else if(type===3){
-    /* geometric sequence */
-    a=[2,3,4][Math.floor(Math.random()*3)];
-    r=[2,3][Math.floor(Math.random()*2)];
-    n=4+Math.floor(Math.random()*3);
-    ans=a*Math.pow(r,n-1);
-    q='A geometric sequence has first term '+a+' and common ratio '+r+'.\nWhat is the '+n+'th term?';
-    id='geoseq-'+a+'-'+r+'-'+n;
-    opts=mentalNumericOptions(ans,[a*Math.pow(r,n-2),a*Math.pow(r,n),ans+r]);
+    /* percentage increase */
+    startVal=[60,80,100,120,150,200][Math.floor(Math.random()*6)];
+    up=[10,15,20,25][Math.floor(Math.random()*4)];
+    ans=startVal*(1+up/100);
+    q='A price of '+startVal+' increases by '+up+'%.\nWhat is the new price?';
+    id='pct-'+startVal+'-'+up;
+    opts=mentalNumericOptions(ans,[startVal+up,startVal*(1-up/100),startVal]);
   }else if(type===4){
-    /* logarithm */
-    base=[2,3,5][Math.floor(Math.random()*3)];
-    k=2+Math.floor(Math.random()*4);
-    ans=k;
-    q='If log'+base+'('+Math.pow(base,k)+') = x, what is x?';
-    id='log-'+base+'-'+k;
-    opts=mentalNumericOptions(ans,[k+1,k-1,base*k]);
+    /* ratio */
+    a=[2,3,4][Math.floor(Math.random()*3)];
+    b=[3,4,5][Math.floor(Math.random()*3)];
+    if(a===b) b+=1;
+    n=4+Math.floor(Math.random()*7);
+    total=(a+b)*n;
+    ans=Math.min(a,b)*n;
+    q='A total of '+total+' is divided in the ratio '+a+':'+b+'.\nWhat is the smaller share?';
+    id='ratio-'+a+'-'+b+'-'+total;
+    opts=mentalNumericOptions(ans,[Math.max(a,b)*n,n,total/2]);
   }else if(type===5){
-    /* function composition */
-    a=2+Math.floor(Math.random()*4);
-    b=1+Math.floor(Math.random()*5);
-    c=2+Math.floor(Math.random()*5);
-    n=1+Math.floor(Math.random()*5);
-    /* f(x)=ax+b, g(x)=x+c; find f(g(n)) */
-    ans=a*(n+c)+b;
-    q='f(x) = '+a+'x + '+b+' and g(x) = x + '+c+'.\nWhat is f(g('+n+'))?';
-    id='func-'+a+'-'+b+'-'+c+'-'+n;
-    opts=mentalNumericOptions(ans,[a*n+b+c,a*(n+c),ans+a]);
+    /* mean */
+    a=10+Math.floor(Math.random()*16);
+    b=10+Math.floor(Math.random()*16);
+    c=10+Math.floor(Math.random()*16);
+    d=10+Math.floor(Math.random()*16);
+    var sum=a+b+c+d;
+    var rem=sum%4;
+    if(rem!==0){d += 4-rem; sum=a+b+c+d;}
+    ans=sum/4;
+    q='What is the mean of '+a+', '+b+', '+c+' and '+d+'?';
+    id='mean-'+a+'-'+b+'-'+c+'-'+d;
+    opts=mentalNumericOptions(ans,[ans+2,Math.max(1,ans-2),sum]);
   }else if(type===6){
-    /* trig exact value */
+    /* exact trig value */
     var trigSet=[
       {q:'sin 30°',a:'1/2',o:['1/2','√2/2','√3/2','1']},
       {q:'cos 60°',a:'1/2',o:['1/2','√2/2','√3/2','0']},
@@ -7505,14 +7509,14 @@ function mentalMathQuestion(){
     opts=mentalShuffle(t.o);
     id='trig-'+t.q.replace(/\s+/g,'-');
   }else{
-    /* conditional probability style, without ambiguity */
+    /* simple probability */
     var red=3+Math.floor(Math.random()*4);
     var blue=2+Math.floor(Math.random()*4);
-    var total=red+blue;
-    q='A bag contains '+red+' red and '+blue+' blue counters. One counter is drawn at random.\nWhat is P(red)?';
+    total=red+blue;
     ans=red+'/'+total;
-    opts=mentalShuffle([ans,blue+'/'+total,red+'/'+blue,'1/'+total]);
+    q='A bag contains '+red+' red and '+blue+' blue counters.\nWhat is the probability of choosing red?';
     id='prob-'+red+'-'+blue;
+    opts=mentalShuffle([ans,blue+'/'+total,red+'/'+blue,'1/'+total]);
   }
   return {id:'math-'+id,c:0,q:q,o:opts.map(String),a:opts.indexOf(ans)};
 }
@@ -7530,9 +7534,9 @@ function mentalCuratedBank(){
       {en:'Dramatic irony',tr:'Dramatik ironi',de:'Dramatische Ironie',ar:'المفارقة الدرامية',zh:'戏剧性反讽'},{en:'Pathetic fallacy',tr:'Duygusal doğa aktarımı',de:'Pathetic Fallacy',ar:'إسقاط المشاعر على الطبيعة',zh:'感情谬误'},{en:'Bathos',tr:'Batos',de:'Bathos',ar:'الهبوط البلاغي',zh:'突降法'},{en:'Paradox',tr:'Paradoks',de:'Paradox',ar:'مفارقة منطقية',zh:'悖论'}],0),
     Q('eng5',1,{en:'Who wrote “A Streetcar Named Desire”?',tr:'“A Streetcar Named Desire” eserini kim yazdı?',de:'Wer schrieb „A Streetcar Named Desire“?',ar:'من كتب “A Streetcar Named Desire”؟',zh:'谁写了《欲望号街车》？'},[
       {en:'Tennessee Williams'},{en:'Arthur Miller'},{en:'Eugene O’Neill'},{en:'Edward Albee'}],0),
-    Q('eng6',1,{en:'Which sentence contains a non-finite subordinate clause?',tr:'Hangi İngilizce cümlede çekimsiz yan cümlecik vardır?',de:'Welcher englische Satz enthält einen infiniten Nebensatz?',ar:'أي جملة إنجليزية تحتوي على جملة فرعية غير محددة بزمن؟',zh:'哪个英语句子包含非限定从句？'},[
+    Q('eng6',1,{en:'Which sentence contains a dangling modifier?',tr:'Hangi İngilizce cümlede çekimsiz yan cümlecik vardır?',de:'Welcher englische Satz enthält einen infiniten Nebensatz?',ar:'أي جملة إنجليزية تحتوي على جملة فرعية غير محددة بزمن؟',zh:'哪个英语句子包含非限定从句？'},[
       {en:'To finish on time, she worked through lunch.'},{en:'She worked because the deadline was close.'},{en:'She worked while everyone else rested.'},{en:'She worked after the meeting ended.'}],0),
-    Q('eng7',1,{en:'Which critical approach focuses most directly on class, labour and economic power?',tr:'Hangi eleştirel yaklaşım sınıf, emek ve ekonomik güç üzerinde en doğrudan şekilde durur?',de:'Welcher literaturkritische Ansatz konzentriert sich am stärksten auf Klasse, Arbeit und ökonomische Macht?',ar:'أي منهج نقدي يركز بصورة مباشرة على الطبقة والعمل والقوة الاقتصادية؟',zh:'哪一种文学批评方法最直接关注阶级、劳动和经济权力？'},[
+    Q('eng7',1,{en:'Which pair of words are antonyms?',tr:'Hangi eleştirel yaklaşım sınıf, emek ve ekonomik güç üzerinde en doğrudan şekilde durur?',de:'Welcher literaturkritische Ansatz konzentriert sich am stärksten auf Klasse, Arbeit und ökonomische Macht?',ar:'أي منهج نقدي يركز بصورة مباشرة على الطبقة والعمل والقوة الاقتصادية؟',zh:'哪一种文学批评方法最直接关注阶级、劳动和经济权力？'},[
       {en:'Marxist criticism',tr:'Marksist eleştiri',de:'Marxistische Kritik',ar:'النقد الماركسي',zh:'马克思主义批评'},{en:'Formalist criticism',tr:'Biçimci eleştiri',de:'Formalistische Kritik',ar:'النقد الشكلي',zh:'形式主义批评'},{en:'Psychoanalytic criticism',tr:'Psikanalitik eleştiri',de:'Psychoanalytische Kritik',ar:'النقد النفسي',zh:'精神分析批评'},{en:'Ecocriticism',tr:'Ekoeleştiri',de:'Ökokritik',ar:'النقد البيئي',zh:'生态批评'}],0),
     Q('eng8',1,{en:'In poetry, what is enjambment?',tr:'Şiirde enjambment nedir?',de:'Was bedeutet Enjambement in der Lyrik?',ar:'ما المقصود بـ enjambment في الشعر؟',zh:'诗歌中的“跨行”指什么？'},[
       {en:'A sentence continuing beyond the end of a line',tr:'Bir cümlenin dize sonunu aşarak devam etmesi',de:'Ein Satz läuft über das Versende hinaus weiter',ar:'استمرار الجملة بعد نهاية السطر الشعري',zh:'句子跨越诗行末尾继续'},{en:'A pause in the middle of a line',tr:'Dizenin ortasında durak',de:'Eine Pause in der Versmitte',ar:'وقفة في منتصف السطر',zh:'诗行中间的停顿'},{en:'A repeated final rhyme',tr:'Tekrarlanan son kafiye',de:'Ein wiederholter Endreim',ar:'قافية نهائية متكررة',zh:'重复尾韵'},{en:'A poem without metre',tr:'Ölçüsüz şiir',de:'Ein Gedicht ohne Metrum',ar:'قصيدة بلا وزن',zh:'无格律诗'}],0),
@@ -7542,13 +7546,13 @@ function mentalCuratedBank(){
       {en:'Lateral erosion and deposition',tr:'Yanal aşındırma ve biriktirme',de:'Seitenerosion und Ablagerung',ar:'التعرية الجانبية والترسيب',zh:'侧蚀与沉积'},{en:'Freeze-thaw weathering',tr:'Donma-çözülme ayrışması',de:'Frostsprengung',ar:'التجمد والذوبان',zh:'冻融风化'},{en:'Hydraulic uplift',tr:'Hidrolik yükselme',de:'Hydraulischer Auftrieb',ar:'الرفع الهيدروليكي',zh:'水力抬升'},{en:'Aeolian deflation',tr:'Rüzgâr deflasyonu',de:'Äolische Deflation',ar:'التذرية الريحية',zh:'风蚀吹蚀'}],0),
     Q('geo2',2,{en:'At a destructive plate margin, which combination is most typical?',tr:'Yıkıcı levha sınırında en tipik birleşim hangisidir?',de:'Welche Kombination ist an einer destruktiven Plattengrenze am typischsten?',ar:'أي مجموعة هي الأكثر شيوعاً عند حدود الصفائح الهدامة؟',zh:'在汇聚型板块边界，哪种组合最典型？'},[
       {en:'Subduction, earthquakes and volcanic activity',tr:'Dalma-batma, depremler ve volkanizma',de:'Subduktion, Erdbeben und Vulkanismus',ar:'اندساس وزلازل ونشاط بركاني',zh:'俯冲、地震和火山活动'},{en:'Rifting and mid-ocean ridges',tr:'Riftleşme ve okyanus ortası sırtları',de:'Rifting und mittelozeanische Rücken',ar:'تصدع وحيد وسط المحيط',zh:'裂谷和洋中脊'},{en:'Only folding, with no seismicity',tr:'Sadece kıvrımlanma, sismisite yok',de:'Nur Faltung ohne Seismizität',ar:'طي فقط دون زلازل',zh:'只有褶皱，没有地震'},{en:'Deposition of loess',tr:'Lös birikimi',de:'Lössablagerung',ar:'ترسيب اللوس',zh:'黄土沉积'}],0),
-    Q('geo3',2,{en:'Which atmospheric cell is most closely associated with the subtropical high-pressure belts near 30° latitude?',tr:'30° enlemleri civarındaki subtropikal yüksek basınç kuşaklarıyla en yakından ilişkili atmosferik hücre hangisidir?',de:'Welche atmosphärische Zelle ist am engsten mit den subtropischen Hochdruckgürteln um 30° Breite verbunden?',ar:'أي خلية جوية ترتبط أكثر بأحزمة الضغط المرتفع شبه المدارية قرب خط عرض 30°؟',zh:'约30°纬度的副热带高压带最主要与哪一个大气环流圈相关？'},[
+    Q('geo3',2,{en:'Which river flows through Vienna, Bratislava, Budapest and Belgrade?',tr:'30° enlemleri civarındaki subtropikal yüksek basınç kuşaklarıyla en yakından ilişkili atmosferik hücre hangisidir?',de:'Welche atmosphärische Zelle ist am engsten mit den subtropischen Hochdruckgürteln um 30° Breite verbunden?',ar:'أي خلية جوية ترتبط أكثر بأحزمة الضغط المرتفع شبه المدارية قرب خط عرض 30°؟',zh:'约30°纬度的副热带高压带最主要与哪一个大气环流圈相关？'},[
       {en:'Hadley cell',tr:'Hadley hücresi',de:'Hadley-Zelle',ar:'خلية هادلي',zh:'哈德莱环流'},{en:'Ferrel cell',tr:'Ferrel hücresi',de:'Ferrel-Zelle',ar:'خلية فيريل',zh:'费雷尔环流'},{en:'Polar cell',tr:'Kutup hücresi',de:'Polarzelle',ar:'الخلية القطبية',zh:'极地环流'},{en:'Walker circulation',tr:'Walker dolaşımı',de:'Walker-Zirkulation',ar:'دوران ووكر',zh:'沃克环流'}],0),
     Q('geo4',2,{en:'What is meant by demographic transition?',tr:'Demografik geçiş ne anlama gelir?',de:'Was versteht man unter dem demografischen Übergang?',ar:'ما المقصود بالتحول الديموغرافي؟',zh:'什么是人口转变？'},[
       {en:'A shift from high birth and death rates to low birth and death rates',tr:'Yüksek doğum ve ölüm oranlarından düşük oranlara geçiş',de:'Der Übergang von hohen Geburten- und Sterberaten zu niedrigen',ar:'الانتقال من معدلات ولادة ووفيات مرتفعة إلى منخفضة',zh:'从高出生率和高死亡率转向低出生率和低死亡率'},{en:'A move from rural to urban employment only',tr:'Yalnızca kırsaldan kentsel istihdama geçiş',de:'Nur der Wechsel von ländlicher zu städtischer Beschäftigung',ar:'الانتقال من العمل الريفي إلى الحضري فقط',zh:'仅从农村就业转向城市就业'},{en:'A sudden fall in migration',tr:'Göçte ani düşüş',de:'Ein plötzlicher Rückgang der Migration',ar:'انخفاض مفاجئ في الهجرة',zh:'迁移突然下降'},{en:'A permanent increase in fertility',tr:'Doğurganlıkta kalıcı artış',de:'Ein dauerhafter Anstieg der Fertilität',ar:'ارتفاع دائم في الخصوبة',zh:'生育率永久上升'}],0),
     Q('geo5',2,{en:'Which measure combines life expectancy, education and income?',tr:'Yaşam beklentisi, eğitim ve geliri birleştiren ölçüt hangisidir?',de:'Welcher Index kombiniert Lebenserwartung, Bildung und Einkommen?',ar:'أي مقياس يجمع بين متوسط العمر والتعليم والدخل؟',zh:'哪一项指标综合了预期寿命、教育和收入？'},[
       {en:'Human Development Index',tr:'İnsani Gelişme Endeksi',de:'Index der menschlichen Entwicklung',ar:'مؤشر التنمية البشرية',zh:'人类发展指数'},{en:'Gini coefficient',tr:'Gini katsayısı',de:'Gini-Koeffizient',ar:'معامل جيني',zh:'基尼系数'},{en:'GDP deflator',tr:'GSYİH deflatörü',de:'BIP-Deflator',ar:'مخفض الناتج المحلي',zh:'GDP平减指数'},{en:'Dependency ratio',tr:'Bağımlılık oranı',de:'Abhängigkeitsquote',ar:'نسبة الإعالة',zh:'抚养比'}],0),
-    Q('geo6',2,{en:'Which drainage-basin store usually has the slowest transfer time?',tr:'Bir drenaj havzasındaki hangi depo genellikle en yavaş aktarım süresine sahiptir?',de:'Welcher Speicher in einem Einzugsgebiet hat normalerweise die langsamste Transferzeit?',ar:'أي مخزن في حوض التصريف عادة ما تكون له أبطأ مدة انتقال؟',zh:'在流域系统中，哪一种储存通常具有最慢的传输时间？'},[
+    Q('geo6',2,{en:'Which country is completely surrounded by South Africa?',tr:'Bir drenaj havzasındaki hangi depo genellikle en yavaş aktarım süresine sahiptir?',de:'Welcher Speicher in einem Einzugsgebiet hat normalerweise die langsamste Transferzeit?',ar:'أي مخزن في حوض التصريف عادة ما تكون له أبطأ مدة انتقال؟',zh:'在流域系统中，哪一种储存通常具有最慢的传输时间？'},[
       {en:'Groundwater',tr:'Yeraltı suyu',de:'Grundwasser',ar:'المياه الجوفية',zh:'地下水'},{en:'Surface runoff',tr:'Yüzey akışı',de:'Oberflächenabfluss',ar:'الجريان السطحي',zh:'地表径流'},{en:'Channel flow',tr:'Kanal akışı',de:'Gerinneabfluss',ar:'جريان القناة',zh:'河道流'},{en:'Interception',tr:'Tutulma',de:'Interzeption',ar:'الاعتراض النباتي',zh:'截留'}],0),
     Q('geo7',2,{en:'What is the main reason tropical rainforests have nutrient-poor soils despite high biomass?',tr:'Tropikal yağmur ormanlarının yüksek biyokütleye rağmen besince fakir topraklara sahip olmasının temel nedeni nedir?',de:'Warum sind die Böden tropischer Regenwälder trotz hoher Biomasse oft nährstoffarm?',ar:'ما السبب الرئيسي لفقر تربة الغابات المطيرة الاستوائية بالعناصر الغذائية رغم ارتفاع الكتلة الحيوية؟',zh:'热带雨林生物量很高，但土壤却贫瘠，主要原因是什么？'},[
       {en:'Rapid nutrient cycling and intense leaching',tr:'Hızlı besin döngüsü ve güçlü yıkanma',de:'Schneller Nährstoffkreislauf und starke Auswaschung',ar:'دورة مغذيات سريعة وغسل شديد للتربة',zh:'养分循环快且淋溶强烈'},{en:'Very low rainfall',tr:'Çok düşük yağış',de:'Sehr geringe Niederschläge',ar:'أمطار قليلة جداً',zh:'降雨极少'},{en:'Permanent permafrost',tr:'Kalıcı permafrost',de:'Dauerhafter Permafrost',ar:'تربة صقيعية دائمة',zh:'永久冻土'},{en:'Lack of decomposition',tr:'Ayrışma eksikliği',de:'Fehlende Zersetzung',ar:'غياب التحلل',zh:'缺乏分解作用'}],0),
