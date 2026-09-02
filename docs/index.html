@@ -645,6 +645,28 @@
     gap:8px; padding:14px 0 0;
   }
   .tasks-panel{width:100%; max-width:430px; margin-top:28px;}
+  .daily-intention{
+    width:100%; max-width:430px; margin-top:22px;
+    display:flex; align-items:center; gap:10px;
+    color:var(--muted);
+  }
+  .daily-intention-label{
+    flex:none; font-size:10px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; opacity:.72;
+  }
+  .daily-intention-input{
+    flex:1; min-width:0; border:none; border-bottom:1px solid transparent;
+    background:transparent; color:var(--fg); font:inherit; font-size:16px;
+    line-height:1.4; padding:3px 0 4px; outline:none;
+    border-radius:0; -webkit-appearance:none;
+    transition:border-color .16s ease, opacity .16s ease;
+  }
+  .daily-intention-input::placeholder{color:var(--muted);opacity:.45;}
+  .daily-intention-input:hover{border-bottom-color:color-mix(in srgb,var(--line) 65%,transparent);}
+  .daily-intention-input:focus{border-bottom-color:var(--line);}
+  body:not([data-mode="focus"]) .daily-intention{display:none;}
+  body.focus-mode .daily-intention{display:none;}
+
   /* Tasks belong to the timer/focus screen only. */
   body:not([data-mode="focus"]) .tasks-panel{ display:none; }
   .current-task{display:none;}
@@ -2638,6 +2660,11 @@
         </svg>
       </button>
     </div>
+  </div>
+
+  <div class="daily-intention" id="dailyIntention">
+    <span class="daily-intention-label">Today</span>
+    <input class="daily-intention-input" id="dailyIntentionInput" type="text" maxlength="120" autocomplete="off" placeholder="What matters most today?">
   </div>
 
   <div class="tasks-panel" id="tasksPanel">
@@ -6193,6 +6220,41 @@ function broadcastMyTask(){
 const taskListMain=$('taskListMain'), taskForm=$('taskForm'), newTaskInput=$('newTaskInput');
 let editingTask=null;
 let estCount=1;
+
+/* ---------- daily intention ----------
+   One quiet line for today only. Stored locally by the user's calendar date. */
+function dailyIntentionDateKey(){
+  const d=new Date();
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return 'pomofit:dailyIntention:'+y+'-'+m+'-'+day;
+}
+function loadDailyIntention(){
+  const input=$('dailyIntentionInput');
+  if(!input) return;
+  try{ input.value=localStorage.getItem(dailyIntentionDateKey())||''; }catch(e){}
+}
+function saveDailyIntention(){
+  const input=$('dailyIntentionInput');
+  if(!input) return;
+  const value=input.value.trim();
+  try{
+    if(value) localStorage.setItem(dailyIntentionDateKey(),value);
+    else localStorage.removeItem(dailyIntentionDateKey());
+  }catch(e){}
+}
+{
+  const input=$('dailyIntentionInput');
+  if(input){
+    loadDailyIntention();
+    input.addEventListener('input',saveDailyIntention);
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){ e.preventDefault(); input.blur(); }
+      if(e.key==='Escape'){ loadDailyIntention(); input.blur(); }
+    });
+  }
+}
 
 function syncAutoRemoveTasksUI(){
   const btn=$('autoRemoveTasksToggle');
