@@ -646,26 +646,47 @@
   }
   .tasks-panel{width:100%; max-width:430px; margin-top:28px;}
   .daily-intention{
-    width:100%; max-width:430px; margin-top:22px;
-    display:flex; align-items:center; gap:10px;
-    color:var(--muted);
+    margin-top:9px;
+    display:flex; align-items:center; gap:8px;
+    width:100%; box-sizing:border-box;
+    padding:6px 9px;
+    border:1px solid transparent;
+    border-radius:999px;
+    background:transparent;
+    transition:border-color .16s ease, background .16s ease, opacity .16s ease;
+  }
+  .daily-intention:hover,
+  .daily-intention:focus-within{
+    border-color:color-mix(in srgb,var(--line) 58%,transparent);
+    background:color-mix(in srgb,var(--fg) 2.5%,transparent);
   }
   .daily-intention-label{
-    flex:none; font-size:10px; font-weight:700; letter-spacing:.14em;
-    text-transform:uppercase; opacity:.72;
+    flex:none;
+    font:inherit;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    opacity:.62;
   }
   .daily-intention-input{
-    flex:1; min-width:0; border:none; border-bottom:1px solid transparent;
-    background:transparent; color:var(--fg); font:inherit; font-size:16px;
-    line-height:1.4; padding:3px 0 4px; outline:none;
-    border-radius:0; -webkit-appearance:none;
-    transition:border-color .16s ease, opacity .16s ease;
+    flex:1; min-width:0;
+    border:none; outline:none;
+    background:transparent; color:var(--fg);
+    font:inherit;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    line-height:1.25;
+    padding:0;
+    -webkit-appearance:none;
   }
-  .daily-intention-input::placeholder{color:var(--muted);opacity:.45;}
-  .daily-intention-input:hover{border-bottom-color:color-mix(in srgb,var(--line) 65%,transparent);}
-  .daily-intention-input:focus{border-bottom-color:var(--line);}
-  body:not([data-mode="focus"]) .daily-intention{display:none;}
-  body.focus-mode .daily-intention{display:none;}
+  .daily-intention-input::placeholder{
+    color:var(--muted);
+    opacity:.38;
+  }
 
   /* Tasks belong to the timer/focus screen only. */
   body:not([data-mode="focus"]) .tasks-panel{ display:none; }
@@ -2662,11 +2683,6 @@
     </div>
   </div>
 
-  <div class="daily-intention" id="dailyIntention">
-    <span class="daily-intention-label">Today</span>
-    <input class="daily-intention-input" id="dailyIntentionInput" type="text" maxlength="120" autocomplete="off" placeholder="What matters most today?">
-  </div>
-
   <div class="tasks-panel" id="tasksPanel">
     <div class="tp-head" id="tasksHeadRow">
       <span id="tasksHeading">Tasks</span>
@@ -2682,6 +2698,10 @@
     </div>
     <div class="tp-body" id="tasksBody">
       <div id="taskListMain"></div>
+      <div class="daily-intention" id="dailyIntention">
+        <span class="daily-intention-label">Today</span>
+        <input class="daily-intention-input" id="dailyIntentionInput" type="text" maxlength="120" autocomplete="off" placeholder="What matters most today?">
+      </div>
       <button class="add-task" id="addTaskOpen">＋ Add Task</button>
       <div class="task-form" id="taskForm">
         <input id="newTaskInput" type="text" maxlength="80" placeholder="What are you working on?">
