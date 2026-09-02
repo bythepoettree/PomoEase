@@ -646,7 +646,8 @@
   }
   .tasks-panel{width:100%; max-width:430px; margin-top:28px;}
   .daily-intention{
-    margin-top:9px;
+    margin-top:5px;
+    margin-bottom:2px;
     display:flex; align-items:center; gap:8px;
     width:100%; box-sizing:border-box;
     padding:6px 9px;
@@ -695,19 +696,42 @@
     color:var(--muted);
     opacity:.38;
   }
-  .daily-intention-check{
+  .daily-intention-confirm{
     flex:none;
-    width:14px;
-    text-align:center;
+    width:18px;
+    height:18px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:none;
+    border-radius:50%;
+    background:transparent;
+    color:var(--muted);
+    font:inherit;
     font-size:11px;
     line-height:1;
-    color:#A8DDBF;
+    cursor:pointer;
     opacity:0;
-    transform:scale(.75);
-    transition:opacity .16s ease, transform .16s ease;
+    pointer-events:none;
+    transform:scale(.78);
+    transition:opacity .16s ease, transform .16s ease, color .16s ease, background .16s ease;
   }
-  .daily-intention.accepted .daily-intention-check{
+  .daily-intention.editing .daily-intention-confirm{
+    opacity:.72;
+    pointer-events:auto;
+    transform:scale(1);
+  }
+  .daily-intention-confirm:hover,
+  .daily-intention-confirm:focus-visible{
+    color:var(--fg);
+    background:color-mix(in srgb,var(--fg) 7%,transparent);
+    outline:none;
+  }
+  .daily-intention.accepted .daily-intention-confirm{
     opacity:1;
+    pointer-events:none;
+    color:#A8DDBF;
     transform:scale(1);
   }
 
@@ -762,6 +786,7 @@
     border-left:5px solid transparent; cursor:pointer;
     transition:border-color .15s;
   }
+  .daily-intention + #taskListMain .task-item:first-child{ margin-top:4px; }
   .task-item.selected{border-left-color:var(--accent);}
   .task-item .t-check{
     width:22px; height:22px; border-radius:50%; border:2px solid var(--muted);
@@ -2695,7 +2720,7 @@
       <div class="daily-intention" id="dailyIntention">
         <span class="daily-intention-label">Intention</span>
         <input class="daily-intention-input" id="dailyIntentionInput" type="text" maxlength="120" autocomplete="off" placeholder="What is your intention today?">
-        <span class="daily-intention-check" aria-hidden="true">✓</span>
+        <button class="daily-intention-confirm" id="dailyIntentionConfirm" type="button" aria-label="Confirm intention" title="Confirm intention">✓</button>
       </div>
       <div id="taskListMain"></div>
       <button class="add-task" id="addTaskOpen">＋ Add Task</button>
@@ -6238,7 +6263,8 @@ let editingTask=null;
 let estCount=1;
 
 /* ---------- daily intention ----------
-   One quiet line for today only. Stored locally by calendar date and cleared at local midnight. */
+   One quiet line for today only. Stored locally by calendar date and cleared at local midnight.
+   Explicit confirmation is required: Enter or the tick button. */
 let dailyIntentionDayKey='';
 let dailyIntentionMidnightTimer=null;
 let dailyIntentionAcceptTimer=null;
@@ -6259,12 +6285,19 @@ function syncDailyIntentionSetState(){
   if(!wrap || !input) return;
   wrap.classList.toggle('set', !!input.value.trim());
 }
+function syncDailyIntentionEditingState(){
+  const wrap=$('dailyIntention');
+  const input=$('dailyIntentionInput');
+  if(!wrap || !input) return;
+  wrap.classList.toggle('editing', document.activeElement===input && !!input.value.trim());
+}
 function loadDailyIntention(){
   const input=$('dailyIntentionInput');
   if(!input) return;
   dailyIntentionDayKey=dailyIntentionDateStamp();
   try{ input.value=localStorage.getItem(dailyIntentionDateKey(dailyIntentionDayKey))||''; }catch(e){ input.value=''; }
   syncDailyIntentionSetState();
+  syncDailyIntentionEditingState();
 }
 function saveDailyIntention(){
   const input=$('dailyIntentionInput');
@@ -6280,6 +6313,7 @@ function saveDailyIntention(){
     else localStorage.removeItem(dailyIntentionDateKey(today));
   }catch(e){}
   syncDailyIntentionSetState();
+  syncDailyIntentionEditingState();
 }
 function acceptDailyIntention(){
   const wrap=$('dailyIntention');
@@ -6287,10 +6321,10 @@ function acceptDailyIntention(){
   if(!wrap || !input || !input.value.trim()) return;
   saveDailyIntention();
   clearTimeout(dailyIntentionAcceptTimer);
-  wrap.classList.remove('accepted');
+  wrap.classList.remove('editing','accepted');
   void wrap.offsetWidth;
   wrap.classList.add('accepted');
-  dailyIntentionAcceptTimer=setTimeout(()=>wrap.classList.remove('accepted'),1200);
+  dailyIntentionAcceptTimer=setTimeout(()=>wrap.classList.remove('accepted'),1750);
 }
 function clearDailyIntentionForNewDay(){
   const input=$('dailyIntentionInput');
@@ -6298,7 +6332,7 @@ function clearDailyIntentionForNewDay(){
   if(!input) return;
   input.value='';
   dailyIntentionDayKey=dailyIntentionDateStamp();
-  if(wrap) wrap.classList.remove('accepted','set');
+  if(wrap) wrap.classList.remove('accepted','set','editing');
 }
 function scheduleDailyIntentionMidnightReset(){
   clearTimeout(dailyIntentionMidnightTimer);
@@ -6317,15 +6351,21 @@ function checkDailyIntentionDate(){
 }
 {
   const input=$('dailyIntentionInput');
+  const confirm=$('dailyIntentionConfirm');
   if(input){
     loadDailyIntention();
     scheduleDailyIntentionMidnightReset();
+
+    input.addEventListener('focus',syncDailyIntentionEditingState);
     input.addEventListener('input',()=>{
       saveDailyIntention();
       const wrap=$('dailyIntention');
       if(wrap) wrap.classList.remove('accepted');
+      syncDailyIntentionEditingState();
     });
-    input.addEventListener('blur',acceptDailyIntention);
+    input.addEventListener('blur',()=>{
+      setTimeout(syncDailyIntentionEditingState,0);
+    });
     input.addEventListener('keydown',e=>{
       if(e.key==='Enter'){
         e.preventDefault();
@@ -6337,6 +6377,15 @@ function checkDailyIntentionDate(){
         input.blur();
       }
     });
+
+    if(confirm){
+      confirm.addEventListener('mousedown',e=>e.preventDefault());
+      confirm.addEventListener('click',()=>{
+        acceptDailyIntention();
+        input.blur();
+      });
+    }
+
     document.addEventListener('visibilitychange',()=>{
       if(!document.hidden) checkDailyIntentionDate();
     });
