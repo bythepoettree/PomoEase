@@ -7632,7 +7632,7 @@ function renderProgList(){
     const prog = PROGRAMMES[k];
     const metaEl = card.querySelector('.prog-meta');
     if(!prog || !metaEl) return;
-    if(prog.mental) metaEl.textContent='12 questions · Maths, English, Geography';
+    if(prog.mental) metaEl.textContent='12 questions · Maths, English, Geography, History';
     else metaEl.textContent = prog.steps.length+' · '+prog.steps.map(s=>(EX[s]._tname||EX[s].name)).join(', ');
   });
 }
@@ -7643,14 +7643,14 @@ function mentalText(){
   return {
     name:'Mental Workout',
     note:'12 fresh questions for your break.',
-    meta:'12 questions · Maths, English, Geography',
+    meta:'12 questions · Maths, English, Geography, History',
     skip:'Skip',
     again:'Another round',
     yes:'Nice — correct.',
     no:'Not quite — the answer is highlighted.',
     done:'Mental workout complete',
     result:'A quick brain reset — focus is up next.',
-    cats:['Mathematics','English','Geography']
+    cats:['Mathematics','English','Geography','History']
   };
 }
 function mentalLocal(v){
@@ -7663,108 +7663,133 @@ function mentalNumericOptions(ans,near){var a=[ans].concat(near).filter(function
 function mentalMathQuestion(){
   var type=Math.floor(Math.random()*8),ans,q,id,opts,a,b,c,total,p,n;
   if(type===0){
-    /* one-step/two-step everyday algebra */
-    n=2+Math.floor(Math.random()*12);
-    a=2+Math.floor(Math.random()*8);
-    total=n+a;
+    /* two-step algebra, still approachable */
+    a=[2,3][Math.floor(Math.random()*2)];
+    n=2+Math.floor(Math.random()*10);
+    b=2+Math.floor(Math.random()*8);
+    total=a*n+b;
     ans=n;
-    q='n + '+a+' = '+total+'\nWhat is n?';
-    id='add-'+a+'-'+total;
-    opts=mentalNumericOptions(ans,[ans+1,Math.max(1,ans-1),total]);
+    q=a+'n + '+b+' = '+total+'\nWhat is n?';
+    id='alg-'+a+'-'+b+'-'+total;
+    opts=mentalNumericOptions(ans,[ans+1,Math.max(1,ans-1),ans+2]);
   }else if(type===1){
     /* percentage of a quantity */
-    p=[10,20,25,50][Math.floor(Math.random()*4)];
+    p=[12.5,15,20,25,30][Math.floor(Math.random()*5)];
     total=[40,60,80,100,120,160,200][Math.floor(Math.random()*7)];
     ans=total*p/100;
+    if(!Number.isInteger(ans)){ total=[80,120,160,200][Math.floor(Math.random()*4)]; ans=total*p/100; }
     q='What is '+p+'% of '+total+'?';
     id='pct-'+p+'-'+total;
-    opts=mentalNumericOptions(ans,[ans+5,Math.max(1,ans-5),total]);
+    opts=mentalNumericOptions(ans,[ans+5,Math.max(1,ans-5),total*p/10]);
   }else if(type===2){
-    /* simple fraction */
-    var den=[2,4,5][Math.floor(Math.random()*3)];
-    var num=den===2?1:[1,2][Math.floor(Math.random()*2)];
-    total=den*(4+Math.floor(Math.random()*10));
-    ans=total*num/den;
-    q='What is '+num+'/'+den+' of '+total+'?';
-    id='frac-'+num+'-'+den+'-'+total;
-    opts=mentalNumericOptions(ans,[total/den,total-ans,ans+den]);
+    /* ratio */
+    a=[2,3,4][Math.floor(Math.random()*3)];
+    b=[3,4,5][Math.floor(Math.random()*3)];
+    if(a===b)b+=1;
+    n=3+Math.floor(Math.random()*7);
+    total=(a+b)*n;
+    ans=Math.min(a,b)*n;
+    q='A total of '+total+' is divided in the ratio '+a+':'+b+'.\nWhat is the smaller share?';
+    id='ratio-'+a+'-'+b+'-'+total;
+    opts=mentalNumericOptions(ans,[Math.max(a,b)*n,n,total/2]);
   }else if(type===3){
     /* average */
-    a=4+Math.floor(Math.random()*12);
-    b=4+Math.floor(Math.random()*12);
-    c=4+Math.floor(Math.random()*12);
-    var d=4+Math.floor(Math.random()*12);
+    a=6+Math.floor(Math.random()*16);
+    b=6+Math.floor(Math.random()*16);
+    c=6+Math.floor(Math.random()*16);
+    var d=6+Math.floor(Math.random()*16);
     var sum=a+b+c+d, rem=sum%4;
     if(rem){d+=4-rem;sum=a+b+c+d;}
     ans=sum/4;
     q='What is the average of '+a+', '+b+', '+c+' and '+d+'?';
     id='avg-'+a+'-'+b+'-'+c+'-'+d;
-    opts=mentalNumericOptions(ans,[ans+2,Math.max(1,ans-2),sum]);
+    opts=mentalNumericOptions(ans,[ans+2,Math.max(1,ans-2),sum/2]);
   }else if(type===4){
-    /* multiplication */
-    a=4+Math.floor(Math.random()*9);
-    b=4+Math.floor(Math.random()*9);
-    ans=a*b;
-    q='What is '+a+' × '+b+'?';
-    id='mul-'+a+'-'+b;
-    opts=mentalNumericOptions(ans,[ans+a,ans-a,ans+b]);
+    /* percentage increase */
+    total=[50,80,100,120,150,200][Math.floor(Math.random()*6)];
+    p=[10,15,20,25][Math.floor(Math.random()*4)];
+    ans=total*(1+p/100);
+    q='A price of £'+total+' rises by '+p+'%.\nWhat is the new price?';
+    id='inc-'+total+'-'+p;
+    opts=mentalNumericOptions(ans,[total+p,total*(1-p/100),total]);
   }else if(type===5){
-    /* division */
-    b=2+Math.floor(Math.random()*9);
-    ans=2+Math.floor(Math.random()*10);
-    a=b*ans;
-    q='What is '+a+' ÷ '+b+'?';
-    id='div-'+a+'-'+b;
-    opts=mentalNumericOptions(ans,[ans+1,Math.max(1,ans-1),b]);
+    /* fraction */
+    var den=[3,4,5,8][Math.floor(Math.random()*4)];
+    var num=[1,2,3][Math.floor(Math.random()*3)];
+    if(num>=den)num=1;
+    total=den*(5+Math.floor(Math.random()*9));
+    ans=total*num/den;
+    q='What is '+num+'/'+den+' of '+total+'?';
+    id='frac-'+num+'-'+den+'-'+total;
+    opts=mentalNumericOptions(ans,[total/den,total-ans,ans+den]);
   }else if(type===6){
-    /* simple sequence */
-    a=1+Math.floor(Math.random()*8);
+    /* sequence */
+    a=2+Math.floor(Math.random()*8);
     b=2+Math.floor(Math.random()*5);
-    ans=a+4*b;
-    q='What comes next: '+a+', '+(a+b)+', '+(a+2*b)+', '+(a+3*b)+', ?';
+    ans=a+5*b;
+    q='What comes next: '+a+', '+(a+b)+', '+(a+2*b)+', '+(a+3*b)+', '+(a+4*b)+', ?';
     id='seq-'+a+'-'+b;
     opts=mentalNumericOptions(ans,[ans+b,ans-b,ans+1]);
   }else{
-    /* simple money increase */
-    total=[20,30,40,50,60,80][Math.floor(Math.random()*6)];
-    a=[5,10,15,20][Math.floor(Math.random()*4)];
-    ans=total+a;
-    q='Something costs £'+total+' and the price rises by £'+a+'. What is the new price?';
-    id='money-'+total+'-'+a;
-    opts=mentalNumericOptions(ans,[total-a,total,total+a+5]);
+    /* simple probability */
+    var red=2+Math.floor(Math.random()*5);
+    var blue=2+Math.floor(Math.random()*5);
+    total=red+blue;
+    ans=red+'/'+total;
+    q='A bag contains '+red+' red and '+blue+' blue counters.\nWhat is the probability of choosing red?';
+    id='prob-'+red+'-'+blue;
+    opts=mentalShuffle([ans,blue+'/'+total,red+'/'+blue,'1/'+total]);
   }
   return {id:'math-'+id,c:0,q:q,o:opts.map(String),a:opts.indexOf(ans)};
 }
 function mentalCuratedBank(){
   function Q(id,c,q,o,a){return{id:id,c:c,q:q,o:o,a:a};}
   return [
-    /* ENGLISH — accessible language and literature */
-    Q('eng1',1,'Which word is closest in meaning to “rapid”?',['Quick','Quiet','Heavy','Late'],0),
-    Q('eng2',1,'Which sentence is punctuated correctly?',['After dinner, we went for a walk.','After dinner we, went for a walk.','After, dinner we went for a walk.','After dinner we went, for a walk.'],0),
-    Q('eng3',1,'What type of word is “beautiful” in “a beautiful garden”?',['Adjective','Verb','Adverb','Pronoun'],0),
-    Q('eng4',1,'Which word is the opposite of “scarce”?',['Abundant','Rare','Limited','Few'],0),
-    Q('eng5',1,'Who wrote “Romeo and Juliet”?',['William Shakespeare','Charles Dickens','Jane Austen','George Orwell'],0),
-    Q('eng6',1,'Which sentence uses “their” correctly?',['The students finished their work.','Their going to the shop.','Put the book over their.','Their is a problem.'],0),
-    Q('eng7',1,'Which phrase is a metaphor?',['Time is a thief.','The baby slept quietly.','The door was open.','She walked to school.'],0),
-    Q('eng8',1,'Which word is spelled correctly?',['Necessary','Necesary','Neccessary','Necessery'],0),
-    Q('eng9',1,'What is the plural of “analysis”?',['Analyses','Analysises','Analysis','Analysi'],0),
-    Q('eng10',1,'Which sentence is in the past tense?',['She walked home.','She walks home.','She will walk home.','She is walking home.'],0),
-    Q('eng11',1,'Which word best completes the sentence: “The instructions were clear and easy to ___.”',['follow','follows','following','followed'],0),
-    Q('eng12',1,'Which of these is a synonym for “generous”?',['Giving','Selfish','Angry','Careless'],0),
+    /* ENGLISH — moderate, accessible but not trivial */
+    Q('eng1',1,'Which word is closest in meaning to “reluctant”?',['Unwilling','Excited','Certain','Careless'],0),
+    Q('eng2',1,'Which sentence uses the apostrophe correctly?',['The dog’s collar was red.','The dogs collar was red.','The dogs’ collar was red.','The dog collar’s was red.'],0),
+    Q('eng3',1,'What type of word is “carefully” in “She carefully opened the letter”?',['Adverb','Adjective','Noun','Pronoun'],0),
+    Q('eng4',1,'Which phrase is an example of personification?',['The wind whispered through the trees.','The wind was very strong.','The trees were tall.','The leaves fell quickly.'],0),
+    Q('eng5',1,'Who wrote “Pride and Prejudice”?',['Jane Austen','Virginia Woolf','Emily Brontë','George Eliot'],0),
+    Q('eng6',1,'Which sentence is grammatically correct?',['Neither of the answers is correct.','Neither of the answers are correct.','Neither of the answer are correct.','Neither answers is correct.'],0),
+    Q('eng7',1,'Which word best completes the sentence: “The evidence was not enough to ___ the claim”?',['support','supports','supported','supporting'],0),
+    Q('eng8',1,'Which word is the opposite of “temporary”?',['Permanent','Brief','Short','Sudden'],0),
+    Q('eng9',1,'In literature, what is a “theme”?',['A central idea or message','The name of the main character','The setting only','The final sentence'],0),
+    Q('eng10',1,'Which sentence uses a semicolon correctly?',['I was tired; I went to bed early.','I was; tired I went to bed early.','I was tired; and went to bed early.','I; was tired and went to bed early.'],0),
+    Q('eng11',1,'Which word is spelled correctly?',['Separate','Seperate','Sepperate','Seperrate'],0),
+    Q('eng12',1,'Which sentence is in the passive voice?',['The window was broken by the ball.','The ball broke the window.','The boy kicked the ball.','The window broke suddenly.'],0),
 
-    /* GEOGRAPHY — broad general knowledge */
-    Q('geo1',2,'What is the capital of Australia?',['Canberra','Sydney','Melbourne','Perth'],0),
-    Q('geo2',2,'Which is the largest ocean on Earth?',['Pacific Ocean','Atlantic Ocean','Indian Ocean','Arctic Ocean'],0),
-    Q('geo3',2,'Which continent is Brazil in?',['South America','North America','Europe','Africa'],0),
-    Q('geo4',2,'Which river flows through London?',['Thames','Seine','Danube','Rhine'],0),
-    Q('geo5',2,'Mount Everest is part of which mountain range?',['Himalayas','Andes','Alps','Rockies'],0),
-    Q('geo6',2,'Which country is directly south of the United States?',['Mexico','Canada','Brazil','Spain'],0),
-    Q('geo7',2,'What is the capital of Japan?',['Tokyo','Kyoto','Osaka','Seoul'],0),
-    Q('geo8',2,'The Sahara Desert is mainly on which continent?',['Africa','Asia','Australia','South America'],0),
-    Q('geo9',2,'Which country is famous for the city of Rome?',['Italy','Greece','France','Portugal'],0),
-    Q('geo10',2,'Which of these countries is an island nation?',['Iceland','Austria','Switzerland','Hungary'],0),
-    Q('geo11',2,'Which line divides Earth into the Northern and Southern Hemispheres?',['Equator','Prime Meridian','Tropic of Cancer','International Date Line'],0),
-    Q('geo12',2,'Which country has the maple leaf on its national flag?',['Canada','Norway','Ireland','New Zealand'],0)
+    /* GEOGRAPHY — general knowledge with a little more depth */
+    Q('geo1',2,'Which country has the largest population in South America?',['Brazil','Argentina','Colombia','Peru'],0),
+    Q('geo2',2,'Which sea separates Europe from Africa?',['Mediterranean Sea','Baltic Sea','Black Sea','North Sea'],0),
+    Q('geo3',2,'Which river flows through Paris?',['Seine','Thames','Rhine','Danube'],0),
+    Q('geo4',2,'Which country contains the ancient city of Petra?',['Jordan','Egypt','Lebanon','Turkey'],0),
+    Q('geo5',2,'Which mountain range runs along the western edge of South America?',['Andes','Alps','Rockies','Himalayas'],0),
+    Q('geo6',2,'Which country borders both Germany and Spain?',['France','Belgium','Italy','Austria'],0),
+    Q('geo7',2,'Which desert covers much of northern Africa?',['Sahara','Gobi','Kalahari','Atacama'],0),
+    Q('geo8',2,'Which capital city stands on the River Thames?',['London','Paris','Rome','Dublin'],0),
+    Q('geo9',2,'Which country is made up of more than 7,000 islands?',['Philippines','Portugal','Chile','Greece'],0),
+    Q('geo10',2,'What is the capital of New Zealand?',['Wellington','Auckland','Christchurch','Hamilton'],0),
+    Q('geo11',2,'Which strait separates Spain from Morocco?',['Strait of Gibraltar','Bering Strait','Bosporus','Strait of Hormuz'],0),
+    Q('geo12',2,'Which continent has the most countries?',['Africa','Asia','Europe','South America'],0),
+
+    /* HISTORY — broad, useful knowledge rather than obscure trivia */
+    Q('hist1',3,'Which event began in 1914?',['First World War','Second World War','French Revolution','American Civil War'],0),
+    Q('hist2',3,'Who was the first President of the United States?',['George Washington','Abraham Lincoln','Thomas Jefferson','Theodore Roosevelt'],0),
+    Q('hist3',3,'Which ancient civilization built the pyramids at Giza?',['Ancient Egyptians','Ancient Romans','Vikings','Aztecs'],0),
+    Q('hist4',3,'The Industrial Revolution began first in which country?',['Great Britain','France','Germany','United States'],0),
+    Q('hist5',3,'Which city was buried by the eruption of Mount Vesuvius in AD 79?',['Pompeii','Athens','Carthage','Sparta'],0),
+    Q('hist6',3,'Who wrote the “95 Theses” and became a key figure in the Protestant Reformation?',['Martin Luther','Galileo Galilei','Isaac Newton','Leonardo da Vinci'],0),
+    Q('hist7',3,'Which empire was ruled by Julius Caesar and later Augustus?',['Roman Empire','Ottoman Empire','Mongol Empire','Persian Empire'],0),
+    Q('hist8',3,'Which event is most closely associated with 1066 in English history?',['The Norman Conquest','The signing of Magna Carta','The English Civil War','The Great Fire of London'],0),
+    Q('hist9',3,'Which document was signed in 1215 to limit the power of the English king?',['Magna Carta','Declaration of Independence','Treaty of Versailles','Domesday Book'],0),
+    Q('hist10',3,'Which leader is associated with India’s non-violent independence movement?',['Mahatma Gandhi','Winston Churchill','Napoleon Bonaparte','Otto von Bismarck'],0),
+    Q('hist11',3,'Which wall fell in 1989, symbolising the end of the Cold War in Europe?',['Berlin Wall','Great Wall of China','Hadrian’s Wall','Western Wall'],0),
+    Q('hist12',3,'Which civilisation developed democracy in ancient Athens?',['Ancient Greeks','Ancient Egyptians','Phoenicians','Sumerians'],0),
+    Q('hist13',3,'Which war ended with the Treaty of Versailles in 1919?',['First World War','Second World War','Crimean War','Napoleonic Wars'],0),
+    Q('hist14',3,'Who was the British monarch during most of the Victorian era?',['Queen Victoria','Queen Elizabeth I','Queen Anne','Queen Mary I'],0),
+    Q('hist15',3,'Which explorer’s 1492 voyage reached the Americas from Europe?',['Christopher Columbus','James Cook','Marco Polo','Ferdinand Magellan'],0),
+    Q('hist16',3,'Which ancient people are credited with creating one of the earliest known writing systems, cuneiform?',['Sumerians','Romans','Vikings','Spartans'],0)
   ];
 }
 function mentalPickFresh(pool,count,recent){
@@ -7774,10 +7799,10 @@ function mentalPickFresh(pool,count,recent){
 }
 function mentalBuildSession(){
   var recent=mentalRecent(),math=[],used={},guard=0,q;
-  while(math.length<4&&guard++<100){q=mentalMathQuestion();if(!used[q.id]&&recent.indexOf(q.id)<0){used[q.id]=1;math.push(q);}}
-  while(math.length<4){q=mentalMathQuestion();if(!used[q.id]){used[q.id]=1;math.push(q);}}
+  while(math.length<3&&guard++<100){q=mentalMathQuestion();if(!used[q.id]&&recent.indexOf(q.id)<0){used[q.id]=1;math.push(q);}}
+  while(math.length<3){q=mentalMathQuestion();if(!used[q.id]){used[q.id]=1;math.push(q);}}
   var bank=mentalCuratedBank(),all=math;
-  [1,2].forEach(function(c){all=all.concat(mentalPickFresh(bank.filter(function(q){return q.c===c;}),4,recent));});
+  [1,2,3].forEach(function(c){all=all.concat(mentalPickFresh(bank.filter(function(q){return q.c===c;}),3,recent));});
   all=mentalShuffle(all);mentalRemember(all.map(function(q){return q.id;}));return all;
 }
 function startMentalQuiz(){
