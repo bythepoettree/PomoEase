@@ -646,8 +646,8 @@
   }
   .tasks-panel{width:100%; max-width:430px; margin-top:28px;}
   .daily-intention{
-    margin-top:5px;
-    margin-bottom:2px;
+    margin-top:2px;
+    margin-bottom:0;
     display:flex; align-items:center; gap:8px;
     width:100%; box-sizing:border-box;
     padding:6px 9px;
@@ -735,6 +735,35 @@
     transform:scale(1);
   }
 
+
+  /* Tasks belong to the timer/focus screen only. */
+  body:not([data-mode="focus"]) .tasks-panel{ display:none; }
+  .current-task{display:none;}
+  .timer{
+    font-family:'Anton', sans-serif;
+    font-size:clamp(86px, 28vw, 160px);
+    line-height:1; letter-spacing:.01em;
+    font-variant-numeric: tabular-nums; user-select:none;
+  }
+  .sub{color:var(--muted); font-size:15px; text-align:center; max-width:36ch;}
+  #breakClock{ font-size:20px; font-weight:800; color:var(--fg); text-align:center; letter-spacing:.3px; margin:2px 0 10px; opacity:.9; }
+  #breakClock:empty{ display:none; margin:0; }
+  .controls{display:flex; gap:26px; margin-top:14px; align-items:center; flex-wrap:wrap; justify-content:center;}
+  .btn{
+    font-family:'Anton', sans-serif; letter-spacing:.08em; font-size:18px;
+    padding:14px 36px; border-radius:16px; border:none; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink);
+    transition:transform .12s var(--ease), opacity .12s var(--ease);
+  }
+  .btn:active{transform:scale(.97); opacity:.92;}
+  .btn.ghost{
+    background:var(--chip); color:var(--fg); border:none;
+    font-size:14px; padding:12px 20px; letter-spacing:.04em;
+  }
+  .btn:focus-visible,.icon-btn:focus-visible,.chip:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+
+  /* ---------- tasks (Pomofocus style) ---------- */
+  .tasks-panel{ border-top:none !important; }
   .tp-head{
     display:flex; justify-content:space-between; align-items:center;
     width:100%;
@@ -786,7 +815,8 @@
     border-left:5px solid transparent; cursor:pointer;
     transition:border-color .15s;
   }
-  .daily-intention + #taskListMain .task-item:first-child{ margin-top:4px; }
+  .daily-intention + #taskListMain .task-item:first-child{ margin-top:2px; }
+  .daily-intention + #taskListMain:empty + .add-task{ margin-top:4px; }
   .task-item.selected{border-left-color:var(--accent);}
   .task-item .t-check{
     width:22px; height:22px; border-radius:50%; border:2px solid var(--muted);
